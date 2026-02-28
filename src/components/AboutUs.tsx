@@ -23,8 +23,22 @@ export default function AboutUs() {
   };
 
   return (
-    <section id="about-us" className="py-20">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="about-us" className="py-24 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-b from-background to-secondary/20" />
+
+      <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mb-14"
+        >
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary mb-3 block">Our Story</span>
+          <h2 className="text-3xl sm:text-5xl font-bold text-foreground">
+            Built in Mirpur, <span className="text-primary">for Mirpur</span>
+          </h2>
+        </motion.div>
+
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-center">
           {/* Text */}
           <motion.div
@@ -32,16 +46,24 @@ export default function AboutUs() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
+            className="space-y-5"
           >
-            <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-6">
-              Built in Mirpur, <span className="text-brand-blue">for Mirpur.</span>
-            </h2>
-            <p className="text-muted-foreground leading-relaxed mb-4">
+            <p className="text-muted-foreground leading-relaxed text-lg">
               HUKAM is on a mission to bring hyper-local, high-speed commerce to our city. No more waiting days for deliveries.
             </p>
             <p className="text-muted-foreground leading-relaxed">
               Founded by a local tech enthusiast known simply as Hukam, this brand was born from a simple frustration — why should Mirpur wait 3-5 days for a phone charger? We deliver premium tech accessories to your doorstep in under 60 minutes, because your time matters.
             </p>
+            <motion.a
+              href="https://wa.me/923426807645?text=Hi%20HUKAM!"
+              target="_blank"
+              rel="noopener noreferrer"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.97 }}
+              className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-full text-sm font-semibold shadow-lg shadow-primary/20"
+            >
+              Talk to HUKAM ⚡
+            </motion.a>
           </motion.div>
 
           {/* Video */}
@@ -50,18 +72,18 @@ export default function AboutUs() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="glass-card p-3 aspect-[4/3] min-h-[220px] flex items-center justify-center overflow-hidden relative"
+            className="glass-card p-2 aspect-[4/3] min-h-[220px] flex items-center justify-center overflow-hidden"
           >
             <video
               ref={videoRef}
               src={logoVideo}
               poster="/logo-poster.jpg"
-              autoPlay={true}
-              loop={true}
-              muted={true}
-              playsInline={true}
+              autoPlay
+              loop
+              muted
+              playsInline
               onError={handleVideoError}
-              className="w-full h-full object-cover rounded-2xl shadow-lg border border-white/50 relative z-10"
+              className="w-full h-full object-cover rounded-xl"
             />
           </motion.div>
         </div>
