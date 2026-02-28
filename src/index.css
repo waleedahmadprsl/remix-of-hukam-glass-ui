@@ -39,6 +39,7 @@
     --glass-bg: 0 0% 100% / 0.7;
     --glass-border: 0 0% 100% / 0.5;
     --glass-shadow: 213 94% 68% / 0.08;
+    --primary-glow: 213 94% 75%;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;

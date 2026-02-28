@@ -9,52 +9,43 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { session, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!session) {
-    return <Navigate to="/admin/login" replace />;
-  }
-
   const [role, setRole] = React.useState<string | null>(null);
   const [checkingRole, setCheckingRole] = React.useState(true);
 
   React.useEffect(() => {
-    if (session) {
-      supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
-        .single()
-        .then(({ data, error }) => {
-          if (data && data.role) {
-            setRole(data.role);
-          }
-          setCheckingRole(false);
-        })
-        .catch(() => setCheckingRole(false));
+    if (!session) {
+      setCheckingRole(false);
+      return;
     }
+    const fetchRole = async () => {
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .single();
+        if (data?.role) setRole(data.role);
+      } catch {
+        // ignore
+      } finally {
+        setCheckingRole(false);
+      }
+    };
+    fetchRole();
   }, [session]);
 
-  if (checkingRole) {
+  if (loading || checkingRole) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Checking permissions...</p>
+          <p>{loading ? "Loading..." : "Checking permissions..."}</p>
         </div>
       </div>
     );
   }
+
+  if (!session) return <Navigate to="/admin/login" replace />;
 
   if (role && !["owner", "manager"].includes(role)) {
     return (

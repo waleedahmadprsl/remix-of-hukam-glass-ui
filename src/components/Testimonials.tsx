@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Star } from "lucide-react";
+import { Star, Quote } from "lucide-react";
 
 const testimonials = [
   { quote: "Got my iPhone charger in 45 minutes, amazing service!", name: "Ali M.", location: "Mirpur" },
@@ -9,16 +9,21 @@ const testimonials = [
 ];
 
 const Testimonials = () => (
-  <section className="py-20 brand-gradient">
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-      <motion.h2
+  <section className="py-24 relative overflow-hidden">
+    <div className="absolute inset-0 bg-gradient-to-b from-secondary/30 to-background" />
+
+    <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8">
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="text-3xl sm:text-4xl font-bold text-center text-foreground mb-12"
+        className="text-center mb-14"
       >
-        What Mirpur Says
-      </motion.h2>
+        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary mb-3 block">Testimonials</span>
+        <h2 className="text-3xl sm:text-5xl font-bold text-foreground">
+          What Mirpur <span className="text-primary">Says</span>
+        </h2>
+      </motion.div>
 
       <div className="flex gap-5 overflow-x-auto pb-4 snap-x snap-mandatory -mx-4 px-4 md:grid md:grid-cols-2 lg:grid-cols-4 md:overflow-visible md:mx-0 md:px-0 max-w-5xl md:mx-auto">
         {testimonials.map((t, i) => (
@@ -28,16 +33,25 @@ const Testimonials = () => (
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: i * 0.1 }}
-            whileHover={{ y: -4 }}
-            className="glass-card p-6 min-w-[80vw] md:min-w-0 snap-center flex flex-col gap-4"
+            whileHover={{ y: -6 }}
+            className="glass-card p-6 min-w-[80vw] md:min-w-0 snap-center flex flex-col gap-4 relative"
           >
+            <Quote className="w-8 h-8 text-primary/10 absolute top-4 right-4" />
             <div className="flex gap-0.5">
               {Array.from({ length: 5 }).map((_, j) => (
-                <Star key={j} className="w-4 h-4 fill-brand-blue text-brand-blue" />
+                <Star key={j} className="w-4 h-4 fill-primary text-primary" />
               ))}
             </div>
             <p className="text-foreground text-sm leading-relaxed flex-1">"{t.quote}"</p>
-            <p className="text-xs text-muted-foreground font-medium">{t.name}, {t.location}</p>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                {t.name[0]}
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-foreground">{t.name}</p>
+                <p className="text-xs text-muted-foreground">{t.location}</p>
+              </div>
+            </div>
           </motion.div>
         ))}
       </div>
