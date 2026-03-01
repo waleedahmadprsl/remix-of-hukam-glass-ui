@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, Zap, Clock, Share2, ChevronLeft, ShoppingCart, Star, Shield, Truck } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { toast } from "@/hooks/use-toast";
+import CustomerReviews from "@/components/CustomerReviews";
 
 import imgCharger from "@/assets/products/fast-charger-65w.jpg";
 import imgEarbuds from "@/assets/products/earbuds-pro.jpg";
