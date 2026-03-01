@@ -325,6 +325,9 @@ const ProductDetail = () => {
           </motion.div>
         </div>
 
+        {/* Customer Reviews */}
+        <CustomerReviews productId={product.id} />
+
         {/* Related Products */}
         <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mt-24">
           <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-8">You Might Also Like</h2>
