@@ -4,6 +4,7 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { supabase } from "@/lib/supabase";
 import { logActivity } from "@/lib/activityLogger";
 import { Trash2, Plus, Edit2 } from "lucide-react";
+import AdminImageOrderer from "@/components/AdminImageOrderer";
 
 interface Product {
   id: string;
@@ -21,7 +22,7 @@ const AdminProducts: React.FC = () => {
   const [subCategories, setSubCategories] = React.useState<{id:string;name:string}[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [showForm, setShowForm] = React.useState(false);
-  const inputRef = React.useRef<HTMLInputElement | null>(null);
+  const [editingId, setEditingId] = React.useState<string | null>(null);
   const [form, setForm] = React.useState({
     title: "",
     description: "",
@@ -31,7 +32,6 @@ const AdminProducts: React.FC = () => {
     video_url: "",
   });
   const [uploadedUrls, setUploadedUrls] = React.useState<string[]>([]);
-  const [uploading, setUploading] = React.useState(false);
 
   React.useEffect(() => {
     fetchProducts();
@@ -60,7 +60,14 @@ const AdminProducts: React.FC = () => {
     }
   };
 
-  const handleAddProduct = async (e: React.FormEvent) => {
+  const resetForm = () => {
+    setForm({ title: "", description: "", price: 0, stock: 0, sub_category_id: "", video_url: "" });
+    setUploadedUrls([]);
+    setEditingId(null);
+    setShowForm(false);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const productPayload = {
@@ -75,31 +82,50 @@ const AdminProducts: React.FC = () => {
     };
 
     try {
-      const { data, error } = await supabase.from("products").insert([productPayload]).select();
-      if (error) {
-        console.error("Supabase Insert Error:", error);
-        alert("Error saving to database: " + error.message);
-        return;
+      if (editingId) {
+        const { error } = await supabase.from("products").update(productPayload).eq("id", editingId);
+        if (error) {
+          console.error("Supabase Update Error:", error);
+          alert("Database Error: " + error.message);
+          return;
+        }
+        await logActivity("PRODUCT_UPDATED", `Updated product: ${form.title}`);
+      } else {
+        const { error } = await supabase.from("products").insert([productPayload]).select();
+        if (error) {
+          console.error("Supabase Insert Error:", error);
+          alert("Database Error: " + error.message);
+          return;
+        }
+        await logActivity("PRODUCT_ADDED", `Added product: ${form.title}`);
       }
-
-      await logActivity("PRODUCT_ADDED", `Added product: ${form.title}`);
-      setForm({ title: "", description: "", price: 0, stock: 0, sub_category_id: "", video_url: "" });
-      setUploadedUrls([]);
-      setShowForm(false);
+      resetForm();
       fetchProducts();
     } catch (err: any) {
-      console.error("Unexpected error during product insert", err);
+      console.error("Unexpected error during product save", err);
       alert(`Error: ${err.message}`);
     }
   };
 
+  const handleEdit = (product: Product) => {
+    setEditingId(product.id);
+    setForm({
+      title: product.title,
+      description: product.description,
+      price: product.price,
+      stock: product.stock,
+      sub_category_id: product.sub_category_id,
+      video_url: product.video_url || "",
+    });
+    setUploadedUrls(product.images || []);
+    setShowForm(true);
+  };
+
   const handleDeleteProduct = async (id: string, title: string) => {
     if (!confirm("Delete this product?")) return;
-
     try {
       const { error } = await supabase.from("products").delete().eq("id", id);
       if (error) throw error;
-
       await logActivity("PRODUCT_DELETED", `Deleted product: ${title}`);
       fetchProducts();
     } catch (err: any) {
@@ -113,7 +139,7 @@ const AdminProducts: React.FC = () => {
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-4xl font-extrabold text-foreground">Product Manager</h1>
           <motion.button
-            onClick={() => setShowForm(!showForm)}
+            onClick={() => { resetForm(); setShowForm(!showForm); }}
             whileHover={{ scale: 1.05 }}
             className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg font-semibold"
           >
@@ -126,153 +152,95 @@ const AdminProducts: React.FC = () => {
           <motion.form
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            onSubmit={handleAddProduct}
+            onSubmit={handleSave}
             className="glass-card p-8 rounded-2xl mb-8 space-y-4"
           >
-            <div className="grid grid-cols-2 gap-4">
-              <input
-                type="text"
-                placeholder="Product Title"
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                required
-                className="px-4 py-3 bg-background border border-border/40 rounded-lg"
-              />
-              <input
-                type="number"
-                placeholder="Price (Rs)"
-                value={form.price}
-                onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
-                required
-                className="px-4 py-3 bg-background border border-border/40 rounded-lg"
-              />
-            </div>
-
-            <textarea
-              placeholder="Description"
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              required
-              rows={3}
-              className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg"
-            />
+            <h2 className="text-xl font-bold text-foreground">{editingId ? "Edit Product" : "Add New Product"}</h2>
 
             <div className="grid grid-cols-2 gap-4">
-              <input
-                type="number"
-                placeholder="Quantity (stock)"
-                value={form.stock}
-                onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })}
-                required
-                className="px-4 py-3 bg-background border border-border/40 rounded-lg"
-              />
-              <select
-                value={form.sub_category_id}
-                onChange={(e) => setForm({ ...form, sub_category_id: e.target.value })}
-                required
-                className="px-4 py-3 bg-background border border-border/40 rounded-lg"
-              >
-                <option value="">Select sub-category</option>
-                {subCategories.map((sc) => (
-                  <option key={sc.id} value={sc.id}>
-                    {sc.name}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Title</label>
+                <input
+                  type="text"
+                  placeholder="Product Title"
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  required
+                  className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Price (Rs)</label>
+                <input
+                  type="number"
+                  placeholder="Price"
+                  value={form.price}
+                  onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
+                  required
+                  className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg"
+                />
+              </div>
             </div>
 
             <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Product Images</label>
-            <div
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={async (e) => {
-                e.preventDefault();
-                const files = Array.from(e.dataTransfer.files);
-                console.log("files dropped", files);
-                if (files.length === 0) return;
-                setUploading(true);
-                for (const file of files) {
-                  try {
-                    const fileExt = file.name.split(".").pop();
-                    const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
-                    const { data, error } = await supabase.storage
-                      .from("product-media")
-                      .upload(fileName, file);
-                    if (error) throw error;
-                    const {
-                      data: { publicUrl },
-                    } = await supabase.storage.from("product-media").getPublicUrl(data.path);
-                    if (file.type.startsWith("video")) {
-                      setForm((f) => ({ ...f, video_url: publicUrl }));
-                    } else {
-                      setUploadedUrls((u) => [...u, publicUrl]);
-                    }
-                  } catch (err) {
-                    console.error("upload error", err);
-                    alert("Upload error: " + (err as any).message);
-                  }
-                }
-                setUploading(false);
-              }}
-              onClick={() => inputRef.current?.click()}
-              className="border-2 border-dashed border-border/40 rounded-lg p-8 text-center cursor-pointer"
-            >
-              Drag & drop images or video here, or click to select
-              <input
-                type="file"
-                accept="image/*,video/*"
-                multiple
-                className="hidden"
-                ref={inputRef}
-                onChange={async (e) => {
-                  const files = e.target.files ? Array.from(e.target.files) : [];
-                  if (files.length === 0) return;
-                  setUploading(true);
-                  for (const file of files) {
-                    try {
-                      const fileExt = file.name.split(".").pop();
-                      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
-                      const { data, error } = await supabase.storage
-                        .from("product-media")
-                        .upload(fileName, file);
-                      if (error) throw error;
-                      const {
-                        data: { publicUrl },
-                      } = await supabase.storage.from("product-media").getPublicUrl(data.path);
-                      if (file.type.startsWith("video")) {
-                        setForm((f) => ({ ...f, video_url: publicUrl }));
-                      } else {
-                        setUploadedUrls((u) => [...u, publicUrl]);
-                      }
-                    } catch (err) {
-                      console.error("upload error", err);
-                      alert("Upload error: " + (err as any).message);
-                    }
-                  }
-                  setUploading(false);
-                }}
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Description</label>
+              <textarea
+                placeholder="Product description"
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                required
+                rows={3}
+                className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg"
               />
             </div>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {uploadedUrls.map((url, idx) => (
-                <img key={idx} src={url} alt="uploaded" className="w-20 h-20 object-cover rounded" />
-              ))}
-            </div>
-          </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Stock (Quantity)</label>
+                <input
+                  type="number"
+                  placeholder="Quantity"
+                  value={form.stock}
+                  onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })}
+                  required
+                  className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Sub-category</label>
+                <select
+                  value={form.sub_category_id}
+                  onChange={(e) => setForm({ ...form, sub_category_id: e.target.value })}
+                  required
+                  className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg"
+                >
+                  <option value="">Select sub-category</option>
+                  {subCategories.map((sc) => (
+                    <option key={sc.id} value={sc.id}>{sc.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Image uploader with ordering */}
+            <AdminImageOrderer
+              images={uploadedUrls}
+              onChange={setUploadedUrls}
+              videoUrl={form.video_url}
+              onVideoChange={(url) => setForm((f) => ({ ...f, video_url: url }))}
+            />
 
             <div className="flex gap-4">
               <motion.button
                 type="submit"
-                disabled={uploading}
                 whileHover={{ scale: 1.02 }}
-                className="flex-1 bg-primary text-primary-foreground py-3 rounded-lg font-semibold disabled:opacity-50"
+                className="flex-1 bg-primary text-primary-foreground py-3 rounded-lg font-semibold"
               >
-                {uploading ? "Uploading…" : "Add Product"}
+                {editingId ? "Update Product" : "Add Product"}
               </motion.button>
               <motion.button
                 type="button"
-                onClick={() => setShowForm(false)}
+                onClick={resetForm}
                 whileHover={{ scale: 1.02 }}
                 className="flex-1 bg-secondary text-foreground py-3 rounded-lg font-semibold"
               >
@@ -295,24 +263,22 @@ const AdminProducts: React.FC = () => {
               >
                 <div className="flex items-center gap-4 flex-1">
                   {product.images && product.images[0] && (
-                    <img
-                      src={product.images[0]}
-                      alt={product.title}
-                      className="w-20 h-20 object-cover rounded-md"
-                    />
+                    <img src={product.images[0]} alt={product.title} className="w-20 h-20 object-cover rounded-md" />
                   )}
                   <div>
                     <h3 className="font-bold text-foreground text-lg">{product.title}</h3>
-                    <p className="text-sm text-muted-foreground">{product.description}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-1">{product.description}</p>
                     <div className="flex gap-4 mt-2 text-sm">
-                      <span className="text-brand-blue font-semibold">Rs.{product.price}</span>
+                      <span className="text-primary font-semibold">Rs.{product.price}</span>
                       <span className="text-muted-foreground">Stock: {product.stock}</span>
+                      <span className="text-muted-foreground">{product.images?.length || 0} images</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="flex gap-2">
                   <motion.button
+                    onClick={() => handleEdit(product)}
                     whileHover={{ scale: 1.05 }}
                     className="p-2 bg-primary/10 text-primary rounded-lg"
                   >

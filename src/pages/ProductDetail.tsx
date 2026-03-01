@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, Zap, Clock, Share2, ChevronLeft, ShoppingCart, Star, Shield, Truck } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { toast } from "@/hooks/use-toast";
+import CustomerReviews from "@/components/CustomerReviews";
 
 import imgCharger from "@/assets/products/fast-charger-65w.jpg";
 import imgEarbuds from "@/assets/products/earbuds-pro.jpg";
@@ -323,6 +324,9 @@ const ProductDetail = () => {
             </div>
           </motion.div>
         </div>
+
+        {/* Customer Reviews */}
+        <CustomerReviews productId={product.id} />
 
         {/* Related Products */}
         <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mt-24">
