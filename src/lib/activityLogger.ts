@@ -1,16 +1,13 @@
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 export async function logActivity(
   action: string,
-  details?: string,
-  userId?: string
+  details?: string
 ) {
   try {
     const { error } = await supabase.from("activity_logs").insert({
       action,
       details: details || "",
-      user_id: userId || (await supabase.auth.getUser()).data.user?.id,
-      timestamp: new Date().toISOString(),
     });
 
     if (error) {
