@@ -19,7 +19,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     }
     const fetchRole = async () => {
       try {
-        const { data } = await supabase
+        const { data } = await (supabase as any)
           .from("profiles")
           .select("role")
           .eq("id", session.user.id)

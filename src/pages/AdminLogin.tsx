@@ -25,7 +25,7 @@ const AdminLogin: React.FC = () => {
         setError(signInError.message);
       } else if (data && data.user) {
         // verify role
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile, error: profileError } = await (supabase as any)
           .from("profiles")
           .select("role")
           .eq("id", data.user.id)
