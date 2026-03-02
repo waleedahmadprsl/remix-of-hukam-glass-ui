@@ -73,6 +73,25 @@ const Checkout: React.FC = () => {
         alert("Database Error: " + error.message);
         return;
       }
+
+      // Send order confirmation email
+      const orderId = data?.[0]?.id;
+      if (form.email && orderId) {
+        try {
+          await supabase.functions.invoke("send-order-email", {
+            body: {
+              type: "order_confirmation",
+              email: form.email,
+              customerName: form.fullName,
+              orderId,
+              totalAmount: parsedTotal,
+              items: cartStr,
+            },
+          });
+        } catch (emailErr) {
+          console.error("Order email error:", emailErr);
+        }
+      }
     } catch (err: any) {
       console.error("🔥 SUPABASE INSERT EXCEPTION:", err);
       alert("Database Error: " + err.message);
