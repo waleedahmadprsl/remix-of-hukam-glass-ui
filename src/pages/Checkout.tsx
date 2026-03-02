@@ -58,13 +58,15 @@ const Checkout: React.FC = () => {
     try {
       const { data, error } = await supabase.from('orders').insert([{
         customer_name: String(form.fullName),
-        phone: String(form.phone),
-        address: String(form.address),
+        customer_email: String(form.email),
+        customer_phone: String(form.phone),
+        delivery_address: String(form.address),
         instructions: String(form.instructions) || '',
+        items: cartStr,
+        promo_code: appliedPromo,
         total_amount: parsedTotal,
-        promo_code_used: appliedPromo,
         status: 'pending'
-      }]);
+      }]).select();
 
       if (error) {
         console.error("🔥 SUPABASE INSERT ERROR:", error.message, error.details, error.hint);

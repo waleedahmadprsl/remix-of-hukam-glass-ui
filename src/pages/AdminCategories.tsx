@@ -8,11 +8,13 @@ import { Trash2, Edit2, Save, X } from "lucide-react";
 interface Category {
   id: string;
   name: string;
+  slug: string;
 }
 
 interface SubCategory {
   id: string;
   name: string;
+  slug: string;
   category_id: string;
 }
 
@@ -35,16 +37,18 @@ const AdminCategories: React.FC = () => {
     fetchAll();
   }, []);
 
+  const toSlug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
   const fetchAll = async () => {
     setLoading(true);
     try {
       const { data: cats, error: catErr } = await supabase.from("categories").select("*");
       if (catErr) throw catErr;
-      setCategories(cats || []);
+      setCategories((cats as Category[]) || []);
 
       const { data: subs, error: subErr } = await supabase.from("sub_categories").select("*");
       if (subErr) throw subErr;
-      setSubCategories(subs || []);
+      setSubCategories((subs as SubCategory[]) || []);
     } catch (err: any) {
       console.error("Error fetching categories:", err.message);
     } finally {
@@ -55,7 +59,7 @@ const AdminCategories: React.FC = () => {
   const addCategory = async () => {
     if (!newCategoryName.trim()) return;
     try {
-      const { error } = await supabase.from("categories").insert({ name: newCategoryName });
+      const { error } = await supabase.from("categories").insert({ name: newCategoryName, slug: toSlug(newCategoryName) });
       if (error) throw error;
       await logActivity("CATEGORY_ADDED", `Added category ${newCategoryName}`);
       setNewCategoryName("");
@@ -80,7 +84,7 @@ const AdminCategories: React.FC = () => {
   const updateCategory = async (id: string) => {
     if (!editingCatName.trim()) return;
     try {
-      const { error } = await supabase.from("categories").update({ name: editingCatName }).eq("id", id);
+      const { error } = await supabase.from("categories").update({ name: editingCatName, slug: toSlug(editingCatName) }).eq("id", id);
       if (error) throw error;
       await logActivity("CATEGORY_UPDATED", `Updated category ${editingCatName}`);
       setEditingCatId(null);
@@ -94,7 +98,7 @@ const AdminCategories: React.FC = () => {
   const addSubCategory = async () => {
     if (!newSubName.trim() || !selectedCat) return;
     try {
-      const { error } = await supabase.from("sub_categories").insert({ name: newSubName, category_id: selectedCat });
+      const { error } = await supabase.from("sub_categories").insert({ name: newSubName, slug: toSlug(newSubName), category_id: selectedCat });
       if (error) throw error;
       await logActivity("SUBCATEGORY_ADDED", `Added subcategory ${newSubName}`);
       setNewSubName("");
@@ -122,7 +126,7 @@ const AdminCategories: React.FC = () => {
     try {
       const { error } = await supabase
         .from("sub_categories")
-        .update({ name: editingSubName, category_id: editingSubCat })
+        .update({ name: editingSubName, slug: toSlug(editingSubName), category_id: editingSubCat })
         .eq("id", id);
       if (error) throw error;
       await logActivity("SUBCATEGORY_UPDATED", `Updated subcategory ${editingSubName}`);
@@ -165,10 +169,10 @@ const AdminCategories: React.FC = () => {
                       onChange={(e) => setEditingCatName(e.target.value)}
                     />
                     <div className="flex gap-2">
-                      <button onClick={() => updateCategory(cat.id)} className="text-green-600">
+                      <button onClick={() => updateCategory(cat.id)} className="text-primary">
                         <Save />
                       </button>
-                      <button onClick={() => setEditingCatId(null)} className="text-gray-600">
+                      <button onClick={() => setEditingCatId(null)} className="text-muted-foreground">
                         <X />
                       </button>
                     </div>
@@ -182,11 +186,11 @@ const AdminCategories: React.FC = () => {
                           setEditingCatId(cat.id);
                           setEditingCatName(cat.name);
                         }}
-                        className="text-blue-600"
+                        className="text-primary"
                       >
                         <Edit2 />
                       </button>
-                      <button onClick={() => deleteCategory(cat.id, cat.name)} className="text-red-600">
+                      <button onClick={() => deleteCategory(cat.id, cat.name)} className="text-destructive">
                         <Trash2 />
                       </button>
                     </div>
@@ -246,10 +250,10 @@ const AdminCategories: React.FC = () => {
                       onChange={(e) => setEditingSubName(e.target.value)}
                     />
                     <div className="flex gap-2">
-                      <button onClick={() => updateSubCategory(sub.id)} className="text-green-600">
+                      <button onClick={() => updateSubCategory(sub.id)} className="text-primary">
                         <Save />
                       </button>
-                      <button onClick={() => setEditingSubId(null)} className="text-gray-600">
+                      <button onClick={() => setEditingSubId(null)} className="text-muted-foreground">
                         <X />
                       </button>
                     </div>
@@ -264,11 +268,11 @@ const AdminCategories: React.FC = () => {
                           setEditingSubName(sub.name);
                           setEditingSubCat(sub.category_id);
                         }}
-                        className="text-blue-600"
+                        className="text-primary"
                       >
                         <Edit2 />
                       </button>
-                      <button onClick={() => deleteSubCategory(sub.id, sub.name)} className="text-red-600">
+                      <button onClick={() => deleteSubCategory(sub.id, sub.name)} className="text-destructive">
                         <Trash2 />
                       </button>
                     </div>
