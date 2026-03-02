@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { GripVertical, X, Upload } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AdminImageOrdererProps {
   images: string[];

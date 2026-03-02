@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { useCart } from "@/context/CartContext";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { ShoppingCart, FileText, CheckCircle2, ChevronRight } from "lucide-react";
 
@@ -58,18 +58,39 @@ const Checkout: React.FC = () => {
     try {
       const { data, error } = await supabase.from('orders').insert([{
         customer_name: String(form.fullName),
-        phone: String(form.phone),
-        address: String(form.address),
+        customer_email: String(form.email),
+        customer_phone: String(form.phone),
+        delivery_address: String(form.address),
         instructions: String(form.instructions) || '',
+        items: cartStr,
+        promo_code: appliedPromo,
         total_amount: parsedTotal,
-        promo_code_used: appliedPromo,
         status: 'pending'
-      }]);
+      }]).select();
 
       if (error) {
         console.error("🔥 SUPABASE INSERT ERROR:", error.message, error.details, error.hint);
         alert("Database Error: " + error.message);
         return;
+      }
+
+      // Send order confirmation email
+      const orderId = data?.[0]?.id;
+      if (form.email && orderId) {
+        try {
+          await supabase.functions.invoke("send-order-email", {
+            body: {
+              type: "order_confirmation",
+              email: form.email,
+              customerName: form.fullName,
+              orderId,
+              totalAmount: parsedTotal,
+              items: cartStr,
+            },
+          });
+        } catch (emailErr) {
+          console.error("Order email error:", emailErr);
+        }
       }
     } catch (err: any) {
       console.error("🔥 SUPABASE INSERT EXCEPTION:", err);

@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 const AdminLogin: React.FC = () => {
   const [email, setEmail] = React.useState("");
@@ -25,7 +25,7 @@ const AdminLogin: React.FC = () => {
         setError(signInError.message);
       } else if (data && data.user) {
         // verify role
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile, error: profileError } = await (supabase as any)
           .from("profiles")
           .select("role")
           .eq("id", data.user.id)

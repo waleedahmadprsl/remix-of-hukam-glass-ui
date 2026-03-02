@@ -1,27 +1,27 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { AdminLayout } from "@/components/AdminLayout";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { logActivity } from "@/lib/activityLogger";
 import { playBeep } from "@/lib/audio";
 import { toast } from "@/hooks/use-toast";
-import { ChevronRight, X } from "lucide-react";
+import { X } from "lucide-react";
 
 interface Order {
   id: string;
   customer_name: string;
-  customer_email: string;
+  customer_email: string | null;
   customer_phone: string;
   delivery_address: string;
   instructions?: string;
-  items?: string; // textual representation
+  items?: string;
   promo_code?: string;
   total_amount: number;
-  status: "pending" | "confirmed" | "dispatched" | "delivered" | "canceled";
+  status: string;
   created_at: string;
 }
 
-const statusColors: Record<Order["status"], string> = {
+const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
   confirmed: "bg-blue-100 text-blue-800",
   dispatched: "bg-purple-100 text-purple-800",
@@ -32,11 +32,11 @@ const statusColors: Record<Order["status"], string> = {
 const AdminOrders: React.FC = () => {
   const [orders, setOrders] = React.useState<Order[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [selectedOrder, setSelectedOrder] = React.useState<Order | null>(null);
 
   React.useEffect(() => {
     fetchOrders();
 
-    // subscribe to new orders
     const channel = supabase
       .channel("orders_channel")
       .on(
@@ -64,7 +64,7 @@ const AdminOrders: React.FC = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setOrders(data || []);
+      setOrders((data as Order[]) || []);
     } catch (err: any) {
       console.error("Error fetching orders:", err.message);
     } finally {
@@ -72,7 +72,7 @@ const AdminOrders: React.FC = () => {
     }
   };
 
-  const handleStatusChange = async (orderId: string, newStatus: Order["status"]) => {
+  const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
       const { error } = await supabase
         .from("orders")
@@ -81,6 +81,25 @@ const AdminOrders: React.FC = () => {
 
       if (error) throw error;
 
+      // Send status update email
+      const order = orders.find(o => o.id === orderId);
+      if (order?.customer_email) {
+        try {
+          await supabase.functions.invoke("send-order-email", {
+            body: {
+              type: "status_update",
+              email: order.customer_email,
+              customerName: order.customer_name,
+              orderId: orderId,
+              status: newStatus,
+              totalAmount: order.total_amount,
+            },
+          });
+        } catch (emailErr) {
+          console.error("Email send error:", emailErr);
+        }
+      }
+
       await logActivity("ORDER_STATUS_CHANGED", `Order ${orderId} status changed to ${newStatus}`);
       fetchOrders();
     } catch (err: any) {
@@ -88,8 +107,7 @@ const AdminOrders: React.FC = () => {
     }
   };
 
-  const statuses: Order["status"][] = ["pending", "confirmed", "dispatched", "delivered", "canceled"];
-  const [selectedOrder, setSelectedOrder] = React.useState<Order | null>(null);
+  const statuses = ["pending", "confirmed", "dispatched", "delivered", "canceled"];
 
   return (
     <AdminLayout activeTab="orders">
@@ -129,7 +147,7 @@ const AdminOrders: React.FC = () => {
                           value={order.status}
                           onChange={(e) => {
                             e.stopPropagation();
-                            handleStatusChange(order.id, e.target.value as Order["status"]);
+                            handleStatusChange(order.id, e.target.value);
                           }}
                           className="px-2 py-1 bg-background border border-border/40 rounded-lg text-sm"
                         >
@@ -158,7 +176,7 @@ const AdminOrders: React.FC = () => {
                   <h2 className="text-2xl font-bold mb-4">Order #{selectedOrder.id.slice(0,8)}</h2>
                   <p className="text-sm text-muted-foreground mb-2">{new Date(selectedOrder.created_at).toLocaleString()}</p>
                   <p><span className="font-semibold">Customer:</span> {selectedOrder.customer_name} ({selectedOrder.customer_phone})</p>
-                  <p><span className="font-semibold">Email:</span> {selectedOrder.customer_email}</p>
+                  <p><span className="font-semibold">Email:</span> {selectedOrder.customer_email || "—"}</p>
                   <p><span className="font-semibold">Address:</span> {selectedOrder.delivery_address}</p>
                   {selectedOrder.items && (
                     <div className="mt-2">

@@ -1,14 +1,13 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { AdminLayout } from "@/components/AdminLayout";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ActivityLog {
   id: string;
   action: string;
   details: string;
-  user_id: string;
-  timestamp: string;
+  created_at: string;
 }
 
 const AdminActivityLogs: React.FC = () => {
@@ -24,11 +23,11 @@ const AdminActivityLogs: React.FC = () => {
       const { data, error } = await supabase
         .from("activity_logs")
         .select("*")
-        .order("timestamp", { ascending: false })
+        .order("created_at", { ascending: false })
         .limit(50);
 
       if (error) throw error;
-      setLogs(data || []);
+      setLogs((data as ActivityLog[]) || []);
     } catch (err: any) {
       console.error("Error fetching activity logs:", err.message);
     } finally {
@@ -60,7 +59,7 @@ const AdminActivityLogs: React.FC = () => {
                     <p className="text-sm text-muted-foreground">{log.details}</p>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {new Date(log.timestamp).toLocaleString()}
+                    {new Date(log.created_at).toLocaleString()}
                   </div>
                 </motion.div>
               ))
