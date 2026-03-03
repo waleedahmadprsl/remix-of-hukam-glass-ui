@@ -29,6 +29,7 @@ import AdminOrders from "./pages/AdminOrders";
 import AdminCategories from "./pages/AdminCategories";
 import AdminPromos from "./pages/AdminPromos";
 import AdminActivityLogs from "./pages/AdminActivityLogs";
+import TrackOrder from "./pages/TrackOrder";
 
 const queryClient = new QueryClient();
 
