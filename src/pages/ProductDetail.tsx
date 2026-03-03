@@ -289,10 +289,10 @@ const ProductDetail = () => {
                   }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="flex items-center justify-center gap-2 bg-foreground text-background py-4 rounded-2xl font-bold text-base transition-all hover:shadow-lg"
+                  className="flex items-center justify-center gap-2 bg-primary text-primary-foreground py-4 rounded-2xl font-bold text-base shadow-lg shadow-primary/25 transition-all hover:shadow-xl"
                 >
                   <ShoppingCart className="w-5 h-5" />
-                  Add to Cart
+                  HUKAM Kijiye (Add to Cart)
                 </motion.button>
 
                 <motion.a
@@ -301,9 +301,9 @@ const ProductDetail = () => {
                   rel="noopener noreferrer"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="flex items-center justify-center gap-2 bg-primary text-primary-foreground py-4 rounded-2xl font-bold text-base shadow-lg shadow-primary/25 transition-all hover:shadow-xl"
+                  className="flex items-center justify-center gap-2 bg-foreground/10 text-foreground border border-border py-4 rounded-2xl font-bold text-base transition-all hover:bg-foreground/20"
                 >
-                  HUKAM on WhatsApp ⚡
+                  Order via WhatsApp
                 </motion.a>
               </div>
             </div>
