@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { AdminLayout } from "@/components/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { logActivity } from "@/lib/activityLogger";
-import { Trash2, Plus, Edit2 } from "lucide-react";
+import { Trash2, Plus, Edit2, ChevronDown, ChevronUp, X } from "lucide-react";
 import AdminImageOrderer from "@/components/AdminImageOrderer";
 
 interface Product {
@@ -15,14 +15,22 @@ interface Product {
   sub_category_id: string | null;
   images: string[];
   video_url?: string | null;
+  is_active: boolean;
+}
+
+interface CategoryWithSubs {
+  id: string;
+  name: string;
+  subCategories: { id: string; name: string }[];
 }
 
 const AdminProducts: React.FC = () => {
   const [products, setProducts] = React.useState<Product[]>([]);
-  const [subCategories, setSubCategories] = React.useState<{id:string;name:string}[]>([]);
+  const [categoriesWithSubs, setCategoriesWithSubs] = React.useState<CategoryWithSubs[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [showForm, setShowForm] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
+  const [filterCategory, setFilterCategory] = React.useState("");
   const [form, setForm] = React.useState({
     title: "",
     description: "",
@@ -30,19 +38,20 @@ const AdminProducts: React.FC = () => {
     stock: 0,
     sub_category_id: "",
     video_url: "",
+    key_features: "",
+    specs: "",
   });
   const [uploadedUrls, setUploadedUrls] = React.useState<string[]>([]);
 
   React.useEffect(() => {
     fetchProducts();
-    fetchSubCategories();
+    fetchCategories();
   }, []);
 
   const fetchProducts = async () => {
     try {
-      const { data, error } = await supabase.from("products").select("*");
+      const { data, error } = await supabase.from("products").select("*").order("created_at", { ascending: false });
       if (error) throw error;
-      // Cast images from Json to string[]
       const mapped = (data || []).map((p: any) => ({
         ...p,
         images: Array.isArray(p.images) ? p.images : [],
@@ -55,29 +64,52 @@ const AdminProducts: React.FC = () => {
     }
   };
 
-  const fetchSubCategories = async () => {
+  const fetchCategories = async () => {
     try {
-      const { data, error } = await supabase.from("sub_categories").select("id,name");
-      if (error) throw error;
-      setSubCategories((data as any[]) || []);
+      const { data: cats } = await supabase.from("categories").select("id, name");
+      const { data: subs } = await supabase.from("sub_categories").select("id, name, category_id");
+      const mapped = (cats || []).map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        subCategories: (subs || []).filter((s: any) => s.category_id === c.id).map((s: any) => ({ id: s.id, name: s.name })),
+      }));
+      setCategoriesWithSubs(mapped);
     } catch (err: any) {
-      console.error("Error fetching subcategories:", err.message);
+      console.error("Error fetching categories:", err.message);
     }
   };
 
+  const allSubCategories = categoriesWithSubs.flatMap((c) => c.subCategories.map((s) => ({ ...s, categoryName: c.name })));
+
   const resetForm = () => {
-    setForm({ title: "", description: "", price: 0, stock: 0, sub_category_id: "", video_url: "" });
+    setForm({ title: "", description: "", price: 0, stock: 0, sub_category_id: "", video_url: "", key_features: "", specs: "" });
     setUploadedUrls([]);
     setEditingId(null);
     setShowForm(false);
   };
 
+  const parseDescriptionFields = (desc: string) => {
+    // Try to parse structured description: description|||features|||specs
+    const parts = desc.split("|||");
+    return {
+      description: parts[0] || "",
+      key_features: parts[1] || "",
+      specs: parts[2] || "",
+    };
+  };
+
+  const buildDescription = () => {
+    // Store as structured: description|||features|||specs
+    const parts = [form.description, form.key_features, form.specs];
+    if (!form.key_features && !form.specs) return form.description;
+    return parts.join("|||");
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-
     const productPayload = {
       title: form.title,
-      description: form.description,
+      description: buildDescription(),
       price: Number(form.price),
       stock: Number(form.stock),
       sub_category_id: form.sub_category_id || null,
@@ -104,17 +136,21 @@ const AdminProducts: React.FC = () => {
   };
 
   const handleEdit = (product: Product) => {
+    const parsed = parseDescriptionFields(product.description || "");
     setEditingId(product.id);
     setForm({
       title: product.title,
-      description: product.description,
+      description: parsed.description,
       price: product.price,
       stock: product.stock,
       sub_category_id: product.sub_category_id || "",
       video_url: product.video_url || "",
+      key_features: parsed.key_features,
+      specs: parsed.specs,
     });
     setUploadedUrls(product.images || []);
     setShowForm(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleDeleteProduct = async (id: string, title: string) => {
@@ -129,10 +165,25 @@ const AdminProducts: React.FC = () => {
     }
   };
 
+  const getSubCategoryName = (subId: string | null) => {
+    if (!subId) return "Uncategorized";
+    const sub = allSubCategories.find((s) => s.id === subId);
+    return sub ? `${sub.categoryName} → ${sub.name}` : "Unknown";
+  };
+
+  const filteredProducts = filterCategory
+    ? products.filter((p) => {
+        const sub = allSubCategories.find((s) => s.id === p.sub_category_id);
+        if (!sub) return false;
+        const cat = categoriesWithSubs.find((c) => c.subCategories.some((s) => s.id === p.sub_category_id));
+        return cat?.id === filterCategory || p.sub_category_id === filterCategory;
+      })
+    : products;
+
   return (
     <AdminLayout activeTab="products">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
           <h1 className="text-4xl font-extrabold text-foreground">Product Manager</h1>
           <motion.button
             onClick={() => { resetForm(); setShowForm(!showForm); }}
@@ -140,7 +191,7 @@ const AdminProducts: React.FC = () => {
             className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg font-semibold"
           >
             <Plus className="w-5 h-5" />
-            Add Product
+            {showForm ? "Close Form" : "Add Product"}
           </motion.button>
         </div>
 
@@ -151,35 +202,52 @@ const AdminProducts: React.FC = () => {
             onSubmit={handleSave}
             className="glass-card p-8 rounded-2xl mb-8 space-y-4"
           >
-            <h2 className="text-xl font-bold text-foreground">{editingId ? "Edit Product" : "Add New Product"}</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-foreground">{editingId ? "Edit Product" : "Add New Product"}</h2>
+              <button type="button" onClick={resetForm} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
+            </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Title</label>
-                <input type="text" placeholder="Product Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg" />
+                <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Price (Rs)</label>
-                <input type="number" placeholder="Price" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} required className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg" />
+                <input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} required className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg" />
               </div>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Description</label>
-              <textarea placeholder="Product description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required rows={3} className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg" />
+              <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required rows={3} className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg" />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Key Features (one per line)</label>
+              <textarea value={form.key_features} onChange={(e) => setForm({ ...form, key_features: e.target.value })} rows={4} placeholder="65W Maximum Output&#10;GaN Technology&#10;USB-C Compatibility" className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg" />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Specifications (label:value per line)</label>
+              <textarea value={form.specs} onChange={(e) => setForm({ ...form, specs: e.target.value })} rows={4} placeholder="Output:65W Maximum&#10;Technology:GaN&#10;Port:USB-C" className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg" />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Stock (Quantity)</label>
-                <input type="number" placeholder="Quantity" value={form.stock} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} required className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg" />
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Stock</label>
+                <input type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} required className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Sub-category</label>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Category → Sub-category</label>
                 <select value={form.sub_category_id} onChange={(e) => setForm({ ...form, sub_category_id: e.target.value })} className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg">
-                  <option value="">Select sub-category</option>
-                  {subCategories.map((sc) => (
-                    <option key={sc.id} value={sc.id}>{sc.name}</option>
+                  <option value="">Select category</option>
+                  {categoriesWithSubs.map((cat) => (
+                    <optgroup key={cat.id} label={cat.name}>
+                      {cat.subCategories.map((sc) => (
+                        <option key={sc.id} value={sc.id}>{sc.name}</option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
               </div>
@@ -203,27 +271,46 @@ const AdminProducts: React.FC = () => {
           </motion.form>
         )}
 
+        {/* Filter bar */}
+        <div className="flex items-center gap-4 mb-6 flex-wrap">
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="px-4 py-2 bg-background border border-border/40 rounded-lg text-sm"
+          >
+            <option value="">All Categories</option>
+            {categoriesWithSubs.map((cat) => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
+          <span className="text-sm text-muted-foreground">{filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""}</span>
+        </div>
+
         {loading ? (
           <div className="text-center py-12">Loading products...</div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">No products found. Add your first product above.</div>
         ) : (
           <div className="space-y-4">
-            {products.map((product) => (
-              <motion.div key={product.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6 rounded-xl flex items-center justify-between">
-                <div className="flex items-center gap-4 flex-1">
-                  {product.images && product.images[0] && (
-                    <img src={product.images[0]} alt={product.title} className="w-20 h-20 object-cover rounded-md" />
+            {filteredProducts.map((product) => (
+              <motion.div key={product.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5 rounded-xl flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  {product.images?.[0] && (
+                    <img src={product.images[0]} alt={product.title} className="w-16 h-16 object-cover rounded-lg flex-shrink-0" />
                   )}
-                  <div>
-                    <h3 className="font-bold text-foreground text-lg">{product.title}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-1">{product.description}</p>
-                    <div className="flex gap-4 mt-2 text-sm">
-                      <span className="text-primary font-semibold">Rs.{product.price}</span>
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-foreground truncate">{product.title}</h3>
+                    <p className="text-xs text-muted-foreground truncate">{getSubCategoryName(product.sub_category_id)}</p>
+                    <div className="flex gap-4 mt-1 text-sm">
+                      <span className="text-primary font-semibold">Rs.{product.price.toLocaleString()}</span>
                       <span className="text-muted-foreground">Stock: {product.stock}</span>
-                      <span className="text-muted-foreground">{product.images?.length || 0} images</span>
+                      <span className={`text-xs font-medium ${product.is_active ? "text-green-600" : "text-destructive"}`}>
+                        {product.is_active ? "Active" : "Inactive"}
+                      </span>
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-shrink-0">
                   <motion.button onClick={() => handleEdit(product)} whileHover={{ scale: 1.05 }} className="p-2 bg-primary/10 text-primary rounded-lg">
                     <Edit2 className="w-5 h-5" />
                   </motion.button>

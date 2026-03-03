@@ -7,9 +7,9 @@ const Footer = () => {
   const quickLinks = [
     { label: "Home", path: "/" },
     { label: "Products", path: "/products" },
+    { label: "Track Order", path: "/track-order" },
     { label: "About", path: "/about" },
     { label: "Contact", path: "/contact" },
-    { label: "Business Portal", path: "/" },
   ];
 
   const legalLinks = [
