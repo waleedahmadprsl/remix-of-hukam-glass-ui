@@ -98,16 +98,13 @@ const AllProducts = () => {
                 <div className="p-4 relative">
                   <h3 className="font-semibold text-foreground text-sm sm:text-base">{product.name}</h3>
                   <p className="text-brand-blue font-bold mt-1 text-sm">{product.price}</p>
-                  <motion.a
-                    href={`https://wa.me/923426807645?text=Hi%20HUKAM!%20I%20want%20to%20order%20${encodeURIComponent(product.name)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="absolute bottom-0 left-0 right-0 bg-primary text-primary-foreground flex items-center justify-center gap-2 py-2.5 font-medium text-xs sm:text-sm translate-y-full group-hover:translate-y-0 transition-transform duration-300"
+                  <motion.div
+                    onClick={(e) => { e.stopPropagation(); navigate(`/product/${product.id}`); }}
+                    className="absolute bottom-0 left-0 right-0 bg-primary text-primary-foreground flex items-center justify-center gap-2 py-2.5 font-medium text-xs sm:text-sm translate-y-full group-hover:translate-y-0 transition-transform duration-300 cursor-pointer"
                   >
                     <ShoppingBag className="w-3.5 h-3.5" />
-                    HUKAM on WhatsApp
-                  </motion.a>
+                    HUKAM Kijiye
+                  </motion.div>
                 </div>
               </motion.div>
             ))}

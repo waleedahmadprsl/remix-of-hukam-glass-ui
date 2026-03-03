@@ -13,6 +13,7 @@ interface NavLink {
 const navLinks: NavLink[] = [
   { label: "Home", path: "/" },
   { label: "All Products", path: "/products" },
+  { label: "Track Order", path: "/track-order" },
   { label: "About Us", path: "/about" },
   { label: "Contact", path: "/contact" },
 ];
