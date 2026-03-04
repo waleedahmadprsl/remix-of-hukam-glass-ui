@@ -1,77 +1,105 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Search, SlidersHorizontal } from "lucide-react";
+import { ShoppingBag, Search } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useCart } from "@/context/CartContext";
+import { useMiniCart } from "@/context/MiniCartContext";
+import { toast } from "@/hooks/use-toast";
 
-import imgCharger from "@/assets/products/fast-charger-65w.jpg";
-import imgCharger20 from "@/assets/products/pd-charger-20w.jpg";
-import imgEarbuds from "@/assets/products/earbuds-pro.jpg";
-import imgNeckband from "@/assets/products/neckband.jpg";
-import imgPowerBank from "@/assets/products/power-bank.jpg";
-import imgSlimBank from "@/assets/products/slim-bank.jpg";
-import imgHub from "@/assets/products/usb-hub.jpg";
-import imgCableUsbc from "@/assets/products/cable-usbc.jpg";
-import imgCableBraided from "@/assets/products/cable-braided.jpg";
-import imgStand from "@/assets/products/phone-stand.jpg";
-import imgCarMount from "@/assets/products/car-mount.jpg";
-import imgProtector from "@/assets/products/screen-protector.jpg";
-
-interface Product {
+interface DBProduct {
   id: string;
-  name: string;
-  price: string;
-  image: string;
-  category: string;
+  title: string;
+  price: number;
+  images: string[];
+  stock: number;
+  is_active: boolean;
+  sub_category_id: string | null;
+  description: string;
 }
 
-const allProducts: Product[] = [
-  { id: "1", name: "65W GaN Fast Charger", price: "₨ 2,499", image: imgCharger, category: "chargers" },
-  { id: "2", name: "TWS Earbuds Pro", price: "₨ 3,999", image: imgEarbuds, category: "audio" },
-  { id: "3", name: "MagSafe Power Bank", price: "₨ 4,299", image: imgPowerBank, category: "power-banks" },
-  { id: "4", name: "USB-C Hub 7-in-1", price: "₨ 3,199", image: imgHub, category: "cables" },
-  { id: "5", name: "20W PD Charger", price: "₨ 1,299", image: imgCharger20, category: "chargers" },
-  { id: "6", name: "Neckband Sport", price: "₨ 1,999", image: imgNeckband, category: "audio" },
-  { id: "7", name: "10000mAh Slim Bank", price: "₨ 2,999", image: imgSlimBank, category: "power-banks" },
-  { id: "8", name: "USB-C to Lightning", price: "₨ 799", image: imgCableUsbc, category: "cables" },
-  { id: "9", name: "Braided USB-C 2m", price: "₨ 599", image: imgCableBraided, category: "cables" },
-  { id: "10", name: "Phone Stand Foldable", price: "₨ 899", image: imgStand, category: "accessories" },
-  { id: "11", name: "Car Phone Mount", price: "₨ 1,499", image: imgCarMount, category: "accessories" },
-  { id: "12", name: "Screen Protector Pack", price: "₨ 499", image: imgProtector, category: "accessories" },
-];
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
 
-const categories = [
-  { id: "all", label: "All Products" },
-  { id: "chargers", label: "Chargers" },
-  { id: "cables", label: "Cables" },
-  { id: "audio", label: "Audio" },
-  { id: "power-banks", label: "Power Banks" },
-  { id: "accessories", label: "Accessories" },
-];
+interface SubCategory {
+  id: string;
+  name: string;
+  slug: string;
+  category_id: string;
+}
 
 const Products = () => {
   const navigate = useNavigate();
+  const { addItem } = useCart();
+  const { openCart } = useMiniCart();
+  const [products, setProducts] = useState<DBProduct[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("all");
   const [search, setSearch] = useState("");
 
-  const filtered = allProducts.filter((p) => {
-    const matchCat = activeCategory === "all" || p.category === activeCategory;
-    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [prodRes, catRes, subRes] = await Promise.all([
+        supabase.from("products").select("*").eq("is_active", true).order("created_at", { ascending: false }),
+        supabase.from("categories").select("*"),
+        supabase.from("sub_categories").select("*"),
+      ]);
+      setProducts((prodRes.data || []).map((p: any) => ({ ...p, images: Array.isArray(p.images) ? p.images : [] })));
+      setCategories(catRes.data || []);
+      setSubCategories(subRes.data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getCategoryForProduct = (p: DBProduct) => {
+    if (!p.sub_category_id) return null;
+    const sub = subCategories.find((s) => s.id === p.sub_category_id);
+    if (!sub) return null;
+    return categories.find((c) => c.id === sub.category_id) || null;
+  };
+
+  const filtered = products.filter((p) => {
+    const matchCat = activeCategory === "all" || getCategoryForProduct(p)?.id === activeCategory;
+    const matchSearch = p.title.toLowerCase().includes(search.toLowerCase());
     return matchCat && matchSearch;
   });
+
+  const handleAddToCart = (e: React.MouseEvent, product: DBProduct) => {
+    e.stopPropagation();
+    addItem({
+      id: product.id,
+      name: product.title,
+      price: `₨ ${product.price.toLocaleString()}`,
+      image: product.images[0] || "",
+    });
+    toast({ title: "Added to Cart", description: product.title });
+    openCart();
+  };
+
+  const categoryTabs = [{ id: "all", name: "All Products" }, ...categories.map((c) => ({ id: c.id, name: c.name }))];
 
   return (
     <div className="min-h-screen bg-background pt-24 pb-20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
           <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary mb-3 block">HUKAM Collection</span>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground mb-4">The Vault</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">Premium tech accessories with 60-minute delivery in Mirpur.</p>
         </motion.div>
 
-        {/* Search + Filters */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="max-w-3xl mx-auto mb-10 space-y-4">
-          {/* Search bar */}
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
@@ -83,9 +111,8 @@ const Products = () => {
             />
           </div>
 
-          {/* Category pills */}
           <div className="flex flex-wrap gap-2 justify-center">
-            {categories.map((cat) => (
+            {categoryTabs.map((cat) => (
               <motion.button
                 key={cat.id}
                 whileHover={{ scale: 1.05 }}
@@ -97,16 +124,16 @@ const Products = () => {
                     : "bg-background/60 border-border/50 text-muted-foreground hover:border-primary/40 hover:text-foreground"
                 }`}
               >
-                {cat.label}
+                {cat.name}
               </motion.button>
             ))}
           </div>
         </motion.div>
 
-        {/* Results count */}
-        <p className="text-sm text-muted-foreground mb-6 text-center">{filtered.length} product{filtered.length !== 1 ? "s" : ""} found</p>
+        <p className="text-sm text-muted-foreground mb-6 text-center">
+          {loading ? "Loading..." : `${filtered.length} product${filtered.length !== 1 ? "s" : ""} found`}
+        </p>
 
-        {/* Products Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 max-w-6xl mx-auto">
           <AnimatePresence mode="popLayout">
             {filtered.map((product, i) => (
@@ -122,13 +149,22 @@ const Products = () => {
                 className="glass-card group overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:border-primary/30"
               >
                 <div className="relative h-36 sm:h-48 overflow-hidden bg-secondary/30">
-                  <img src={product.image} alt={product.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                  {product.images[0] ? (
+                    <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">No Image</div>
+                  )}
+                  {product.stock > 0 && product.stock <= 5 && (
+                    <span className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">
+                      🔥 Only {product.stock} left!
+                    </span>
+                  )}
                 </div>
                 <div className="p-4 relative">
-                  <h3 className="font-semibold text-foreground text-sm">{product.name}</h3>
-                  <p className="text-primary font-bold mt-1">{product.price}</p>
+                  <h3 className="font-semibold text-foreground text-sm">{product.title}</h3>
+                  <p className="text-primary font-bold mt-1">₨ {product.price.toLocaleString()}</p>
                   <motion.div
-                    onClick={(e) => { e.stopPropagation(); navigate(`/product/${product.id}`); }}
+                    onClick={(e) => handleAddToCart(e, product)}
                     className="absolute bottom-0 left-0 right-0 bg-primary text-primary-foreground flex items-center justify-center gap-2 py-3 font-medium text-sm translate-y-full group-hover:translate-y-0 transition-transform duration-300 cursor-pointer"
                   >
                     <ShoppingBag className="w-4 h-4" />
@@ -140,13 +176,12 @@ const Products = () => {
           </AnimatePresence>
         </div>
 
-        {filtered.length === 0 && (
+        {!loading && filtered.length === 0 && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20">
             <p className="text-xl text-muted-foreground">No products found. Try a different search.</p>
           </motion.div>
         )}
 
-        {/* CTA */}
         <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mt-20 glass-card p-10 sm:p-12 text-center rounded-3xl">
           <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">Can't Find What You Need?</h2>
           <p className="text-muted-foreground mb-8 max-w-lg mx-auto">Chat with us on WhatsApp for custom requests or bulk orders.</p>

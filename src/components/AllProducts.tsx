@@ -1,76 +1,85 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingBag } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useCart } from "@/context/CartContext";
+import { useMiniCart } from "@/context/MiniCartContext";
+import { toast } from "@/hooks/use-toast";
 
-import imgCharger65 from "@/assets/products/fast-charger-65w.jpg";
-import imgCharger20 from "@/assets/products/pd-charger-20w.jpg";
-import imgCableUsbc from "@/assets/products/cable-usbc.jpg";
-import imgCableBraided from "@/assets/products/cable-braided.jpg";
-import imgEarbuds from "@/assets/products/earbuds-pro.jpg";
-import imgNeckband from "@/assets/products/neckband.jpg";
-import imgPowerBank from "@/assets/products/power-bank.jpg";
-import imgSlimBank from "@/assets/products/slim-bank.jpg";
-import imgHub from "@/assets/products/usb-hub.jpg";
-import imgStand from "@/assets/products/phone-stand.jpg";
-import imgCarMount from "@/assets/products/car-mount.jpg";
-import imgProtector from "@/assets/products/screen-protector.jpg";
+interface DBProduct {
+  id: string;
+  title: string;
+  price: number;
+  images: string[];
+  sub_category_id: string | null;
+}
 
-const categories = ["All", "Fast Chargers", "Cables", "Earbuds", "Power Banks", "Accessories"];
-
-const allProducts = [
-  { id: "1", name: "65W GaN Fast Charger", price: "₨ 2,499", image: imgCharger65, category: "Fast Chargers" },
-  { id: "2", name: "20W PD Charger", price: "₨ 1,299", image: imgCharger20, category: "Fast Chargers" },
-  { id: "3", name: "USB-C to Lightning Cable", price: "₨ 799", image: imgCableUsbc, category: "Cables" },
-  { id: "4", name: "Braided USB-C Cable 2m", price: "₨ 599", image: imgCableBraided, category: "Cables" },
-  { id: "5", name: "TWS Earbuds Pro", price: "₨ 3,999", image: imgEarbuds, category: "Earbuds" },
-  { id: "6", name: "Neckband Sport", price: "₨ 1,999", image: imgNeckband, category: "Earbuds" },
-  { id: "7", name: "MagSafe Power Bank", price: "₨ 4,299", image: imgPowerBank, category: "Power Banks" },
-  { id: "8", name: "10000mAh Slim Bank", price: "₨ 2,999", image: imgSlimBank, category: "Power Banks" },
-  { id: "9", name: "USB-C Hub 7-in-1", price: "₨ 3,199", image: imgHub, category: "Accessories" },
-  { id: "10", name: "Phone Stand Foldable", price: "₨ 899", image: imgStand, category: "Accessories" },
-  { id: "11", name: "Car Phone Mount", price: "₨ 1,499", image: imgCarMount, category: "Accessories" },
-  { id: "12", name: "Screen Protector Pack", price: "₨ 499", image: imgProtector, category: "Accessories" },
-];
+interface Category {
+  id: string;
+  name: string;
+}
 
 const AllProducts = () => {
   const navigate = useNavigate();
+  const { addItem } = useCart();
+  const { openCart } = useMiniCart();
+  const [products, setProducts] = useState<DBProduct[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [subCategories, setSubCategories] = useState<{ id: string; category_id: string }[]>([]);
   const [active, setActive] = useState("All");
-  const filtered = active === "All" ? allProducts : allProducts.filter((p) => p.category === active);
+
+  useEffect(() => {
+    Promise.all([
+      supabase.from("products").select("id, title, price, images, sub_category_id").eq("is_active", true).order("created_at", { ascending: false }),
+      supabase.from("categories").select("id, name"),
+      supabase.from("sub_categories").select("id, category_id"),
+    ]).then(([pRes, cRes, sRes]) => {
+      setProducts((pRes.data || []).map((p: any) => ({ ...p, images: Array.isArray(p.images) ? p.images : [] })));
+      setCategories(cRes.data || []);
+      setSubCategories(sRes.data || []);
+    });
+  }, []);
+
+  const getCatId = (p: DBProduct) => {
+    if (!p.sub_category_id) return null;
+    const sub = subCategories.find((s) => s.id === p.sub_category_id);
+    return sub?.category_id || null;
+  };
+
+  const filtered = active === "All" ? products : products.filter((p) => getCatId(p) === active);
+
+  const handleAdd = (e: React.MouseEvent, p: DBProduct) => {
+    e.stopPropagation();
+    addItem({ id: p.id, name: p.title, price: `₨ ${p.price.toLocaleString()}`, image: p.images[0] || "" });
+    toast({ title: "Added to Cart", description: p.title });
+    openCart();
+  };
+
+  const tabs = [{ id: "All", name: "All" }, ...categories.map((c) => ({ id: c.id, name: c.name }))];
+
+  if (products.length === 0) return null;
 
   return (
     <section id="all-products" className="py-20 brand-gradient">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-3xl sm:text-4xl font-bold text-center text-foreground mb-4"
-        >
+        <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-3xl sm:text-4xl font-bold text-center text-foreground mb-4">
           Explore the Vault
         </motion.h2>
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.1 }}
-          className="text-center text-muted-foreground mb-10"
-        >
+        <motion.p initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="text-center text-muted-foreground mb-10">
           Everything you need, all in one place.
         </motion.p>
 
         <div className="flex flex-wrap justify-center gap-2 mb-10">
-          {categories.map((cat) => (
+          {tabs.map((cat) => (
             <button
-              key={cat}
-              onClick={() => setActive(cat)}
+              key={cat.id}
+              onClick={() => setActive(cat.id)}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 border ${
-                active === cat
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-background/60 text-muted-foreground border-border/50 hover:border-primary/40"
+                active === cat.id ? "bg-primary text-primary-foreground border-primary" : "bg-background/60 text-muted-foreground border-border/50 hover:border-primary/40"
               }`}
             >
-              {cat}
+              {cat.name}
             </button>
           ))}
         </div>
@@ -89,17 +98,13 @@ const AllProducts = () => {
                 className="glass-card group overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:border-primary/40"
               >
                 <div className="relative h-32 sm:h-44 overflow-hidden bg-secondary/30">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
+                  <img src={product.images[0] || "/placeholder.svg"} alt={product.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                 </div>
                 <div className="p-4 relative">
-                  <h3 className="font-semibold text-foreground text-sm sm:text-base">{product.name}</h3>
-                  <p className="text-brand-blue font-bold mt-1 text-sm">{product.price}</p>
+                  <h3 className="font-semibold text-foreground text-sm sm:text-base">{product.title}</h3>
+                  <p className="text-primary font-bold mt-1 text-sm">₨ {product.price.toLocaleString()}</p>
                   <motion.div
-                    onClick={(e) => { e.stopPropagation(); navigate(`/product/${product.id}`); }}
+                    onClick={(e) => handleAdd(e, product)}
                     className="absolute bottom-0 left-0 right-0 bg-primary text-primary-foreground flex items-center justify-center gap-2 py-2.5 font-medium text-xs sm:text-sm translate-y-full group-hover:translate-y-0 transition-transform duration-300 cursor-pointer"
                   >
                     <ShoppingBag className="w-3.5 h-3.5" />
