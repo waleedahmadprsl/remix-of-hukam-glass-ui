@@ -150,6 +150,7 @@ const Header = () => {
           </motion.div>
         )}
       </AnimatePresence>
+      <WishlistDrawer open={wishlistOpen} onClose={() => setWishlistOpen(false)} />
     </>
   );
 };
