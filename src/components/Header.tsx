@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ShoppingCart, Search } from "lucide-react";
+import { Menu, X, ShoppingCart, Search, Heart } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useMiniCart } from "@/context/MiniCartContext";
+import { useWishlist } from "@/context/WishlistContext";
+import WishlistDrawer from "@/components/WishlistDrawer";
 import hukamName from "@/assets/hukam-name.png";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -26,9 +28,12 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<{ id: string; title: string; price: number; images: string[] }[]>([]);
   const navigate = useNavigate();
+  const [wishlistOpen, setWishlistOpen] = useState(false);
   const { items } = useCart();
   const { openCart } = useMiniCart();
+  const { items: wishlistItems } = useWishlist();
   const cartCount = items.reduce((s, it) => s + it.quantity, 0);
+  const wishlistCount = wishlistItems.length;
 
   const handleSearch = async (q: string) => {
     setSearchQuery(q);
@@ -61,6 +66,14 @@ const Header = () => {
             {/* Search */}
             <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
               <Search className="w-5 h-5" />
+            </button>
+
+            {/* Wishlist */}
+            <button onClick={() => setWishlistOpen(true)} className="relative p-2 text-muted-foreground hover:text-foreground transition-colors">
+              <Heart className="w-5 h-5" />
+              {wishlistCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">{wishlistCount}</span>
+              )}
             </button>
 
             {/* Cart */}
@@ -137,6 +150,7 @@ const Header = () => {
           </motion.div>
         )}
       </AnimatePresence>
+      <WishlistDrawer open={wishlistOpen} onClose={() => setWishlistOpen(false)} />
     </>
   );
 };

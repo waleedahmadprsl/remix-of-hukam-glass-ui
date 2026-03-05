@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LogOut, LayoutDashboard, Package, Tag, ShoppingCart, Zap, Activity } from "lucide-react";
+import { LogOut, LayoutDashboard, Package, Tag, ShoppingCart, Zap, Activity, BarChart3, Users } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 interface AdminLayoutProps {
@@ -19,6 +19,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, activeTab })
     { id: "categories", label: "Categories", icon: Tag, path: "/admin/categories" },
     { id: "orders", label: "Orders", icon: ShoppingCart, path: "/admin/orders" },
     { id: "promos", label: "Promo Codes", icon: Zap, path: "/admin/promos" },
+    { id: "customers", label: "Customers", icon: Users, path: "/admin/customers" },
+    { id: "analytics", label: "Analytics", icon: BarChart3, path: "/admin/analytics" },
     { id: "logs", label: "Activity Logs", icon: Activity, path: "/admin/logs" },
   ];
 
