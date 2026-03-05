@@ -28,9 +28,12 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<{ id: string; title: string; price: number; images: string[] }[]>([]);
   const navigate = useNavigate();
+  const [wishlistOpen, setWishlistOpen] = useState(false);
   const { items } = useCart();
   const { openCart } = useMiniCart();
+  const { items: wishlistItems } = useWishlist();
   const cartCount = items.reduce((s, it) => s + it.quantity, 0);
+  const wishlistCount = wishlistItems.length;
 
   const handleSearch = async (q: string) => {
     setSearchQuery(q);
