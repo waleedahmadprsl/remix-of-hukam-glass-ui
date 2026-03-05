@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ShoppingCart, Search } from "lucide-react";
+import { Menu, X, ShoppingCart, Search, Heart } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useMiniCart } from "@/context/MiniCartContext";
+import { useWishlist } from "@/context/WishlistContext";
+import WishlistDrawer from "@/components/WishlistDrawer";
 import hukamName from "@/assets/hukam-name.png";
 import { supabase } from "@/integrations/supabase/client";
 
