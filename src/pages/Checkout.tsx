@@ -372,11 +372,6 @@ const Checkout: React.FC = () => {
           <motion.button
             type="submit"
             form="checkout-form"
-            onClick={() => {
-              // Find and submit the form
-              const formEl = document.querySelector('form');
-              if (formEl) formEl.requestSubmit();
-            }}
             disabled={result === "Sending...."}
             whileTap={{ scale: 0.98 }}
             className="w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-bold text-base shadow-lg shadow-primary/25 disabled:opacity-50"
