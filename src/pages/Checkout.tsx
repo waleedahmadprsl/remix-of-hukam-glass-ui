@@ -205,6 +205,7 @@ const Checkout: React.FC = () => {
         <div className="grid lg:grid-cols-5 gap-6 sm:gap-8 max-w-6xl mx-auto">
           {/* Form */}
           <motion.form
+            id="checkout-form"
             onSubmit={handleSubmit}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
