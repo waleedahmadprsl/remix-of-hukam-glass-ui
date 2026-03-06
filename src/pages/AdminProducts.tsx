@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { AdminLayout } from "@/components/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { logActivity } from "@/lib/activityLogger";
-import { Trash2, Plus, Edit2, ChevronDown, ChevronUp, X } from "lucide-react";
+import { Trash2, Plus, Edit2, X, Search } from "lucide-react";
 import AdminImageOrderer from "@/components/AdminImageOrderer";
 
 interface Product {
@@ -12,311 +12,282 @@ interface Product {
   description: string;
   price: number;
   stock: number;
+  category_id: string | null;
   sub_category_id: string | null;
   images: string[];
   video_url?: string | null;
   is_active: boolean;
+  status?: string;
+  tags?: string[];
 }
 
-interface CategoryWithSubs {
+interface Category {
   id: string;
   name: string;
-  subCategories: { id: string; name: string }[];
+  parent_id: string | null;
+  level: number;
 }
 
 const AdminProducts: React.FC = () => {
   const [products, setProducts] = React.useState<Product[]>([]);
-  const [categoriesWithSubs, setCategoriesWithSubs] = React.useState<CategoryWithSubs[]>([]);
+  const [categories, setCategories] = React.useState<Category[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [showForm, setShowForm] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [filterCategory, setFilterCategory] = React.useState("");
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+  const [bulkAction, setBulkAction] = React.useState("");
+
   const [form, setForm] = React.useState({
-    title: "",
-    description: "",
-    price: 0,
-    stock: 0,
-    sub_category_id: "",
-    video_url: "",
-    key_features: "",
-    specs: "",
+    title: "", description: "", price: 0, stock: 0, category_id: "", video_url: "", key_features: "", specs: "", status: "active", tags: [] as string[],
   });
   const [uploadedUrls, setUploadedUrls] = React.useState<string[]>([]);
+  const [tagInput, setTagInput] = React.useState("");
 
-  React.useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-  }, []);
+  React.useEffect(() => { fetchProducts(); fetchCategories(); }, []);
 
   const fetchProducts = async () => {
-    try {
-      const { data, error } = await supabase.from("products").select("*").order("created_at", { ascending: false });
-      if (error) throw error;
-      const mapped = (data || []).map((p: any) => ({
-        ...p,
-        images: Array.isArray(p.images) ? p.images : [],
-      }));
-      setProducts(mapped as Product[]);
-    } catch (err: any) {
-      console.error("Error fetching products:", err.message);
-    } finally {
-      setLoading(false);
-    }
+    const { data } = await supabase.from("products").select("*").order("created_at", { ascending: false });
+    setProducts((data || []).map((p: any) => ({ ...p, images: Array.isArray(p.images) ? p.images : [], tags: Array.isArray(p.tags) ? p.tags : [] })) as Product[]);
+    setLoading(false);
   };
 
   const fetchCategories = async () => {
-    try {
-      const { data: cats } = await supabase.from("categories").select("id, name");
-      const { data: subs } = await supabase.from("sub_categories").select("id, name, category_id");
-      const mapped = (cats || []).map((c: any) => ({
-        id: c.id,
-        name: c.name,
-        subCategories: (subs || []).filter((s: any) => s.category_id === c.id).map((s: any) => ({ id: s.id, name: s.name })),
-      }));
-      setCategoriesWithSubs(mapped);
-    } catch (err: any) {
-      console.error("Error fetching categories:", err.message);
-    }
+    const { data } = await supabase.from("categories").select("id, name, parent_id, level");
+    setCategories((data as Category[]) || []);
   };
 
-  const allSubCategories = categoriesWithSubs.flatMap((c) => c.subCategories.map((s) => ({ ...s, categoryName: c.name })));
+  // Build category path for display
+  const getCategoryPath = (catId: string | null): string => {
+    if (!catId) return "Uncategorized";
+    const parts: string[] = [];
+    let current = categories.find((c) => c.id === catId);
+    while (current) {
+      parts.unshift(current.name);
+      current = current.parent_id ? categories.find((c) => c.id === current!.parent_id) : undefined;
+    }
+    return parts.join(" → ") || "Unknown";
+  };
+
+  // Build cascading category options
+  const buildCategoryOptions = (parentId: string | null = null, depth: number = 0): { id: string; label: string }[] => {
+    return categories
+      .filter((c) => c.parent_id === parentId)
+      .flatMap((c) => [
+        { id: c.id, label: "—".repeat(depth) + " " + c.name },
+        ...buildCategoryOptions(c.id, depth + 1),
+      ]);
+  };
+
+  const categoryOptions = buildCategoryOptions();
 
   const resetForm = () => {
-    setForm({ title: "", description: "", price: 0, stock: 0, sub_category_id: "", video_url: "", key_features: "", specs: "" });
+    setForm({ title: "", description: "", price: 0, stock: 0, category_id: "", video_url: "", key_features: "", specs: "", status: "active", tags: [] });
     setUploadedUrls([]);
     setEditingId(null);
     setShowForm(false);
+    setTagInput("");
   };
 
-  const parseDescriptionFields = (desc: string) => {
-    // Try to parse structured description: description|||features|||specs
+  const parseDescription = (desc: string) => {
     const parts = desc.split("|||");
-    return {
-      description: parts[0] || "",
-      key_features: parts[1] || "",
-      specs: parts[2] || "",
-    };
+    return { description: parts[0] || "", key_features: parts[1] || "", specs: parts[2] || "" };
   };
 
   const buildDescription = () => {
-    // Store as structured: description|||features|||specs
-    const parts = [form.description, form.key_features, form.specs];
     if (!form.key_features && !form.specs) return form.description;
-    return parts.join("|||");
+    return [form.description, form.key_features, form.specs].join("|||");
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const productPayload = {
-      title: form.title,
-      description: buildDescription(),
-      price: Number(form.price),
-      stock: Number(form.stock),
-      sub_category_id: form.sub_category_id || null,
-      images: uploadedUrls as any,
-      video_url: form.video_url || null,
-      is_active: true,
+    const payload: any = {
+      title: form.title, description: buildDescription(), price: Number(form.price), stock: Number(form.stock),
+      category_id: form.category_id || null, sub_category_id: form.category_id || null,
+      images: uploadedUrls, video_url: form.video_url || null, is_active: form.status === "active",
+      status: form.status, tags: form.tags,
     };
-
     try {
       if (editingId) {
-        const { error } = await supabase.from("products").update(productPayload).eq("id", editingId);
-        if (error) { alert("Database Error: " + error.message); return; }
-        await logActivity("PRODUCT_UPDATED", `Updated product: ${form.title}`);
+        const { error } = await supabase.from("products").update(payload).eq("id", editingId);
+        if (error) { alert(error.message); return; }
+        await logActivity("PRODUCT_UPDATED", `Updated: ${form.title}`);
       } else {
-        const { error } = await supabase.from("products").insert([productPayload]).select();
-        if (error) { alert("Database Error: " + error.message); return; }
-        await logActivity("PRODUCT_ADDED", `Added product: ${form.title}`);
+        const { error } = await supabase.from("products").insert([payload]).select();
+        if (error) { alert(error.message); return; }
+        await logActivity("PRODUCT_ADDED", `Added: ${form.title}`);
       }
       resetForm();
       fetchProducts();
-    } catch (err: any) {
-      alert(`Error: ${err.message}`);
-    }
+    } catch (err: any) { alert(err.message); }
   };
 
-  const handleEdit = (product: Product) => {
-    const parsed = parseDescriptionFields(product.description || "");
-    setEditingId(product.id);
-    setForm({
-      title: product.title,
-      description: parsed.description,
-      price: product.price,
-      stock: product.stock,
-      sub_category_id: product.sub_category_id || "",
-      video_url: product.video_url || "",
-      key_features: parsed.key_features,
-      specs: parsed.specs,
-    });
-    setUploadedUrls(product.images || []);
+  const handleEdit = (p: Product) => {
+    const parsed = parseDescription(p.description || "");
+    setEditingId(p.id);
+    setForm({ title: p.title, description: parsed.description, price: p.price, stock: p.stock, category_id: p.category_id || p.sub_category_id || "", video_url: p.video_url || "", key_features: parsed.key_features, specs: parsed.specs, status: p.status || (p.is_active ? "active" : "draft"), tags: p.tags || [] });
+    setUploadedUrls(p.images || []);
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleDeleteProduct = async (id: string, title: string) => {
+  const handleDelete = async (id: string, title: string) => {
     if (!confirm("Delete this product?")) return;
-    try {
-      const { error } = await supabase.from("products").delete().eq("id", id);
-      if (error) throw error;
-      await logActivity("PRODUCT_DELETED", `Deleted product: ${title}`);
-      fetchProducts();
-    } catch (err: any) {
-      alert(`Error: ${err.message}`);
+    await supabase.from("products").delete().eq("id", id);
+    await logActivity("PRODUCT_DELETED", `Deleted: ${title}`);
+    fetchProducts();
+  };
+
+  const addTag = () => {
+    if (tagInput.trim() && !form.tags.includes(tagInput.trim())) {
+      setForm({ ...form, tags: [...form.tags, tagInput.trim()] });
+      setTagInput("");
     }
   };
 
-  const getSubCategoryName = (subId: string | null) => {
-    if (!subId) return "Uncategorized";
-    const sub = allSubCategories.find((s) => s.id === subId);
-    return sub ? `${sub.categoryName} → ${sub.name}` : "Unknown";
+  const handleBulkAction = async () => {
+    if (!bulkAction || selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    if (bulkAction === "delete") {
+      if (!confirm(`Delete ${ids.length} products?`)) return;
+      for (const id of ids) await supabase.from("products").delete().eq("id", id);
+    } else {
+      const update: any = {};
+      if (bulkAction === "active") { update.status = "active"; update.is_active = true; }
+      if (bulkAction === "draft") { update.status = "draft"; update.is_active = false; }
+      if (bulkAction === "archived") { update.status = "archived"; update.is_active = false; }
+      for (const id of ids) await supabase.from("products").update(update).eq("id", id);
+    }
+    setSelectedIds(new Set());
+    setBulkAction("");
+    fetchProducts();
   };
 
-  const filteredProducts = filterCategory
-    ? products.filter((p) => {
-        const sub = allSubCategories.find((s) => s.id === p.sub_category_id);
-        if (!sub) return false;
-        const cat = categoriesWithSubs.find((c) => c.subCategories.some((s) => s.id === p.sub_category_id));
-        return cat?.id === filterCategory || p.sub_category_id === filterCategory;
-      })
-    : products;
+  const filtered = products.filter((p) => {
+    if (filterCategory && p.category_id !== filterCategory && p.sub_category_id !== filterCategory) return false;
+    if (searchQuery && !p.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    return true;
+  });
+
+  const toggleSelect = (id: string) => setSelectedIds((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggleAll = () => { if (selectedIds.size === filtered.length) setSelectedIds(new Set()); else setSelectedIds(new Set(filtered.map((p) => p.id))); };
 
   return (
     <AdminLayout activeTab="products">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-          <h1 className="text-4xl font-extrabold text-foreground">Product Manager</h1>
-          <motion.button
-            onClick={() => { resetForm(); setShowForm(!showForm); }}
-            whileHover={{ scale: 1.05 }}
-            className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg font-semibold"
-          >
-            <Plus className="w-5 h-5" />
-            {showForm ? "Close Form" : "Add Product"}
-          </motion.button>
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <h1 className="text-2xl sm:text-4xl font-extrabold text-foreground">Products</h1>
+          <button onClick={() => { resetForm(); setShowForm(!showForm); }} className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-xl font-semibold text-sm">
+            <Plus className="w-4 h-4" /> {showForm ? "Close" : "Add Product"}
+          </button>
         </div>
 
         {showForm && (
-          <motion.form
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            onSubmit={handleSave}
-            className="glass-card p-8 rounded-2xl mb-8 space-y-4"
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-foreground">{editingId ? "Edit Product" : "Add New Product"}</h2>
-              <button type="button" onClick={resetForm} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
+          <motion.form initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} onSubmit={handleSave} className="glass-card p-5 sm:p-8 rounded-2xl mb-8 space-y-4">
+            <div className="flex justify-between"><h2 className="text-lg font-bold text-foreground">{editingId ? "Edit Product" : "Add Product"}</h2><button type="button" onClick={resetForm}><X className="w-5 h-5 text-muted-foreground" /></button></div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div><label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Title</label><input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required className="w-full px-4 py-3 bg-background border border-border rounded-lg" /></div>
+              <div><label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Price (Rs)</label><input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} required className="w-full px-4 py-3 bg-background border border-border rounded-lg" /></div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div><label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Description</label><textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required rows={3} className="w-full px-4 py-3 bg-background border border-border rounded-lg" /></div>
+            <div><label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Key Features (one per line)</label><textarea value={form.key_features} onChange={(e) => setForm({ ...form, key_features: e.target.value })} rows={3} className="w-full px-4 py-3 bg-background border border-border rounded-lg" /></div>
+            <div><label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Specifications (label:value per line)</label><textarea value={form.specs} onChange={(e) => setForm({ ...form, specs: e.target.value })} rows={3} className="w-full px-4 py-3 bg-background border border-border rounded-lg" /></div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div><label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Stock</label><input type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} required className="w-full px-4 py-3 bg-background border border-border rounded-lg" /></div>
               <div>
-                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Title</label>
-                <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Price (Rs)</label>
-                <input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} required className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Description</label>
-              <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required rows={3} className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg" />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Key Features (one per line)</label>
-              <textarea value={form.key_features} onChange={(e) => setForm({ ...form, key_features: e.target.value })} rows={4} placeholder="65W Maximum Output&#10;GaN Technology&#10;USB-C Compatibility" className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg" />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Specifications (label:value per line)</label>
-              <textarea value={form.specs} onChange={(e) => setForm({ ...form, specs: e.target.value })} rows={4} placeholder="Output:65W Maximum&#10;Technology:GaN&#10;Port:USB-C" className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg" />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Stock</label>
-                <input type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} required className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Category → Sub-category</label>
-                <select value={form.sub_category_id} onChange={(e) => setForm({ ...form, sub_category_id: e.target.value })} className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg">
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Category</label>
+                <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className="w-full px-4 py-3 bg-background border border-border rounded-lg">
                   <option value="">Select category</option>
-                  {categoriesWithSubs.map((cat) => (
-                    <optgroup key={cat.id} label={cat.name}>
-                      {cat.subCategories.map((sc) => (
-                        <option key={sc.id} value={sc.id}>{sc.name}</option>
-                      ))}
-                    </optgroup>
-                  ))}
+                  {categoryOptions.map((opt) => <option key={opt.id} value={opt.id}>{opt.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Status</label>
+                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full px-4 py-3 bg-background border border-border rounded-lg">
+                  <option value="active">Active</option>
+                  <option value="draft">Draft</option>
+                  <option value="archived">Archived</option>
                 </select>
               </div>
             </div>
 
-            <AdminImageOrderer
-              images={uploadedUrls}
-              onChange={setUploadedUrls}
-              videoUrl={form.video_url}
-              onVideoChange={(url) => setForm((f) => ({ ...f, video_url: url }))}
-            />
+            {/* Tags */}
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Tags</label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {form.tags.map((t) => (
+                  <span key={t} className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
+                    {t} <button type="button" onClick={() => setForm({ ...form, tags: form.tags.filter((x) => x !== t) })}><X className="w-3 h-3" /></button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())} placeholder="New Arrival, Bestseller..." className="flex-1 px-3 py-2 bg-background border border-border rounded-lg text-sm" />
+                <button type="button" onClick={addTag} className="px-3 py-2 bg-secondary text-foreground rounded-lg text-sm">Add</button>
+              </div>
+            </div>
+
+            <AdminImageOrderer images={uploadedUrls} onChange={setUploadedUrls} videoUrl={form.video_url} onVideoChange={(url) => setForm((f) => ({ ...f, video_url: url }))} />
 
             <div className="flex gap-4">
-              <motion.button type="submit" whileHover={{ scale: 1.02 }} className="flex-1 bg-primary text-primary-foreground py-3 rounded-lg font-semibold">
-                {editingId ? "Update Product" : "Add Product"}
-              </motion.button>
-              <motion.button type="button" onClick={resetForm} whileHover={{ scale: 1.02 }} className="flex-1 bg-secondary text-foreground py-3 rounded-lg font-semibold">
-                Cancel
-              </motion.button>
+              <button type="submit" className="flex-1 bg-primary text-primary-foreground py-3 rounded-lg font-semibold">{editingId ? "Update" : "Add Product"}</button>
+              <button type="button" onClick={resetForm} className="flex-1 bg-secondary text-foreground py-3 rounded-lg font-semibold">Cancel</button>
             </div>
           </motion.form>
         )}
 
-        {/* Filter bar */}
-        <div className="flex items-center gap-4 mb-6 flex-wrap">
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="px-4 py-2 bg-background border border-border/40 rounded-lg text-sm"
-          >
+        {/* Filters & Bulk Actions */}
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search products..." className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-xl text-sm" />
+          </div>
+          <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="px-3 py-2 bg-background border border-border rounded-xl text-sm">
             <option value="">All Categories</option>
-            {categoriesWithSubs.map((cat) => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
-            ))}
+            {categoryOptions.map((opt) => <option key={opt.id} value={opt.id}>{opt.label}</option>)}
           </select>
-          <span className="text-sm text-muted-foreground">{filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""}</span>
+          {selectedIds.size > 0 && (
+            <div className="flex items-center gap-2">
+              <select value={bulkAction} onChange={(e) => setBulkAction(e.target.value)} className="px-3 py-2 bg-background border border-border rounded-xl text-sm">
+                <option value="">Bulk Action ({selectedIds.size})</option>
+                <option value="active">Set Active</option>
+                <option value="draft">Set Draft</option>
+                <option value="archived">Archive</option>
+                <option value="delete">Delete</option>
+              </select>
+              <button onClick={handleBulkAction} className="px-3 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-semibold">Apply</button>
+            </div>
+          )}
+          <span className="text-xs text-muted-foreground">{filtered.length} products</span>
         </div>
 
-        {loading ? (
-          <div className="text-center py-12">Loading products...</div>
-        ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">No products found. Add your first product above.</div>
-        ) : (
-          <div className="space-y-4">
-            {filteredProducts.map((product) => (
-              <motion.div key={product.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5 rounded-xl flex items-center justify-between gap-4">
-                <div className="flex items-center gap-4 flex-1 min-w-0">
-                  {product.images?.[0] && (
-                    <img src={product.images[0]} alt={product.title} className="w-16 h-16 object-cover rounded-lg flex-shrink-0" />
-                  )}
-                  <div className="min-w-0">
-                    <h3 className="font-bold text-foreground truncate">{product.title}</h3>
-                    <p className="text-xs text-muted-foreground truncate">{getSubCategoryName(product.sub_category_id)}</p>
-                    <div className="flex gap-4 mt-1 text-sm">
-                      <span className="text-primary font-semibold">Rs.{product.price.toLocaleString()}</span>
-                      <span className="text-muted-foreground">Stock: {product.stock}</span>
-                      <span className={`text-xs font-medium ${product.is_active ? "text-green-600" : "text-destructive"}`}>
-                        {product.is_active ? "Active" : "Inactive"}
-                      </span>
-                    </div>
+        {loading ? <div className="text-center py-12">Loading...</div> : filtered.length === 0 ? <div className="text-center py-12 text-muted-foreground">No products found.</div> : (
+          <div className="space-y-3">
+            {/* Select all */}
+            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+              <input type="checkbox" checked={selectedIds.size === filtered.length && filtered.length > 0} onChange={toggleAll} className="rounded" /> Select All
+            </label>
+            {filtered.map((p) => (
+              <motion.div key={p.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-3 sm:p-5 rounded-xl flex items-center gap-3 sm:gap-4">
+                <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} className="rounded flex-shrink-0" />
+                {p.images?.[0] && <img src={p.images[0]} alt={p.title} className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg flex-shrink-0" />}
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-bold text-foreground text-sm truncate">{p.title}</h3>
+                  <p className="text-xs text-muted-foreground truncate">{getCategoryPath(p.category_id || p.sub_category_id)}</p>
+                  <div className="flex gap-2 sm:gap-4 mt-1 text-xs sm:text-sm flex-wrap">
+                    <span className="text-primary font-semibold">Rs.{p.price.toLocaleString()}</span>
+                    <span className="text-muted-foreground">Stock: {p.stock}</span>
+                    <span className={`text-xs font-medium capitalize ${p.status === "active" ? "text-green-600" : p.status === "draft" ? "text-yellow-600" : "text-muted-foreground"}`}>{p.status || "active"}</span>
+                    {p.tags?.map((t) => <span key={t} className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary rounded-full">{t}</span>)}
                   </div>
                 </div>
-                <div className="flex gap-2 flex-shrink-0">
-                  <motion.button onClick={() => handleEdit(product)} whileHover={{ scale: 1.05 }} className="p-2 bg-primary/10 text-primary rounded-lg">
-                    <Edit2 className="w-5 h-5" />
-                  </motion.button>
-                  <motion.button onClick={() => handleDeleteProduct(product.id, product.title)} whileHover={{ scale: 1.05 }} className="p-2 bg-destructive/10 text-destructive rounded-lg">
-                    <Trash2 className="w-5 h-5" />
-                  </motion.button>
+                <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+                  <button onClick={() => handleEdit(p)} className="p-2 bg-primary/10 text-primary rounded-lg"><Edit2 className="w-4 h-4" /></button>
+                  <button onClick={() => handleDelete(p.id, p.title)} className="p-2 bg-destructive/10 text-destructive rounded-lg"><Trash2 className="w-4 h-4" /></button>
                 </div>
               </motion.div>
             ))}
