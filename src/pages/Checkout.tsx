@@ -205,6 +205,7 @@ const Checkout: React.FC = () => {
         <div className="grid lg:grid-cols-5 gap-6 sm:gap-8 max-w-6xl mx-auto">
           {/* Form */}
           <motion.form
+            id="checkout-form"
             onSubmit={handleSubmit}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -371,11 +372,6 @@ const Checkout: React.FC = () => {
           <motion.button
             type="submit"
             form="checkout-form"
-            onClick={() => {
-              // Find and submit the form
-              const formEl = document.querySelector('form');
-              if (formEl) formEl.requestSubmit();
-            }}
             disabled={result === "Sending...."}
             whileTap={{ scale: 0.98 }}
             className="w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-bold text-base shadow-lg shadow-primary/25 disabled:opacity-50"

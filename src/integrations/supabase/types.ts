@@ -39,22 +39,36 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          level: number | null
           name: string
+          parent_id: string | null
           slug: string
         }
         Insert: {
           created_at?: string
           id?: string
+          level?: number | null
           name: string
+          parent_id?: string | null
           slug: string
         }
         Update: {
           created_at?: string
           id?: string
+          level?: number | null
           name?: string
+          parent_id?: string | null
           slug?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       contact_submissions: {
         Row: {
@@ -108,12 +122,15 @@ export type Database = {
           customer_name: string
           customer_phone: string
           delivery_address: string
+          discount_amount: number | null
           id: string
           instructions: string | null
           items: string | null
           promo_code: string | null
+          shipping_cost: number | null
           status: string
           total_amount: number
+          tracking_id: string | null
           updated_at: string
         }
         Insert: {
@@ -122,12 +139,15 @@ export type Database = {
           customer_name: string
           customer_phone: string
           delivery_address: string
+          discount_amount?: number | null
           id?: string
           instructions?: string | null
           items?: string | null
           promo_code?: string | null
+          shipping_cost?: number | null
           status?: string
           total_amount?: number
+          tracking_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -136,57 +156,117 @@ export type Database = {
           customer_name?: string
           customer_phone?: string
           delivery_address?: string
+          discount_amount?: number | null
           id?: string
           instructions?: string | null
           items?: string | null
           promo_code?: string | null
+          shipping_cost?: number | null
           status?: string
           total_amount?: number
+          tracking_id?: string | null
           updated_at?: string
         }
         Relationships: []
       }
+      product_variants: {
+        Row: {
+          attributes: Json | null
+          created_at: string | null
+          id: string
+          price: number | null
+          product_id: string
+          sku: string | null
+          stock: number | null
+          variant_name: string
+        }
+        Insert: {
+          attributes?: Json | null
+          created_at?: string | null
+          id?: string
+          price?: number | null
+          product_id: string
+          sku?: string | null
+          stock?: number | null
+          variant_name: string
+        }
+        Update: {
+          attributes?: Json | null
+          created_at?: string | null
+          id?: string
+          price?: number | null
+          product_id?: string
+          sku?: string | null
+          stock?: number | null
+          variant_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variants_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
+          category_id: string | null
           created_at: string
           description: string
           id: string
           images: Json
           is_active: boolean
           price: number
+          status: string | null
           stock: number
           sub_category_id: string | null
+          tags: string[] | null
           title: string
           updated_at: string
           video_url: string | null
         }
         Insert: {
+          category_id?: string | null
           created_at?: string
           description?: string
           id?: string
           images?: Json
           is_active?: boolean
           price?: number
+          status?: string | null
           stock?: number
           sub_category_id?: string | null
+          tags?: string[] | null
           title: string
           updated_at?: string
           video_url?: string | null
         }
         Update: {
+          category_id?: string | null
           created_at?: string
           description?: string
           id?: string
           images?: Json
           is_active?: boolean
           price?: number
+          status?: string | null
           stock?: number
           sub_category_id?: string | null
+          tags?: string[] | null
           title?: string
           updated_at?: string
           video_url?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "products_sub_category_id_fkey"
             columns: ["sub_category_id"]
@@ -226,6 +306,9 @@ export type Database = {
           discount_type: string
           id: string
           is_active: boolean
+          min_purchase: number | null
+          times_used: number | null
+          usage_limit: number | null
         }
         Insert: {
           code: string
@@ -235,6 +318,9 @@ export type Database = {
           discount_type?: string
           id?: string
           is_active?: boolean
+          min_purchase?: number | null
+          times_used?: number | null
+          usage_limit?: number | null
         }
         Update: {
           code?: string
@@ -244,6 +330,9 @@ export type Database = {
           discount_type?: string
           id?: string
           is_active?: boolean
+          min_purchase?: number | null
+          times_used?: number | null
+          usage_limit?: number | null
         }
         Relationships: []
       }
