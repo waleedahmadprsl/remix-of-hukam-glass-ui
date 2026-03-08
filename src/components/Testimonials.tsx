@@ -1,13 +1,20 @@
 import { useRef } from "react";
 import { motion } from "framer-motion";
-import { Star, Quote, ChevronLeft, ChevronRight, Play } from "lucide-react";
+import { Star, Quote, ChevronLeft, ChevronRight } from "lucide-react";
 import logoVideo from "@/assets/logo-video.mp4";
 
 const testimonials = [
-  { quote: "Got my iPhone charger in 45 minutes, amazing service!", name: "Ali M.", location: "Mirpur", avatar: "https://i.pravatar.cc/80?img=12" },
-  { quote: "Best earbuds I've bought. Delivered right to my door, no hassle.", name: "Sara K.", location: "Mirpur", avatar: "https://i.pravatar.cc/80?img=32" },
-  { quote: "Pay at door is a game changer. Verified the product before paying!", name: "Usman R.", location: "Mirpur", avatar: "https://i.pravatar.cc/80?img=53" },
-  { quote: "Super fast delivery and genuine products. Highly recommend!", name: "Hina T.", location: "Mirpur", avatar: "https://i.pravatar.cc/80?img=44" },
+  { quote: "Got my iPhone charger in 45 minutes, amazing service!", name: "Ali M.", location: "Mirpur", initials: "AM" },
+  { quote: "Best earbuds I've bought. Delivered right to my door, no hassle.", name: "Sara K.", location: "Mirpur", initials: "SK" },
+  { quote: "Pay at door is a game changer. Verified the product before paying!", name: "Usman R.", location: "Mirpur", initials: "UR" },
+  { quote: "Super fast delivery and genuine products. Highly recommend!", name: "Hina T.", location: "Mirpur", initials: "HT" },
+];
+
+const avatarColors = [
+  "bg-primary/20 text-primary",
+  "bg-accent text-accent-foreground",
+  "bg-secondary text-secondary-foreground",
+  "bg-muted text-muted-foreground",
 ];
 
 const Testimonials = () => {
@@ -86,13 +93,9 @@ const Testimonials = () => {
               </div>
               <p className="text-foreground text-sm leading-relaxed flex-1">"{t.quote}"</p>
               <div className="flex items-center gap-2.5 pt-1">
-                <img
-                  src={t.avatar}
-                  alt={t.name}
-                  className="w-8 h-8 rounded-full object-cover border border-border/30"
-                  loading="lazy"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                />
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${avatarColors[i % avatarColors.length]}`}>
+                  {t.initials}
+                </div>
                 <div>
                   <p className="text-xs font-semibold text-foreground">{t.name}</p>
                   <p className="text-[10px] text-muted-foreground">{t.location}</p>
