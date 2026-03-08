@@ -166,8 +166,26 @@ const ProductDetail = () => {
   const stockColor = activeStock > 20 ? "text-primary" : activeStock > 5 ? "text-accent-foreground" : activeStock > 0 ? "text-destructive" : "text-destructive";
 
   const handleAddToCart = () => {
+    if (activeStock <= 0) {
+      toast({ title: "Out of Stock", description: "This product is currently unavailable", variant: "destructive" });
+      return;
+    }
+    if (qty > activeStock) {
+      toast({ title: "Insufficient Stock", description: `Only ${activeStock} available`, variant: "destructive" });
+      return;
+    }
     const cartName = selectedVariant ? `${product.title} — ${selectedVariant.variant_name}` : product.title;
-    addItem({ id: selectedVariant?.id || product.id, name: cartName, price: `₨ ${activePrice.toLocaleString()}`, image: product.images[0] || "", quantity: qty });
+    addItem({
+      id: product.id,
+      name: cartName,
+      price: `₨ ${activePrice.toLocaleString()}`,
+      image: product.images[0] || "",
+      quantity: qty,
+      shopId: product.shop_id || null,
+      variantId: selectedVariant?.id || null,
+      variantName: selectedVariant?.variant_name || null,
+      buyingCost: product.buying_cost || 0,
+    });
     toast({ title: "Added to Cart", description: `${cartName} x${qty}` });
     openCart();
   };
