@@ -59,7 +59,7 @@ const ProductDetail = () => {
   const [qty, setQty] = React.useState(1);
   const [selectedImage, setSelectedImage] = React.useState(0);
   const [activeTab, setActiveTab] = React.useState<"features" | "specs">("features");
-  
+  const [selectedVariant, setSelectedVariant] = React.useState<{ id: string; variant_name: string; price: number | null; stock: number | null; sku: string | null } | null>(null);
 
   React.useEffect(() => {
     if (!id) return;
