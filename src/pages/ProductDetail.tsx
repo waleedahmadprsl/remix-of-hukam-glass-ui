@@ -158,12 +158,15 @@ const ProductDetail = () => {
   }
 
   const { description, features, specs } = parseDescription(product.description || "");
-  const stockStatus = product.stock > 20 ? "In Stock" : product.stock > 5 ? "Low Stock" : product.stock > 0 ? "Only Few Left" : "Out of Stock";
-  const stockColor = product.stock > 20 ? "text-primary" : product.stock > 5 ? "text-accent-foreground" : product.stock > 0 ? "text-destructive" : "text-destructive";
+  const activePrice = selectedVariant?.price ?? product.price;
+  const activeStock = selectedVariant?.stock ?? product.stock;
+  const stockStatus = activeStock > 20 ? "In Stock" : activeStock > 5 ? "Low Stock" : activeStock > 0 ? "Only Few Left" : "Out of Stock";
+  const stockColor = activeStock > 20 ? "text-primary" : activeStock > 5 ? "text-accent-foreground" : activeStock > 0 ? "text-destructive" : "text-destructive";
 
   const handleAddToCart = () => {
-    addItem({ id: product.id, name: product.title, price: `₨ ${product.price.toLocaleString()}`, image: product.images[0] || "", quantity: qty });
-    toast({ title: "Added to HUKAM Cart", description: `${product.title} x${qty}` });
+    const cartName = selectedVariant ? `${product.title} — ${selectedVariant.variant_name}` : product.title;
+    addItem({ id: selectedVariant?.id || product.id, name: cartName, price: `₨ ${activePrice.toLocaleString()}`, image: product.images[0] || "", quantity: qty });
+    toast({ title: "Added to Cart", description: `${cartName} x${qty}` });
     openCart();
   };
 
