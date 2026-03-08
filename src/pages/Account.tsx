@@ -103,7 +103,6 @@ const Account: React.FC = () => {
     { key: "profile", label: "Profile", icon: <User className="w-4 h-4" /> },
     { key: "orders", label: "Orders", icon: <Package className="w-4 h-4" /> },
     { key: "wishlist", label: "Wishlist", icon: <Heart className="w-4 h-4" /> },
-    { key: "addresses", label: "Address", icon: <MapPin className="w-4 h-4" /> },
   ];
 
   return (
