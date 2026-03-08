@@ -7,6 +7,9 @@ import { useMiniCart } from "@/context/MiniCartContext";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import CustomerReviews from "@/components/CustomerReviews";
+import FrequentlyBoughtTogether from "@/components/FrequentlyBoughtTogether";
+import ProductQA from "@/components/ProductQA";
+import RecentlyViewed, { addToRecentlyViewed } from "@/components/RecentlyViewed";
 
 interface DBProduct {
   id: string;
@@ -17,8 +20,13 @@ interface DBProduct {
   stock: number;
   is_active: boolean;
   sub_category_id: string | null;
+  category_id: string | null;
   description: string;
   video_url: string | null;
+  warranty_type: string | null;
+  return_policy: string | null;
+  meta_title: string | null;
+  meta_description: string | null;
 }
 
 function parseDescription(desc: string) {
@@ -62,10 +70,16 @@ const ProductDetail = () => {
 
   const fetchProduct = async (pid: string) => {
     try {
-      const { data, error } = await supabase.from("products").select("id, title, price, compare_at_price, images, stock, is_active, sub_category_id, description, video_url").eq("id", pid).single();
+      const { data, error } = await supabase.from("products").select("id, title, price, compare_at_price, images, stock, is_active, sub_category_id, category_id, description, video_url, warranty_type, return_policy, meta_title, meta_description").eq("id", pid).single();
       if (error || !data) { setProduct(null); setLoading(false); return; }
-      const p = { ...data, images: Array.isArray(data.images) ? data.images as string[] : [] };
+      const p = { ...data, images: Array.isArray(data.images) ? data.images as string[] : [] } as DBProduct;
       setProduct(p);
+      addToRecentlyViewed(p.id);
+      // SEO meta
+      if (p.meta_title) document.title = p.meta_title;
+      else document.title = `${p.title} | HUKAM`;
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) metaDesc.setAttribute("content", p.meta_description || p.description?.slice(0, 160) || "");
       // Fetch related
       const { data: rel } = await supabase
         .from("products")
@@ -279,7 +293,7 @@ const ProductDetail = () => {
             <div className="grid grid-cols-3 gap-3">
               {[
                 { icon: Truck, label: "60-Min Delivery", sub: "In Mirpur" },
-                { icon: Shield, label: "Verified Product", sub: "100% Genuine" },
+                { icon: Shield, label: product.warranty_type || "Verified Product", sub: product.return_policy || "100% Genuine" },
                 { icon: Check, label: "Cash on Delivery", sub: "Pay at door" },
               ].map((badge) => (
                 <div key={badge.label} className="glass-card p-3 rounded-xl text-center">
@@ -292,8 +306,17 @@ const ProductDetail = () => {
           </motion.div>
         </div>
 
+        {/* Frequently Bought Together */}
+        <FrequentlyBoughtTogether productId={product.id} categoryId={product.category_id || product.sub_category_id} />
+
         {/* Customer Reviews */}
         <CustomerReviews productId={product.id} />
+
+        {/* Customer Q&A */}
+        <ProductQA productId={product.id} />
+
+        {/* Recently Viewed */}
+        <RecentlyViewed excludeId={product.id} />
 
         {/* Related Products */}
         {related.length > 0 && (
