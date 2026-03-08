@@ -70,9 +70,10 @@ const BannerCarousel = () => {
           {slides.map((slide, i) => (
             <div key={i} className="min-w-0 shrink-0 grow-0 basis-full">
               <div
-                className={`relative h-[50vh] sm:h-[55vh] lg:h-[60vh] bg-gradient-to-br ${slide.gradient} flex items-center justify-center`}
+                className="relative h-[40vh] sm:h-[50vh] lg:h-[55vh] flex items-center justify-center overflow-hidden"
               >
-                <div className="absolute inset-0 bg-background/40 backdrop-blur-sm" />
+                <img src={slide.image} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
                 <div className="relative z-10 text-center px-6 max-w-3xl mx-auto">
                   <motion.h2
                     key={`h-${i}-${activeIndex}`}
