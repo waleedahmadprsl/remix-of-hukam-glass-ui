@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Mail, Phone, MapPin, Clock, MessageCircle } from "lucide-react";
+import { Mail, Phone, MapPin, Clock } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 const Contact = () => {
@@ -16,11 +16,17 @@ const Contact = () => {
     e.preventDefault();
     setResult("Sending....");
 
+    // Save to database
     try {
       await supabase.from("contact_submissions").insert([{
-        name: formData.name, email: formData.email, subject: formData.subject, message: formData.message,
+        name: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
       }]);
-    } catch (err) { console.error("DB save failed:", err); }
+    } catch (err) {
+      console.error("DB save failed:", err);
+    }
 
     const ACCESS_KEY = "30b97afd-15a6-456e-84e0-08bedd37e77f";
     const formDataToSend = new FormData(e.currentTarget);
@@ -32,7 +38,9 @@ const Contact = () => {
         setResult("Form Submitted Successfully ✅");
         setFormData({ name: "", email: "", subject: "", message: "" });
         setTimeout(() => setResult(""), 3000);
-      } else { setResult("Error submitting form"); }
+      } else {
+        setResult("Error submitting form");
+      }
     } catch (error) {
       setResult("Error submitting form");
       console.error("Form submission error:", error);
@@ -60,14 +68,21 @@ const Contact = () => {
         </motion.div>
 
         <div className="grid lg:grid-cols-2 gap-10 max-w-6xl mx-auto">
+          {/* Contact Cards */}
           <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="space-y-4">
             <h2 className="text-2xl font-bold text-foreground mb-6">Reach Out Anytime</h2>
             <p className="text-muted-foreground mb-8">Whether you need product support, want to explore business opportunities, or have a quick question — we're ready.</p>
 
             <div className="space-y-4">
               {contactInfo.map((info) => (
-                <motion.a key={info.label} href={info.link} target={info.link.startsWith("http") ? "_blank" : undefined} rel={info.link.startsWith("http") ? "noopener noreferrer" : undefined} whileHover={{ x: 6 }}
-                  className="glass-card p-5 rounded-2xl flex gap-4 items-center group hover:border-primary/30 transition-all">
+                <motion.a
+                  key={info.label}
+                  href={info.link}
+                  target={info.link.startsWith("http") ? "_blank" : undefined}
+                  rel={info.link.startsWith("http") ? "noopener noreferrer" : undefined}
+                  whileHover={{ x: 6 }}
+                  className="glass-card p-5 rounded-2xl flex gap-4 items-center group hover:border-primary/30 transition-all"
+                >
                   <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors flex-shrink-0">
                     <info.icon className="w-5 h-5 text-primary" />
                   </div>
@@ -78,22 +93,20 @@ const Contact = () => {
                 </motion.a>
               ))}
             </div>
-
-            {/* Direct WhatsApp CTA */}
-            <motion.a href="https://wa.me/923426807645?text=Hi%20HUKAM,%20I%20have%20a%20question" target="_blank" rel="noopener noreferrer" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-              className="mt-6 w-full flex items-center justify-center gap-3 bg-[#25D366] text-white py-4 rounded-2xl font-bold text-base shadow-lg shadow-[#25D366]/25 transition-all hover:shadow-xl">
-              <MessageCircle className="w-5 h-5" />
-              Chat on WhatsApp
-            </motion.a>
           </motion.div>
 
+          {/* Form */}
           <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="glass-card p-6 sm:p-8 rounded-3xl">
             <h3 className="text-xl font-bold text-foreground mb-6">Send a Message</h3>
+
             {result && (
               <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className={`mb-6 p-4 border rounded-xl text-sm font-medium ${
                 result.includes("Successfully") ? "bg-primary/5 border-primary/20 text-primary" : result.includes("Error") ? "bg-destructive/5 border-destructive/20 text-destructive" : "bg-secondary border-border text-foreground"
-              }`}>{result}</motion.div>
+              }`}>
+                {result}
+              </motion.div>
             )}
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Name</label>
@@ -115,9 +128,16 @@ const Contact = () => {
                 {result === "Sending...." ? "Sending..." : "Send Message ⚡"}
               </motion.button>
             </form>
+
             <p className="text-xs text-muted-foreground text-center mt-6">We typically respond within 2-4 hours.</p>
           </motion.div>
         </div>
+
+        {/* Support CTA */}
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mt-20 glass-card p-10 sm:p-12 rounded-3xl text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">Need Quick Support?</h2>
+          <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">Email us at contact@hukam.pk or fill out the form above. Our team responds within minutes!</p>
+        </motion.div>
       </div>
     </div>
   );

@@ -1,11 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Search, SlidersHorizontal, Heart, ArrowUpDown } from "lucide-react";
+import { ShoppingBag, Search, SlidersHorizontal } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useCart } from "@/context/CartContext";
 import { useMiniCart } from "@/context/MiniCartContext";
-import { useWishlist } from "@/context/WishlistContext";
 import { toast } from "@/hooks/use-toast";
 import ProductFilterSidebar, { type FilterState } from "@/components/ProductFilterSidebar";
 import { useProductRatings, StarRating } from "@/hooks/useProductRatings";
@@ -22,10 +21,6 @@ interface DBProduct {
   description: string;
   compare_at_price: number | null;
   tags: string[] | null;
-  shop_id: string | null;
-  buying_cost: number | null;
-  search_keywords: string[] | null;
-  created_at?: string;
 }
 
 interface Category {
@@ -35,23 +30,16 @@ interface Category {
   parent_id: string | null;
 }
 
-type SortOption = "newest" | "price-low" | "price-high" | "name-az";
-
-const ITEMS_PER_PAGE = 12;
-
 const Products = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { addItem } = useCart();
   const { openCart } = useMiniCart();
-  const { isInWishlist, toggleItem } = useWishlist();
   const [products, setProducts] = useState<DBProduct[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(searchParams.get("q") || "");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [sortBy, setSortBy] = useState<SortOption>("newest");
-  const [page, setPage] = useState(1);
   const ratings = useProductRatings();
   const [filters, setFilters] = useState<FilterState>({
     minPrice: 0,
@@ -70,16 +58,13 @@ const Products = () => {
     setSearchParams(params, { replace: true });
   }, [search, filters.categories]);
 
-  // Reset page on filter/search/sort change
-  useEffect(() => { setPage(1); }, [search, filters, sortBy]);
-
   const fetchData = async () => {
     try {
       const [prodRes, catRes] = await Promise.all([
-        supabase.from("products").select("id, title, price, images, stock, is_active, sub_category_id, category_id, description, compare_at_price, tags, shop_id, buying_cost, search_keywords, created_at").eq("is_active", true).order("created_at", { ascending: false }),
+        supabase.from("products").select("id, title, price, images, stock, is_active, sub_category_id, category_id, description, compare_at_price, tags").eq("is_active", true).order("created_at", { ascending: false }),
         supabase.from("categories").select("id, name, slug, parent_id"),
       ]);
-      setProducts((prodRes.data || []).map((p: any) => ({ ...p, images: Array.isArray(p.images) ? p.images : [], tags: Array.isArray(p.tags) ? p.tags : [], search_keywords: Array.isArray(p.search_keywords) ? p.search_keywords : [] })));
+      setProducts((prodRes.data || []).map((p: any) => ({ ...p, images: Array.isArray(p.images) ? p.images : [], tags: Array.isArray(p.tags) ? p.tags : [] })));
       setCategories(catRes.data || []);
     } catch (err) {
       console.error(err);
@@ -90,36 +75,17 @@ const Products = () => {
 
   const allTags = [...new Set(products.flatMap((p) => p.tags || []))].filter(Boolean);
 
-  // Enhanced search: matches title, description, tags, keywords
-  const filtered = useMemo(() => {
-    let result = products.filter((p) => {
-      const q = search.toLowerCase();
-      const matchSearch = !q || p.title.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q) || (p.tags || []).some(t => t.toLowerCase().includes(q)) || (p.search_keywords || []).some(k => k.toLowerCase().includes(q));
-      const matchPrice = p.price >= filters.minPrice && (filters.maxPrice >= 50000 || p.price <= filters.maxPrice);
-      const matchCat = filters.categories.length === 0 || filters.categories.includes(p.category_id || "") || filters.categories.includes(p.sub_category_id || "");
-      const matchTags = filters.tags.length === 0 || filters.tags.some((t) => (p.tags || []).includes(t));
-      return matchSearch && matchPrice && matchCat && matchTags;
-    });
-
-    // Sorting
-    switch (sortBy) {
-      case "price-low": result.sort((a, b) => a.price - b.price); break;
-      case "price-high": result.sort((a, b) => b.price - a.price); break;
-      case "name-az": result.sort((a, b) => a.title.localeCompare(b.title)); break;
-      case "newest": default: break; // already sorted by created_at desc
-    }
-    return result;
-  }, [products, search, filters, sortBy]);
-
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-  const paged = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const filtered = products.filter((p) => {
+    const matchSearch = p.title.toLowerCase().includes(search.toLowerCase());
+    const matchPrice = p.price >= filters.minPrice && (filters.maxPrice >= 50000 || p.price <= filters.maxPrice);
+    const matchCat = filters.categories.length === 0 || filters.categories.includes(p.category_id || "") || filters.categories.includes(p.sub_category_id || "");
+    const matchTags = filters.tags.length === 0 || filters.tags.some((t) => (p.tags || []).includes(t));
+    return matchSearch && matchPrice && matchCat && matchTags;
+  });
 
   const handleAddToCart = (e: React.MouseEvent, product: DBProduct) => {
     e.stopPropagation();
-    addItem({
-      id: product.id, name: product.title, price: `₨ ${product.price.toLocaleString()}`, image: product.images[0] || "",
-      shopId: product.shop_id || null, buyingCost: product.buying_cost || 0,
-    });
+    addItem({ id: product.id, name: product.title, price: `₨ ${product.price.toLocaleString()}`, image: product.images[0] || "" });
     toast({ title: "Added to Cart", description: product.title });
     openCart();
   };
@@ -129,25 +95,14 @@ const Products = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
           <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary mb-3 block">HUKAM Collection</span>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground mb-4 font-display">All Products</h1>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground mb-4 font-display">The Vault</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">Premium tech accessories with 60-minute delivery in Mirpur.</p>
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="max-w-4xl mx-auto mb-8 flex gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <input type="text" placeholder="Search products, tags, keywords..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-12 pr-4 py-3.5 bg-background/80 backdrop-blur-md border border-border rounded-2xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all" />
-          </div>
-          {/* Sort dropdown */}
-          <div className="relative">
-            <select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="appearance-none px-4 py-3.5 pr-10 bg-background border border-border rounded-2xl text-foreground text-sm font-medium focus:outline-none focus:border-primary cursor-pointer">
-              <option value="newest">Newest</option>
-              <option value="price-low">Price: Low → High</option>
-              <option value="price-high">Price: High → Low</option>
-              <option value="name-az">Name: A → Z</option>
-            </select>
-            <ArrowUpDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <input type="text" placeholder="Search products..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-12 pr-4 py-3.5 bg-background/80 backdrop-blur-md border border-border rounded-2xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all" />
           </div>
           <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setShowMobileFilters(true)} className="lg:hidden flex items-center gap-2 px-4 py-3.5 bg-background border border-border rounded-2xl text-foreground">
             <SlidersHorizontal className="w-4 h-4" />
@@ -159,7 +114,7 @@ const Products = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 max-w-7xl mx-auto">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="rounded-2xl overflow-hidden border border-border/40">
-                <div className="h-44 sm:h-56 bg-muted animate-pulse" />
+                <div className="h-36 sm:h-48 bg-muted animate-pulse" />
                 <div className="p-4 space-y-2">
                   <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
                   <div className="h-3 bg-muted rounded animate-pulse w-1/3" />
@@ -182,12 +137,11 @@ const Products = () => {
           <div className="flex-1">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
               <AnimatePresence mode="popLayout">
-                {paged.map((product, i) => {
+                {filtered.map((product, i) => {
                   const r = ratings[product.id];
-                  const wishlisted = isInWishlist(product.id);
                   return (
                     <motion.div key={product.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.3, delay: i * 0.03 }} whileHover={{ y: -6 }} onClick={() => navigate(`/product/${product.id}`)} className="glass-card group overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:border-primary/30">
-                      <div className="relative h-44 sm:h-56 overflow-hidden bg-secondary/30">
+                      <div className="relative h-36 sm:h-48 overflow-hidden bg-secondary/30">
                         {product.images[0] ? (
                           <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                         ) : (
@@ -203,11 +157,6 @@ const Products = () => {
                             🔥 {product.stock} left
                           </span>
                         )}
-                        {/* Wishlist heart */}
-                        <button onClick={(e) => { e.stopPropagation(); toggleItem({ id: product.id, title: product.title, price: product.price, image: product.images[0] || "" }); }}
-                          className={`absolute bottom-2 right-2 w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-all opacity-0 group-hover:opacity-100 ${wishlisted ? "bg-destructive/90 text-white" : "bg-foreground/30 text-white hover:bg-foreground/50"}`}>
-                          <Heart className={`w-4 h-4 ${wishlisted ? "fill-current" : ""}`} />
-                        </button>
                       </div>
                       <div className="p-4 relative">
                         <h3 className="font-semibold text-foreground text-sm">{product.title}</h3>
@@ -228,30 +177,6 @@ const Products = () => {
                 })}
               </AnimatePresence>
             </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-8">
-                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                  className="px-4 py-2 rounded-xl border border-border text-sm font-medium disabled:opacity-30 hover:bg-secondary transition-colors">
-                  Previous
-                </button>
-                {Array.from({ length: Math.min(totalPages, 5) }).map((_, i) => {
-                  const pageNum = totalPages <= 5 ? i + 1 : page <= 3 ? i + 1 : page >= totalPages - 2 ? totalPages - 4 + i : page - 2 + i;
-                  if (pageNum < 1 || pageNum > totalPages) return null;
-                  return (
-                    <button key={pageNum} onClick={() => setPage(pageNum)}
-                      className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${pageNum === page ? "bg-primary text-primary-foreground" : "border border-border hover:bg-secondary"}`}>
-                      {pageNum}
-                    </button>
-                  );
-                })}
-                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                  className="px-4 py-2 rounded-xl border border-border text-sm font-medium disabled:opacity-30 hover:bg-secondary transition-colors">
-                  Next
-                </button>
-              </div>
-            )}
 
             {!loading && filtered.length === 0 && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20">
