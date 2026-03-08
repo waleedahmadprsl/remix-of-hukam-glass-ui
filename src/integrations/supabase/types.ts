@@ -240,6 +240,83 @@ export type Database = {
         }
         Relationships: []
       }
+      product_questions: {
+        Row: {
+          answer: string | null
+          answered_at: string | null
+          asked_by: string
+          created_at: string
+          id: string
+          product_id: string
+          question: string
+        }
+        Insert: {
+          answer?: string | null
+          answered_at?: string | null
+          asked_by?: string
+          created_at?: string
+          id?: string
+          product_id: string
+          question: string
+        }
+        Update: {
+          answer?: string | null
+          answered_at?: string | null
+          asked_by?: string
+          created_at?: string
+          id?: string
+          product_id?: string
+          question?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_questions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_relations: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          related_product_id: string
+          relation_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          related_product_id: string
+          relation_type?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          related_product_id?: string
+          relation_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_relations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_relations_related_product_id_fkey"
+            columns: ["related_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_variants: {
         Row: {
           attributes: Json | null
@@ -289,10 +366,17 @@ export type Database = {
           compare_at_price: number | null
           created_at: string
           description: string
+          dimensions_h: number | null
+          dimensions_l: number | null
+          dimensions_w: number | null
           id: string
           images: Json
           is_active: boolean
+          meta_description: string | null
+          meta_title: string | null
           price: number
+          return_policy: string | null
+          search_keywords: string[] | null
           shop_id: string | null
           status: string | null
           stock: number
@@ -301,6 +385,8 @@ export type Database = {
           title: string
           updated_at: string
           video_url: string | null
+          warranty_type: string | null
+          weight_kg: number | null
         }
         Insert: {
           auto_sku?: string | null
@@ -309,10 +395,17 @@ export type Database = {
           compare_at_price?: number | null
           created_at?: string
           description?: string
+          dimensions_h?: number | null
+          dimensions_l?: number | null
+          dimensions_w?: number | null
           id?: string
           images?: Json
           is_active?: boolean
+          meta_description?: string | null
+          meta_title?: string | null
           price?: number
+          return_policy?: string | null
+          search_keywords?: string[] | null
           shop_id?: string | null
           status?: string | null
           stock?: number
@@ -321,6 +414,8 @@ export type Database = {
           title: string
           updated_at?: string
           video_url?: string | null
+          warranty_type?: string | null
+          weight_kg?: number | null
         }
         Update: {
           auto_sku?: string | null
@@ -329,10 +424,17 @@ export type Database = {
           compare_at_price?: number | null
           created_at?: string
           description?: string
+          dimensions_h?: number | null
+          dimensions_l?: number | null
+          dimensions_w?: number | null
           id?: string
           images?: Json
           is_active?: boolean
+          meta_description?: string | null
+          meta_title?: string | null
           price?: number
+          return_policy?: string | null
+          search_keywords?: string[] | null
           shop_id?: string | null
           status?: string | null
           stock?: number
@@ -341,6 +443,8 @@ export type Database = {
           title?: string
           updated_at?: string
           video_url?: string | null
+          warranty_type?: string | null
+          weight_kg?: number | null
         }
         Relationships: [
           {
