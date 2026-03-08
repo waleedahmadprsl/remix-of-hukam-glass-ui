@@ -35,7 +35,7 @@ const AllProducts = () => {
 
   useEffect(() => {
     Promise.all([
-      supabase.from("products").select("id, title, price, compare_at_price, images, category_id, sub_category_id").eq("is_active", true).order("created_at", { ascending: false }),
+      supabase.from("products").select("id, title, price, compare_at_price, images, category_id, sub_category_id").eq("is_active", true).order("created_at", { ascending: false }).limit(32),
       supabase.from("categories").select("id, name, parent_id").is("parent_id", null),
     ]).then(([pRes, cRes]) => {
       setProducts((pRes.data || []).map((p: any) => ({ ...p, images: Array.isArray(p.images) ? p.images : [] })));
