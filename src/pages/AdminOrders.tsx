@@ -200,7 +200,12 @@ const AdminOrders: React.FC = () => {
   return (
     <AdminLayout activeTab="orders">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-2xl sm:text-4xl font-extrabold text-foreground mb-1">Order Command Center</h1>
+        <div className="flex items-center justify-between mb-1 flex-wrap gap-3">
+          <h1 className="text-2xl sm:text-4xl font-extrabold text-foreground">Order Command Center</h1>
+          <button onClick={exportCSV} className="flex items-center gap-2 bg-secondary text-foreground px-4 py-2 rounded-xl text-sm font-semibold hover:bg-secondary/80 transition-colors">
+            <Download className="w-4 h-4" /> Export CSV
+          </button>
+        </div>
         <p className="text-sm text-muted-foreground mb-6">Real-time orders with vendor split</p>
 
         <div className="flex gap-2 mb-4 overflow-x-auto pb-2 -mx-2 px-2">

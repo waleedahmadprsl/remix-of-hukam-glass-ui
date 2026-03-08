@@ -226,7 +226,7 @@ const AdminAnalytics: React.FC = () => {
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
               {[
                 { label: "Total Revenue", value: `Rs.${totalRevenue.toLocaleString()}`, icon: DollarSign },
-                { label: "Total Orders", value: orders.length, icon: ShoppingCart },
+                { label: "Total Orders", value: filteredOrders.length, icon: ShoppingCart },
                 { label: "Avg Order Value", value: `Rs.${avgOrderValue.toLocaleString()}`, icon: TrendingUp },
                 { label: "Products", value: products.length, icon: Package },
                 { label: "Total Visitors", value: visitorStats.uniqueSessions, icon: Users },
