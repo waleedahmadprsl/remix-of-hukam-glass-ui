@@ -10,21 +10,21 @@ const slides = [
     sub: "Verified accessories at your doorstep — Cash on Delivery.",
     cta: "Shop Now",
     href: "#all-products",
-    gradient: "from-primary/20 via-accent/30 to-secondary/40",
+    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1400&q=80",
   },
   {
     headline: "Flash Deals — Up to 40% Off",
     sub: "Limited time offers on top-selling gadgets.",
     cta: "View Deals",
     href: "#flash-deals",
-    gradient: "from-destructive/10 via-primary/20 to-accent/30",
+    image: "https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=1400&q=80",
   },
   {
     headline: "New Arrivals Every Week",
     sub: "Earbuds, chargers, power banks & more — always fresh stock.",
     cta: "Browse Collection",
     href: "/products",
-    gradient: "from-secondary/40 via-primary/10 to-accent/20",
+    image: "https://images.unsplash.com/photo-1546868871-af0de0ae72be?w=1400&q=80",
   },
 ];
 
@@ -70,9 +70,10 @@ const BannerCarousel = () => {
           {slides.map((slide, i) => (
             <div key={i} className="min-w-0 shrink-0 grow-0 basis-full">
               <div
-                className={`relative h-[50vh] sm:h-[55vh] lg:h-[60vh] bg-gradient-to-br ${slide.gradient} flex items-center justify-center`}
+                className="relative h-[40vh] sm:h-[50vh] lg:h-[55vh] flex items-center justify-center overflow-hidden"
               >
-                <div className="absolute inset-0 bg-background/40 backdrop-blur-sm" />
+                <img src={slide.image} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
                 <div className="relative z-10 text-center px-6 max-w-3xl mx-auto">
                   <motion.h2
                     key={`h-${i}-${activeIndex}`}
