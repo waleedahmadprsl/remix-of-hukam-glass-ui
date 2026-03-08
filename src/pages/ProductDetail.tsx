@@ -229,7 +229,7 @@ const ProductDetail = () => {
             {/* Scarcity triggers */}
             {product.stock > 0 && product.stock <= 10 && (
               <div className="flex items-center gap-3 flex-wrap">
-                <span className="text-sm font-semibold text-orange-600 bg-orange-50 px-3 py-1.5 rounded-full animate-pulse">
+                <span className="text-sm font-semibold text-destructive bg-destructive/10 px-3 py-1.5 rounded-full animate-pulse">
                   🔥 Only {product.stock} left in stock!
                 </span>
               </div>
