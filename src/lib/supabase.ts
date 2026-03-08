@@ -1,6 +1,2 @@
-import { createClient } from "@supabase/supabase-js";
-
-const SUPABASE_URL = "https://gnaxvluvnnbwbjlvekfg.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_cyfcF3gKb-Niu79xLVF9hg_yv5qYaVK";
-
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Re-export from Lovable Cloud integration (single source of truth)
+export { supabase } from "@/integrations/supabase/client";
