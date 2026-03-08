@@ -3,7 +3,12 @@ import { motion } from "framer-motion";
 import { AdminLayout } from "@/components/AdminLayout";
 import { supabase } from "@/lib/supabase";
 import { logActivity } from "@/lib/activityLogger";
-import { Trash2, Edit2, Plus, X } from "lucide-react";
+import { Trash2, Edit2, Plus, X, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface Promo {
   id: string;
