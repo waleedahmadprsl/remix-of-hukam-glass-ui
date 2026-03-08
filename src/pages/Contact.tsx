@@ -120,13 +120,10 @@ const Contact = () => {
           </motion.div>
         </div>
 
-        {/* WhatsApp CTA */}
+        {/* Support CTA */}
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mt-20 glass-card p-10 sm:p-12 rounded-3xl text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">Quick Support on WhatsApp</h2>
-          <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">For urgent matters, reach out via WhatsApp. Our team responds instantly!</p>
-          <motion.a href="https://wa.me/923426807645" target="_blank" rel="noopener noreferrer" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }} className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-4 rounded-full font-semibold shadow-lg shadow-primary/25 transition-all hover:shadow-xl">
-            HUKAM on WhatsApp 💬
-          </motion.a>
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">Need Quick Support?</h2>
+          <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">Email us at contact@hukam.pk or fill out the form above. Our team responds within minutes!</p>
         </motion.div>
       </div>
     </div>
