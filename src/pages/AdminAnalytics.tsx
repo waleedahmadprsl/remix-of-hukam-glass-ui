@@ -194,7 +194,7 @@ const AdminAnalytics: React.FC = () => {
   // Promo code usage
   const promoUsage = React.useMemo(() => {
     const counts: Record<string, { count: number; revenue: number }> = {};
-    orders.forEach(o => {
+    filteredOrders.forEach(o => {
       if (o.promo_code) {
         if (!counts[o.promo_code]) counts[o.promo_code] = { count: 0, revenue: 0 };
         counts[o.promo_code].count++;
@@ -202,7 +202,7 @@ const AdminAnalytics: React.FC = () => {
       }
     });
     return Object.entries(counts).map(([code, data]) => ({ code, ...data }));
-  }, [orders]);
+  }, [filteredOrders]);
 
   const totalRevenue = orders.reduce((s, o) => s + Number(o.total_amount), 0);
 
