@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { motion, AnimatePresence } from "framer-motion";
-import { User, Package, Heart, MapPin, LogOut, Save, ChevronDown, ChevronUp } from "lucide-react";
+import { motion } from "framer-motion";
+import { User, Package, Heart, MapPin, LogOut, Save, Camera } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import hukamName from "@/assets/hukam-name.png";
 
 type Tab = "profile" | "orders" | "wishlist" | "addresses";
 
@@ -18,14 +19,6 @@ interface Order {
   total_amount: number;
   status: string;
   tracking_id: string | null;
-}
-
-interface OrderItem {
-  id: string;
-  product_title: string;
-  variant_name: string | null;
-  quantity: number;
-  unit_price: number;
 }
 
 interface WishlistProduct {
@@ -43,13 +36,12 @@ const Account: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [wishlist, setWishlist] = useState<WishlistProduct[]>([]);
   const [saving, setSaving] = useState(false);
-  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
-  const [orderItemsMap, setOrderItemsMap] = useState<Record<string, OrderItem[]>>({});
 
   useEffect(() => {
     if (!authLoading && !session) navigate("/login");
   }, [session, authLoading, navigate]);
 
+  // Pre-fill form from profile (Google data included via AuthContext)
   useEffect(() => {
     if (authProfile) {
       setForm({
@@ -72,22 +64,9 @@ const Account: React.FC = () => {
     });
   }, [session]);
 
-  const fetchOrderItems = async (orderId: string) => {
-    if (orderItemsMap[orderId]) return;
-    const { data } = await supabase.from("order_items").select("id, product_title, variant_name, quantity, unit_price").eq("order_id", orderId);
-    setOrderItemsMap(prev => ({ ...prev, [orderId]: (data || []) as OrderItem[] }));
-  };
-
-  const toggleOrder = (orderId: string) => {
-    const expanding = expandedOrderId !== orderId;
-    setExpandedOrderId(expanding ? orderId : null);
-    if (expanding) fetchOrderItems(orderId);
-  };
-
   const saveProfile = async () => {
     if (!session) return;
     setSaving(true);
-    // SECURITY: Never send `role` field in update — prevents privilege escalation
     const { error } = await supabase.from("profiles").update({
       full_name: form.full_name,
       username: form.username,
@@ -126,14 +105,6 @@ const Account: React.FC = () => {
     { key: "wishlist", label: "Wishlist", icon: <Heart className="w-4 h-4" /> },
     { key: "addresses", label: "Address", icon: <MapPin className="w-4 h-4" /> },
   ];
-
-  const statusColor = (status: string) => {
-    if (status === "delivered") return "bg-green-500/10 text-green-600";
-    if (status === "dispatched") return "bg-blue-500/10 text-blue-600";
-    if (status === "confirmed") return "bg-blue-500/10 text-blue-600";
-    if (status === "canceled" || status === "returned") return "bg-red-500/10 text-red-600";
-    return "bg-yellow-500/10 text-yellow-600";
-  };
 
   return (
     <div className="min-h-screen bg-background pt-20 pb-12 px-4">
@@ -185,14 +156,6 @@ const Account: React.FC = () => {
                 <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+92 3XX XXXXXXX" />
               </div>
               <div className="space-y-2">
-                <Label>Address</Label>
-                <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="House #, Street, Area" />
-              </div>
-              <div className="space-y-2">
-                <Label>City</Label>
-                <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="Lahore, Karachi, etc." />
-              </div>
-              <div className="space-y-2">
                 <Label>Email</Label>
                 <Input value={session?.user.email || ""} disabled className="opacity-60" />
               </div>
@@ -202,7 +165,7 @@ const Account: React.FC = () => {
             </div>
           )}
 
-          {/* Orders Tab — with expandable order details */}
+          {/* Orders Tab */}
           {tab === "orders" && (
             <div>
               {orders.length === 0 ? (
@@ -212,65 +175,21 @@ const Account: React.FC = () => {
                   <Button variant="outline" className="mt-4" onClick={() => navigate("/products")}>Start Shopping</Button>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {orders.map((o) => {
-                    const isExpanded = expandedOrderId === o.id;
-                    const items = orderItemsMap[o.id] || [];
-                    return (
-                      <div key={o.id} className="rounded-xl bg-secondary/50 border border-border/50 overflow-hidden">
-                        <button
-                          onClick={() => toggleOrder(o.id)}
-                          className="w-full flex items-center justify-between p-4 text-left hover:bg-secondary/70 transition-colors"
-                        >
-                          <div>
-                            <p className="text-sm font-medium text-foreground">Order #{o.id.slice(0, 8)}</p>
-                            <p className="text-xs text-muted-foreground">{new Date(o.created_at).toLocaleDateString()}</p>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <div className="text-right">
-                              <p className="text-sm font-bold text-foreground">₨ {o.total_amount.toLocaleString()}</p>
-                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor(o.status)}`}>
-                                {o.status}
-                              </span>
-                            </div>
-                            {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-                          </div>
-                        </button>
-                        <AnimatePresence>
-                          {isExpanded && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: "auto", opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              className="overflow-hidden"
-                            >
-                              <div className="px-4 pb-4 pt-1 border-t border-border/30 space-y-2">
-                                {o.tracking_id && (
-                                  <p className="text-xs text-muted-foreground">Tracking ID: <span className="font-mono text-foreground">{o.tracking_id}</span></p>
-                                )}
-                                {items.length > 0 ? (
-                                  <div className="space-y-1.5">
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Items</p>
-                                    {items.map((item) => (
-                                      <div key={item.id} className="flex justify-between text-sm">
-                                        <span className="text-foreground">
-                                          {item.product_title}
-                                          {item.variant_name ? ` (${item.variant_name})` : ""} × {item.quantity}
-                                        </span>
-                                        <span className="text-muted-foreground font-medium">₨ {(item.unit_price * item.quantity).toLocaleString()}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <p className="text-xs text-muted-foreground">Loading items...</p>
-                                )}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
+                <div className="space-y-4">
+                  {orders.map((o) => (
+                    <div key={o.id} className="flex items-center justify-between p-4 rounded-xl bg-secondary/50 border border-border/50">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Order #{o.id.slice(0, 8)}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(o.created_at).toLocaleDateString()}</p>
                       </div>
-                    );
-                  })}
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-foreground">₨ {o.total_amount.toLocaleString()}</p>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${o.status === "delivered" ? "bg-green-500/10 text-green-600" : o.status === "shipped" ? "bg-blue-500/10 text-blue-600" : "bg-yellow-500/10 text-yellow-600"}`}>
+                          {o.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -304,7 +223,7 @@ const Account: React.FC = () => {
             </div>
           )}
 
-          {/* Address Tab — merged into profile */}
+          {/* Address Tab */}
           {tab === "addresses" && (
             <div className="space-y-4 max-w-lg">
               <div className="space-y-2">
