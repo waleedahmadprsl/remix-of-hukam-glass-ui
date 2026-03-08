@@ -26,6 +26,8 @@ const AdminAnalytics: React.FC = () => {
   const [categories, setCategories] = React.useState<any[]>([]);
   const [shops, setShops] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [dateFrom, setDateFrom] = React.useState<Date>(subDays(new Date(), 14));
+  const [dateTo, setDateTo] = React.useState<Date>(new Date());
 
   React.useEffect(() => {
     const fetchData = async () => {
