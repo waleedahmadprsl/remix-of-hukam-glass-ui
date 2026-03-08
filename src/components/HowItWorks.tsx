@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Smartphone, MessageCircle, Bike, ArrowRight } from "lucide-react";
+import { Smartphone, ShoppingCart, Bike, ArrowRight } from "lucide-react";
 
 const steps = [
   { icon: Smartphone, title: "Browse Collection", desc: "Explore our premium tech accessories catalog with real images and prices.", color: "from-primary/10 to-primary/5" },
