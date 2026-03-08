@@ -24,6 +24,21 @@ const Checkout: React.FC = () => {
   const [result, setResult] = React.useState("");
   const [placedOrderId, setPlacedOrderId] = React.useState<string | null>(null);
 
+  // Auto-fill from profile
+  React.useEffect(() => {
+    if (profile) {
+      setForm((f) => ({
+        ...f,
+        fullName: f.fullName || profile.full_name || "",
+        phone: f.phone || profile.phone || "",
+        address: f.address || (profile.address ? `${profile.address}${profile.city ? ", " + profile.city : ""}` : ""),
+      }));
+    }
+    if (session?.user?.email) {
+      setForm((f) => ({ ...f, email: f.email || session.user.email || "" }));
+    }
+  }, [profile, session]);
+
   const currentStep = result && result.startsWith("HUKAM Accepted") ? 2 : items.length > 0 ? 1 : 0;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
