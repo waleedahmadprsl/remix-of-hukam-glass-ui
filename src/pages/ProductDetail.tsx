@@ -12,6 +12,7 @@ interface DBProduct {
   id: string;
   title: string;
   price: number;
+  compare_at_price: number | null;
   images: string[];
   stock: number;
   is_active: boolean;
