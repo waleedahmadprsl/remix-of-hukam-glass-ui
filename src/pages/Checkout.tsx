@@ -298,7 +298,7 @@ const Checkout: React.FC = () => {
               whileTap={{ scale: 0.98 }}
               className="hidden sm:block w-full bg-primary text-primary-foreground py-4 rounded-2xl font-bold text-lg shadow-lg shadow-primary/25 transition-all hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {result === "Sending...." ? "Processing..." : "HUKAM Kijiye (Place Order) ⚡"}
+              {result === "Sending...." ? "Processing..." : "Place Order ⚡"}
             </motion.button>
           </motion.form>
 
