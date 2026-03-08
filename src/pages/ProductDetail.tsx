@@ -58,7 +58,7 @@ const ProductDetail = () => {
   const [qty, setQty] = React.useState(1);
   const [selectedImage, setSelectedImage] = React.useState(0);
   const [activeTab, setActiveTab] = React.useState<"features" | "specs">("features");
-  const [viewingCount] = React.useState(() => Math.floor(Math.random() * 20) + 5);
+  
 
   React.useEffect(() => {
     if (!id) return;
