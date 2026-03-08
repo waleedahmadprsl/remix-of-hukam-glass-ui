@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { logActivity } from "@/lib/activityLogger";
 import { playBeep } from "@/lib/audio";
 import { toast } from "@/hooks/use-toast";
-import { ChevronDown, ChevronUp, Phone, Mail, MapPin, FileText, Tag, Package, Truck, Search, Store } from "lucide-react";
+import { ChevronDown, ChevronUp, Phone, Mail, MapPin, FileText, Tag, Package, Truck, Search, Store, Download } from "lucide-react";
 
 interface Order {
   id: string; customer_name: string; customer_email: string | null; customer_phone: string;
