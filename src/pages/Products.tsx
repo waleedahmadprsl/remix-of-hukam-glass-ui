@@ -95,7 +95,7 @@ const Products = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
           <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary mb-3 block">HUKAM Collection</span>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground mb-4 font-display">The Vault</h1>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground mb-4 font-display">All Products</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">Premium tech accessories with 60-minute delivery in Mirpur.</p>
         </motion.div>
 
@@ -114,7 +114,7 @@ const Products = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 max-w-7xl mx-auto">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="rounded-2xl overflow-hidden border border-border/40">
-                <div className="h-36 sm:h-48 bg-muted animate-pulse" />
+                <div className="h-48 sm:h-56 bg-muted animate-pulse" />
                 <div className="p-4 space-y-2">
                   <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
                   <div className="h-3 bg-muted rounded animate-pulse w-1/3" />
@@ -141,7 +141,7 @@ const Products = () => {
                   const r = ratings[product.id];
                   return (
                     <motion.div key={product.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.3, delay: i * 0.03 }} whileHover={{ y: -6 }} onClick={() => navigate(`/product/${product.id}`)} className="glass-card group overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:border-primary/30">
-                      <div className="relative h-36 sm:h-48 overflow-hidden bg-secondary/30">
+                      <div className="relative h-48 sm:h-56 overflow-hidden bg-secondary/30">
                         {product.images[0] ? (
                           <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                         ) : (

@@ -351,7 +351,18 @@ const ProductDetail = () => {
                   <ShoppingCart className="w-5 h-5" />
                   Add to Cart
                 </motion.button>
-
+                <motion.button
+                  onClick={() => {
+                    handleAddToCart();
+                    navigate("/checkout");
+                  }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex items-center justify-center gap-2 border-2 border-primary text-primary py-4 rounded-2xl font-bold text-base transition-all hover:bg-primary/5"
+                >
+                  <Zap className="w-5 h-5" />
+                  Buy Now
+                </motion.button>
               </div>
             </div>
 

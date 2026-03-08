@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { useCart } from "@/context/CartContext";
+import { useCart, getCartKey } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
@@ -42,15 +42,8 @@ const Checkout: React.FC = () => {
     }
   }, [profile, session]);
 
-  // Redirect to products if cart empty (and not showing success)
-  React.useEffect(() => {
-    if (items.length === 0 && !result) {
-      const timer = setTimeout(() => {
-        if (items.length === 0 && !result) navigate("/products");
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [items.length, result, navigate]);
+  // Empty cart — show UI instead of redirecting
+  const isCartEmpty = items.length === 0 && !result;
 
   // Calculate shipping: Rs.50 per unique shop
   const shippingCost = React.useMemo(() => {
@@ -291,6 +284,26 @@ const Checkout: React.FC = () => {
   const discountAmt = promoStatus === "applied" && discountedTotal !== null ? cartSubtotal - discountedTotal : 0;
   const finalTotal = (discountedTotal !== null && promoStatus === "applied" ? discountedTotal : cartSubtotal) + shippingCost;
 
+  if (isCartEmpty) {
+    return (
+      <div className="min-h-screen bg-background pt-24 pb-20 flex items-center justify-center px-4">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center glass-card p-12 rounded-3xl max-w-md w-full">
+          <ShoppingCart className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-foreground mb-2">Your Cart is Empty</h1>
+          <p className="text-muted-foreground mb-8">Looks like you haven't added anything yet. Browse our collection and find something you love!</p>
+          <motion.button
+            onClick={() => navigate("/products")}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.97 }}
+            className="bg-primary text-primary-foreground px-8 py-3.5 rounded-full font-semibold shadow-lg shadow-primary/25"
+          >
+            Browse Products
+          </motion.button>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background pt-20 sm:pt-24 pb-32 sm:pb-20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -428,11 +441,11 @@ const Checkout: React.FC = () => {
                       <p className="text-xs text-muted-foreground">Rs.{it.priceNumber} each</p>
                       <div className="flex items-center gap-2 mt-1">
                         <div className="flex items-center border border-border rounded-lg text-sm">
-                          <button onClick={() => updateQuantity(it.id, Math.max(1, it.quantity - 1))} className="px-2 py-0.5 text-muted-foreground hover:text-foreground">−</button>
+                        <button onClick={() => updateQuantity(getCartKey(it), Math.max(1, it.quantity - 1))} className="px-2 py-0.5 text-muted-foreground hover:text-foreground">−</button>
                           <span className="px-2 py-0.5 font-semibold text-foreground">{it.quantity}</span>
-                          <button onClick={() => updateQuantity(it.id, it.quantity + 1)} className="px-2 py-0.5 text-muted-foreground hover:text-foreground">+</button>
+                          <button onClick={() => updateQuantity(getCartKey(it), it.quantity + 1)} className="px-2 py-0.5 text-muted-foreground hover:text-foreground">+</button>
                         </div>
-                        <button onClick={() => removeItem(it.id)} className="text-xs text-destructive hover:underline ml-auto">Remove</button>
+                        <button onClick={() => removeItem(getCartKey(it))} className="text-xs text-destructive hover:underline ml-auto">Remove</button>
                       </div>
                     </div>
                     <p className="font-bold text-foreground text-sm whitespace-nowrap">Rs.{it.priceNumber * it.quantity}</p>
