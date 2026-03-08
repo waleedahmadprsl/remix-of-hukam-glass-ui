@@ -121,9 +121,25 @@ const Products = () => {
           </motion.button>
         </motion.div>
 
-        <p className="text-sm text-muted-foreground mb-6 text-center">
-          {loading ? "Loading..." : `${filtered.length} product${filtered.length !== 1 ? "s" : ""} found`}
-        </p>
+        {loading ? (
+          <div className="text-center">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 max-w-7xl mx-auto">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="rounded-2xl overflow-hidden border border-border/40">
+                  <div className="h-36 sm:h-48 bg-muted animate-pulse" />
+                  <div className="p-4 space-y-2">
+                    <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
+                    <div className="h-4 bg-muted rounded animate-pulse w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground mb-6 text-center">
+            {`${filtered.length} product${filtered.length !== 1 ? "s" : ""} found`}
+          </p>
+        )}
 
         <div className="flex gap-8 max-w-7xl mx-auto">
           {/* Desktop Sidebar */}

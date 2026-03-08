@@ -98,8 +98,18 @@ const ProductDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background pt-24 pb-20 flex items-center justify-center">
-        <div className="text-muted-foreground">Loading product...</div>
+      <div className="min-h-screen bg-background pt-24 pb-20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-start max-w-7xl mx-auto">
+            <div className="animate-pulse bg-muted rounded-3xl aspect-square" />
+            <div className="space-y-4">
+              <div className="h-8 bg-muted rounded-xl w-3/4 animate-pulse" />
+              <div className="h-6 bg-muted rounded-xl w-1/2 animate-pulse" />
+              <div className="h-24 bg-muted rounded-2xl animate-pulse" />
+              <div className="h-12 bg-muted rounded-2xl w-full animate-pulse" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

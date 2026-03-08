@@ -1,13 +1,21 @@
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Star, Quote, ChevronLeft, ChevronRight } from "lucide-react";
 import logoVideo from "@/assets/logo-video.mp4";
+import { supabase } from "@/lib/supabase";
 
-const testimonials = [
-  { quote: "Got my iPhone charger in 45 minutes, amazing service!", name: "Ali M.", location: "Mirpur", initials: "AM" },
-  { quote: "Best earbuds I've bought. Delivered right to my door, no hassle.", name: "Sara K.", location: "Mirpur", initials: "SK" },
-  { quote: "Pay at door is a game changer. Verified the product before paying!", name: "Usman R.", location: "Mirpur", initials: "UR" },
-  { quote: "Super fast delivery and genuine products. Highly recommend!", name: "Hina T.", location: "Mirpur", initials: "HT" },
+interface Review {
+  id: string;
+  reviewer_name: string;
+  comment: string;
+  rating: number;
+}
+
+const fallbackTestimonials = [
+  { id: "f1", reviewer_name: "Ali M.", comment: "Got my iPhone charger in 45 minutes, amazing service!", rating: 5 },
+  { id: "f2", reviewer_name: "Sara K.", comment: "Best earbuds I've bought. Delivered right to my door, no hassle.", rating: 5 },
+  { id: "f3", reviewer_name: "Usman R.", comment: "Pay at door is a game changer. Verified the product before paying!", rating: 5 },
+  { id: "f4", reviewer_name: "Hina T.", comment: "Super fast delivery and genuine products. Highly recommend!", rating: 5 },
 ];
 
 const avatarColors = [
@@ -17,8 +25,17 @@ const avatarColors = [
   "bg-muted text-muted-foreground",
 ];
 
+const getInitials = (name: string) => name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
+
 const Testimonials = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [reviews, setReviews] = useState<Review[]>(fallbackTestimonials);
+
+  useEffect(() => {
+    supabase.from("reviews").select("id, reviewer_name, comment, rating").gte("rating", 4).order("created_at", { ascending: false }).limit(8).then(({ data }) => {
+      if (data && data.length > 0) setReviews(data);
+    });
+  }, []);
 
   const scroll = (dir: "left" | "right") => {
     if (!scrollRef.current) return;
@@ -75,9 +92,9 @@ const Testimonials = () => {
 
         {/* Testimonial cards */}
         <div ref={scrollRef} className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory -mx-2 px-2 md:grid md:grid-cols-2 lg:grid-cols-4 md:overflow-visible md:mx-0 md:px-0 max-w-4xl md:mx-auto scrollbar-hide">
-          {testimonials.map((t, i) => (
+          {reviews.map((t, i) => (
             <motion.div
-              key={t.name}
+              key={t.id}
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -87,18 +104,18 @@ const Testimonials = () => {
             >
               <Quote className="w-6 h-6 text-primary/8 absolute top-4 right-4" />
               <div className="flex gap-0.5">
-                {Array.from({ length: 5 }).map((_, j) => (
+                {Array.from({ length: t.rating }).map((_, j) => (
                   <Star key={j} className="w-3.5 h-3.5 fill-primary text-primary" />
                 ))}
               </div>
-              <p className="text-foreground text-sm leading-relaxed flex-1">"{t.quote}"</p>
+              <p className="text-foreground text-sm leading-relaxed flex-1">"{t.comment}"</p>
               <div className="flex items-center gap-2.5 pt-1">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${avatarColors[i % avatarColors.length]}`}>
-                  {t.initials}
+                  {getInitials(t.reviewer_name)}
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-foreground">{t.name}</p>
-                  <p className="text-[10px] text-muted-foreground">{t.location}</p>
+                  <p className="text-xs font-semibold text-foreground">{t.reviewer_name}</p>
+                  <p className="text-[10px] text-muted-foreground">Mirpur</p>
                 </div>
               </div>
             </motion.div>
