@@ -263,6 +263,11 @@ const AdminProducts: React.FC = () => {
 
             <AdminImageOrderer images={uploadedUrls} onChange={setUploadedUrls} videoUrl={form.video_url} onVideoChange={(url) => setForm((f) => ({ ...f, video_url: url }))} />
 
+            {/* Variant Management — only when editing an existing product */}
+            {editingId && (
+              <AdminVariantManager productId={editingId} productPrice={form.price} />
+            )}
+
             {/* Logistics Section */}
             <div className="p-4 bg-secondary/30 rounded-xl space-y-4">
               <h3 className="text-sm font-bold text-foreground">📦 Logistics (for Courier APIs)</h3>
