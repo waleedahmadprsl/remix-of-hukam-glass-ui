@@ -88,6 +88,7 @@ const BannerCarousel = () => {
                 {slide.media.type === "video" ? (
                   <video
                     src={slide.media.src}
+                    poster="/logo-poster.jpg"
                     autoPlay muted loop playsInline
                     className="absolute inset-0 w-full h-full object-cover"
                   />

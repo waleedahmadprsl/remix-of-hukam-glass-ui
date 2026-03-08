@@ -140,31 +140,15 @@ const Checkout: React.FC = () => {
         }));
         await supabase.from("order_items").insert(orderItemsPayload);
 
-        // Stock deduction — decrease stock for each product/variant
+        // Atomic stock deduction using database function (prevents race conditions)
         for (const it of items) {
-          if (it.variantId) {
-            // Deduct variant stock
-            const { data: variant } = await supabase
-              .from("product_variants")
-              .select("stock")
-              .eq("id", it.variantId)
-              .single();
-            if (variant) {
-              await supabase.from("product_variants").update({
-                stock: Math.max(0, (variant.stock || 0) - it.quantity)
-              }).eq("id", it.variantId);
-            }
-          }
-          // Always deduct from main product stock
-          const { data: product } = await supabase
-            .from("products")
-            .select("stock")
-            .eq("id", it.id)
-            .single();
-          if (product) {
-            await supabase.from("products").update({
-              stock: Math.max(0, (product.stock || 0) - it.quantity)
-            }).eq("id", it.id);
+          const { data: success } = await supabase.rpc("deduct_stock", {
+            p_product_id: it.id,
+            p_variant_id: it.variantId || null,
+            p_quantity: it.quantity,
+          });
+          if (success === false) {
+            console.warn(`Stock deduction failed for ${it.name} — may be out of stock`);
           }
         }
       }
