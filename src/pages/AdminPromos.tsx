@@ -149,7 +149,7 @@ const AdminPromos: React.FC = () => {
         {loading ? <div className="text-center py-12 text-muted-foreground">Loading...</div> : (
           <div className="overflow-x-auto glass-card rounded-2xl">
             <table className="w-full text-sm min-w-[600px]">
-              <thead><tr className="text-left text-muted-foreground text-xs border-b border-border/40"><th className="px-4 py-3">Code</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Value</th><th className="px-4 py-3">Min Purchase</th><th className="px-4 py-3">Usage</th><th className="px-4 py-3">Active</th><th className="px-4 py-3">Actions</th></tr></thead>
+              <thead><tr className="text-left text-muted-foreground text-xs border-b border-border/40"><th className="px-4 py-3">Code</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Value</th><th className="px-4 py-3">Min Purchase</th><th className="px-4 py-3">Usage</th><th className="px-4 py-3">Expires</th><th className="px-4 py-3">Active</th><th className="px-4 py-3">Actions</th></tr></thead>
               <tbody>
                 {promos.map((p) => (
                   <tr key={p.id} className="border-b border-border/20 hover:bg-secondary/20 transition-colors">
