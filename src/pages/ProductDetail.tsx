@@ -20,8 +20,13 @@ interface DBProduct {
   stock: number;
   is_active: boolean;
   sub_category_id: string | null;
+  category_id: string | null;
   description: string;
   video_url: string | null;
+  warranty_type: string | null;
+  return_policy: string | null;
+  meta_title: string | null;
+  meta_description: string | null;
 }
 
 function parseDescription(desc: string) {
