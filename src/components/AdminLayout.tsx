@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { LogOut, LayoutDashboard, Package, Tag, ShoppingCart, Zap, Activity, BarChart3, Users, Menu, X } from "lucide-react";
+import { LogOut, LayoutDashboard, Package, Tag, ShoppingCart, Zap, Activity, BarChart3, Users, Menu, X, Store } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 interface AdminLayoutProps {
