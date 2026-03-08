@@ -260,8 +260,13 @@ const Checkout: React.FC = () => {
                       setDiscountedTotal(null);
                       toast({ title: "Promo code invalid", description: "Please enter a valid active code." });
                     } else {
-                      const discount = subtotal() * ((data.discount_percentage || 0) / 100);
-                      const newTotal = subtotal() - discount;
+                      let discount = 0;
+                      if (data.discount_type === "percentage") {
+                        discount = subtotal() * ((data.discount_percentage || 0) / 100);
+                      } else {
+                        discount = data.discount_amount || 0;
+                      }
+                      const newTotal = Math.max(0, subtotal() - discount);
                       setDiscountedTotal(newTotal);
                       setPromoStatus("applied");
                       toast({ title: "Promo applied", description: `You saved Rs.${discount.toFixed(0)}!` });
