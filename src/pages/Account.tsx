@@ -7,19 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { User, Package, Heart, MapPin, LogOut, Save } from "lucide-react";
+import { User, Package, Heart, MapPin, LogOut, Save, Camera } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import hukamName from "@/assets/hukam-name.png";
 
 type Tab = "profile" | "orders" | "wishlist" | "addresses";
-
-interface Profile {
-  full_name: string;
-  username: string;
-  phone: string;
-  address: string;
-  city: string;
-  avatar_url: string;
-}
 
 interface Order {
   id: string;
@@ -37,10 +29,10 @@ interface WishlistProduct {
 }
 
 const Account: React.FC = () => {
-  const { session, loading: authLoading, logout } = useAuth();
+  const { session, profile: authProfile, loading: authLoading, logout, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("profile");
-  const [profile, setProfile] = useState<Profile>({ full_name: "", username: "", phone: "", address: "", city: "", avatar_url: "" });
+  const [form, setForm] = useState({ full_name: "", username: "", phone: "", address: "", city: "" });
   const [orders, setOrders] = useState<Order[]>([]);
   const [wishlist, setWishlist] = useState<WishlistProduct[]>([]);
   const [saving, setSaving] = useState(false);
@@ -49,17 +41,24 @@ const Account: React.FC = () => {
     if (!authLoading && !session) navigate("/login");
   }, [session, authLoading, navigate]);
 
+  // Pre-fill form from profile (Google data included via AuthContext)
+  useEffect(() => {
+    if (authProfile) {
+      setForm({
+        full_name: authProfile.full_name || "",
+        username: authProfile.username || "",
+        phone: authProfile.phone || "",
+        address: authProfile.address || "",
+        city: authProfile.city || "",
+      });
+    }
+  }, [authProfile]);
+
   useEffect(() => {
     if (!session) return;
-    // Fetch profile
-    supabase.from("profiles").select("full_name, username, phone, address, city, avatar_url").eq("id", session.user.id).single().then(({ data }) => {
-      if (data) setProfile(data as Profile);
-    });
-    // Fetch orders
     supabase.from("orders").select("id, created_at, total_amount, status, tracking_id").eq("user_id", session.user.id).order("created_at", { ascending: false }).then(({ data }) => {
       if (data) setOrders(data);
     });
-    // Fetch wishlist with product info
     supabase.from("user_wishlist").select("product_id, products(title, price, images)").eq("user_id", session.user.id).then(({ data }) => {
       if (data) setWishlist(data.map((w: any) => ({ product_id: w.product_id, title: w.products?.title || "", price: w.products?.price || 0, images: Array.isArray(w.products?.images) ? w.products.images : [] })));
     });
@@ -68,10 +67,20 @@ const Account: React.FC = () => {
   const saveProfile = async () => {
     if (!session) return;
     setSaving(true);
-    const { error } = await supabase.from("profiles").update({ full_name: profile.full_name, username: profile.username, phone: profile.phone, address: profile.address, city: profile.city }).eq("id", session.user.id);
+    const { error } = await supabase.from("profiles").update({
+      full_name: form.full_name,
+      username: form.username,
+      phone: form.phone,
+      address: form.address,
+      city: form.city,
+    }).eq("id", session.user.id);
     setSaving(false);
-    if (error) toast({ title: "Error saving", description: error.message, variant: "destructive" });
-    else toast({ title: "Profile updated!" });
+    if (error) {
+      toast({ title: "Error saving", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Profile updated!" });
+      await refreshProfile();
+    }
   };
 
   const removeWishlistItem = async (productId: string) => {
@@ -87,6 +96,9 @@ const Account: React.FC = () => {
 
   if (authLoading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" /></div>;
 
+  const avatarUrl = authProfile?.avatar_url || "";
+  const initials = (authProfile?.full_name || "U").split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
     { key: "profile", label: "Profile", icon: <User className="w-4 h-4" /> },
     { key: "orders", label: "Orders", icon: <Package className="w-4 h-4" /> },
@@ -97,10 +109,17 @@ const Account: React.FC = () => {
   return (
     <div className="min-h-screen bg-background pt-20 pb-12 px-4">
       <div className="container mx-auto max-w-4xl">
+        {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <div>
-            <img src={hukamName} alt="HUKAM" className="h-10 cursor-pointer" onClick={() => navigate("/")} />
-            <h1 className="text-2xl font-bold text-foreground mt-2">My Account</h1>
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16 border-2 border-primary">
+              {avatarUrl ? <AvatarImage src={avatarUrl} alt={authProfile?.full_name || "User"} /> : null}
+              <AvatarFallback className="bg-primary text-primary-foreground text-lg font-bold">{initials}</AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">{authProfile?.full_name || "My Account"}</h1>
+              <p className="text-sm text-muted-foreground">{session?.user?.email}</p>
+            </div>
           </div>
           <Button variant="ghost" onClick={handleLogout} className="gap-2 text-muted-foreground hover:text-destructive">
             <LogOut className="w-4 h-4" /> Logout
@@ -126,15 +145,15 @@ const Account: React.FC = () => {
             <div className="space-y-4 max-w-lg">
               <div className="space-y-2">
                 <Label>Full Name</Label>
-                <Input value={profile.full_name} onChange={(e) => setProfile({ ...profile, full_name: e.target.value })} />
+                <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="Your full name" />
               </div>
               <div className="space-y-2">
                 <Label>Username</Label>
-                <Input value={profile.username} onChange={(e) => setProfile({ ...profile, username: e.target.value })} />
+                <Input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} placeholder="Choose a username" />
               </div>
               <div className="space-y-2">
                 <Label>Phone</Label>
-                <Input value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} placeholder="+92 3XX XXXXXXX" />
+                <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+92 3XX XXXXXXX" />
               </div>
               <div className="space-y-2">
                 <Label>Email</Label>
@@ -209,11 +228,11 @@ const Account: React.FC = () => {
             <div className="space-y-4 max-w-lg">
               <div className="space-y-2">
                 <Label>Delivery Address</Label>
-                <Input value={profile.address} onChange={(e) => setProfile({ ...profile, address: e.target.value })} placeholder="House #, Street, Area" />
+                <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="House #, Street, Area" />
               </div>
               <div className="space-y-2">
                 <Label>City</Label>
-                <Input value={profile.city} onChange={(e) => setProfile({ ...profile, city: e.target.value })} placeholder="Lahore, Karachi, etc." />
+                <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="Lahore, Karachi, etc." />
               </div>
               <Button onClick={saveProfile} disabled={saving} className="gap-2">
                 <Save className="w-4 h-4" /> {saving ? "Saving..." : "Save Address"}

@@ -2,7 +2,7 @@ import React from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
-interface Profile {
+export interface Profile {
   full_name: string;
   username: string;
   phone: string;
@@ -28,36 +28,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = React.useState<Profile | null>(null);
   const [loading, setLoading] = React.useState(true);
 
-  const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
+  const fetchProfile = async (userId: string, user?: User) => {
+    const { data, error } = await supabase
       .from("profiles")
       .select("full_name, username, phone, address, city, avatar_url, role")
       .eq("id", userId)
       .single();
-    if (data) setProfile(data as Profile);
+
+    if (data) {
+      // Merge Google metadata as fallback for empty fields
+      const meta = user?.user_metadata || {};
+      setProfile({
+        full_name: data.full_name || meta.full_name || meta.name || "",
+        username: data.username || meta.email || "",
+        phone: data.phone || "",
+        address: data.address || "",
+        city: data.city || "",
+        avatar_url: data.avatar_url || meta.avatar_url || meta.picture || "",
+        role: data.role || "user",
+      });
+    } else if (error && error.code === "PGRST116") {
+      // Profile doesn't exist yet — create it from Google metadata
+      const meta = user?.user_metadata || {};
+      const newProfile: Omit<Profile, "role"> & { id: string; role: string } = {
+        id: userId,
+        full_name: meta.full_name || meta.name || "",
+        username: meta.email || "",
+        phone: "",
+        address: "",
+        city: "",
+        avatar_url: meta.avatar_url || meta.picture || "",
+        role: "user",
+      };
+      await supabase.from("profiles").upsert(newProfile);
+      setProfile(newProfile);
+    }
   };
 
   const refreshProfile = async () => {
-    if (session?.user?.id) await fetchProfile(session.user.id);
+    if (session?.user?.id) await fetchProfile(session.user.id, session.user);
   };
 
   React.useEffect(() => {
-    // Listen for auth changes FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session?.user?.id) {
-        // Use setTimeout to avoid Supabase deadlock
-        setTimeout(() => fetchProfile(session.user.id), 0);
+        setTimeout(() => fetchProfile(session.user.id, session.user), 0);
       } else {
         setProfile(null);
       }
     });
 
-    // Then check existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session?.user?.id) {
-        fetchProfile(session.user.id).finally(() => setLoading(false));
+        fetchProfile(session.user.id, session.user).finally(() => setLoading(false));
       } else {
         setLoading(false);
       }
