@@ -203,6 +203,7 @@ export type Database = {
           total_amount: number
           tracking_id: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -220,6 +221,7 @@ export type Database = {
           total_amount?: number
           tracking_id?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -237,6 +239,7 @@ export type Database = {
           total_amount?: number
           tracking_id?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -499,22 +502,37 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
+          avatar_url: string | null
+          city: string | null
           created_at: string
           full_name: string | null
           id: string
+          phone: string | null
           role: string
+          username: string | null
         }
         Insert: {
+          address?: string | null
+          avatar_url?: string | null
+          city?: string | null
           created_at?: string
           full_name?: string | null
           id: string
+          phone?: string | null
           role?: string
+          username?: string | null
         }
         Update: {
+          address?: string | null
+          avatar_url?: string | null
+          city?: string | null
           created_at?: string
           full_name?: string | null
           id?: string
+          phone?: string | null
           role?: string
+          username?: string | null
         }
         Relationships: []
       }
@@ -662,6 +680,35 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_wishlist: {
+        Row: {
+          created_at: string | null
+          id: string
+          product_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          product_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          product_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_wishlist_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
