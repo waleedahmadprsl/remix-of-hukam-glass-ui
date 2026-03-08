@@ -106,10 +106,10 @@ const AdminAnalytics: React.FC = () => {
   // Popular pages
   const popularPages = React.useMemo(() => {
     const counts: Record<string, number> = {};
-    pageViews.forEach(pv => { counts[pv.page_path] = (counts[pv.page_path] || 0) + 1; });
+    filteredPageViews.forEach(pv => { counts[pv.page_path] = (counts[pv.page_path] || 0) + 1; });
     return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10)
       .map(([path, views]) => ({ path, views }));
-  }, [pageViews]);
+  }, [filteredPageViews]);
 
   // ── Conversion Funnel ──
   const funnelData = React.useMemo(() => {
