@@ -42,15 +42,8 @@ const Checkout: React.FC = () => {
     }
   }, [profile, session]);
 
-  // Redirect to products if cart empty (and not showing success)
-  React.useEffect(() => {
-    if (items.length === 0 && !result) {
-      const timer = setTimeout(() => {
-        if (items.length === 0 && !result) navigate("/products");
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [items.length, result, navigate]);
+  // Empty cart — show UI instead of redirecting
+  const isCartEmpty = items.length === 0 && !result;
 
   // Calculate shipping: Rs.50 per unique shop
   const shippingCost = React.useMemo(() => {
