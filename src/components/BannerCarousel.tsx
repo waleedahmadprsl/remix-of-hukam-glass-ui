@@ -1,10 +1,29 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Truck, ShieldCheck, Clock, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import heroVideo from "@/assets/logo-video.mp4";
 
-const slides = [
+interface Slide {
+  headline: string;
+  sub: string;
+  cta: string;
+  href: string;
+  image?: string;
+  video?: string;
+  accent: string;
+}
+
+const slides: Slide[] = [
+  {
+    headline: "HUKAM — Mirpur's #1 Quick Commerce",
+    sub: "Premium tech accessories delivered to your doorstep in 60 minutes.",
+    cta: "Shop Now",
+    href: "#all-products",
+    video: heroVideo,
+    accent: "from-primary/20 to-transparent",
+  },
   {
     headline: "Premium Tech, Delivered in 60 Minutes",
     sub: "Verified accessories at your doorstep — Cash on Delivery.",
