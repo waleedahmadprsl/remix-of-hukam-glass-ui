@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { logActivity } from "@/lib/activityLogger";
 import { Trash2, Plus, Edit2, X, Search } from "lucide-react";
 import AdminImageOrderer from "@/components/AdminImageOrderer";
+import AdminVariantManager from "@/components/AdminVariantManager";
 
 interface Product {
   id: string;
@@ -261,6 +262,11 @@ const AdminProducts: React.FC = () => {
             </div>
 
             <AdminImageOrderer images={uploadedUrls} onChange={setUploadedUrls} videoUrl={form.video_url} onVideoChange={(url) => setForm((f) => ({ ...f, video_url: url }))} />
+
+            {/* Variant Management — only when editing an existing product */}
+            {editingId && (
+              <AdminVariantManager productId={editingId} productPrice={form.price} />
+            )}
 
             {/* Logistics Section */}
             <div className="p-4 bg-secondary/30 rounded-xl space-y-4">

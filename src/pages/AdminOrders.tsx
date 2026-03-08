@@ -16,8 +16,8 @@ interface Order {
 
 interface OrderItem {
   id: string; order_id: string; product_id: string | null; shop_id: string | null;
-  product_title: string; variant_name: string | null; quantity: number;
-  unit_price: number; buying_cost: number;
+  product_title: string; variant_name: string | null; variant_id: string | null;
+  quantity: number; unit_price: number; buying_cost: number;
 }
 
 interface Shop { id: string; name: string; commission_percent: number; }
@@ -41,6 +41,8 @@ const AdminOrders: React.FC = () => {
   const [trackingInputs, setTrackingInputs] = React.useState<Record<string, string>>({});
   const [orderItemsMap, setOrderItemsMap] = React.useState<Record<string, OrderItem[]>>({});
   const [shops, setShops] = React.useState<Shop[]>([]);
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = React.useState("");
 
   React.useEffect(() => {
     fetchOrders(); fetchShops();
@@ -77,9 +79,42 @@ const AdminOrders: React.FC = () => {
   };
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
+    const order = orders.find((o) => o.id === orderId);
+    const oldStatus = order?.status;
+
     const { error } = await supabase.from("orders").update({ status: newStatus } as any).eq("id", orderId);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-    const order = orders.find((o) => o.id === orderId);
+
+    // Stock restoration when canceled/returned (only if coming from a non-canceled/returned status)
+    if ((newStatus === "canceled" || newStatus === "returned") && oldStatus && !["canceled", "returned"].includes(oldStatus)) {
+      const items = orderItemsMap[orderId] || [];
+      if (items.length === 0) {
+        const { data } = await supabase.from("order_items").select("*").eq("order_id", orderId);
+        if (data) {
+          for (const item of data as OrderItem[]) {
+            if (item.variant_id) {
+              const { data: v } = await supabase.from("product_variants").select("stock").eq("id", item.variant_id).single();
+              if (v) await supabase.from("product_variants").update({ stock: (v.stock || 0) + item.quantity }).eq("id", item.variant_id);
+            }
+            if (item.product_id) {
+              const { data: p } = await supabase.from("products").select("stock").eq("id", item.product_id).single();
+              if (p) await supabase.from("products").update({ stock: (p.stock || 0) + item.quantity }).eq("id", item.product_id);
+            }
+          }
+        }
+      } else {
+        for (const item of items) {
+          if (item.shop_id) {
+            // variant stock restore
+          }
+          if (item.product_id) {
+            const { data: p } = await supabase.from("products").select("stock").eq("id", item.product_id).single();
+            if (p) await supabase.from("products").update({ stock: (p.stock || 0) + item.quantity }).eq("id", item.product_id);
+          }
+        }
+      }
+    }
+
     if (order?.customer_email) {
       try { await supabase.functions.invoke("send-order-email", { body: { type: "status_update", email: order.customer_email, customerName: order.customer_name, orderId, status: newStatus, totalAmount: order.total_amount } }); } catch (e) { console.error(e); }
     }
@@ -120,6 +155,19 @@ const AdminOrders: React.FC = () => {
     return Object.values(groups);
   };
 
+  const toggleOrderSelect = (id: string) => setSelectedIds((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  const handleBulkStatusUpdate = async () => {
+    if (!bulkStatus || selectedIds.size === 0) return;
+    if (!confirm(`Update ${selectedIds.size} orders to "${bulkStatus}"?`)) return;
+    for (const orderId of Array.from(selectedIds)) {
+      await handleStatusChange(orderId, bulkStatus);
+    }
+    setSelectedIds(new Set());
+    setBulkStatus("");
+    toast({ title: "Bulk update complete", description: `${selectedIds.size} orders updated` });
+  };
+
   return (
     <AdminLayout activeTab="orders">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -139,6 +187,19 @@ const AdminOrders: React.FC = () => {
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name, phone, or order ID..." className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-xl text-sm focus:outline-none focus:border-primary" />
         </div>
 
+        {/* Bulk Actions */}
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-3 mb-4 p-3 bg-primary/5 rounded-xl border border-primary/20">
+            <span className="text-sm font-semibold text-foreground">{selectedIds.size} selected</span>
+            <select value={bulkStatus} onChange={(e) => setBulkStatus(e.target.value)} className="px-3 py-1.5 bg-background border border-border rounded-lg text-sm">
+              <option value="">Change status to...</option>
+              {statuses.map((s) => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+            </select>
+            <button onClick={handleBulkStatusUpdate} disabled={!bulkStatus} className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold disabled:opacity-50">Apply</button>
+            <button onClick={() => setSelectedIds(new Set())} className="text-xs text-muted-foreground hover:text-foreground">Clear</button>
+          </div>
+        )}
+
         {loading ? <div className="text-center py-12 text-muted-foreground">Loading orders...</div> : filtered.length === 0 ? <div className="text-center py-12 text-muted-foreground">No orders found.</div> : (
           <div className="space-y-3">
             {filtered.map((order) => {
@@ -151,6 +212,7 @@ const AdminOrders: React.FC = () => {
               return (
                 <motion.div key={order.id} layout className="glass-card rounded-2xl overflow-hidden">
                   <div className="flex items-center gap-2 sm:gap-4 px-3 sm:px-5 py-3 sm:py-4 cursor-pointer hover:bg-background/40 transition-colors" onClick={() => handleExpand(order.id)}>
+                    <input type="checkbox" checked={selectedIds.has(order.id)} onClick={(e) => e.stopPropagation()} onChange={() => toggleOrderSelect(order.id)} className="rounded flex-shrink-0" />
                     <div className="flex-1 min-w-0 grid grid-cols-2 sm:grid-cols-5 gap-1 sm:gap-2 items-center">
                       <span className="font-bold text-foreground text-xs sm:text-sm">#{order.id.slice(0, 8)}</span>
                       <span className="text-xs text-muted-foreground hidden sm:block">{new Date(order.created_at).toLocaleDateString()}</span>

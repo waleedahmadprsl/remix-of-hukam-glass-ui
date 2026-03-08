@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Phone, MapPin, Clock } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 const Contact = () => {
   const [formData, setFormData] = useState({ name: "", email: "", subject: "", message: "" });
@@ -11,10 +12,22 @@ const Contact = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // === ORIGINAL LOGIC UNCHANGED ===
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setResult("Sending....");
+
+    // Save to database
+    try {
+      await supabase.from("contact_submissions").insert([{
+        name: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+      }]);
+    } catch (err) {
+      console.error("DB save failed:", err);
+    }
+
     const ACCESS_KEY = "30b97afd-15a6-456e-84e0-08bedd37e77f";
     const formDataToSend = new FormData(e.currentTarget);
     formDataToSend.append("access_key", ACCESS_KEY);
