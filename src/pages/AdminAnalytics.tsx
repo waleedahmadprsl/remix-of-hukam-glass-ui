@@ -161,11 +161,11 @@ const AdminAnalytics: React.FC = () => {
   // Repeat customers
   const repeatCustomers = React.useMemo(() => {
     const phoneCounts: Record<string, number> = {};
-    orders.forEach(o => { phoneCounts[o.customer_phone] = (phoneCounts[o.customer_phone] || 0) + 1; });
+    filteredOrders.forEach(o => { phoneCounts[o.customer_phone] = (phoneCounts[o.customer_phone] || 0) + 1; });
     const repeat = Object.values(phoneCounts).filter(c => c > 1).length;
     const total = Object.keys(phoneCounts).length;
     return { repeat, total, pct: total > 0 ? Math.round((repeat / total) * 100) : 0 };
-  }, [orders]);
+  }, [filteredOrders]);
 
   // Revenue by category
   const revenueByCategory = React.useMemo(() => {
