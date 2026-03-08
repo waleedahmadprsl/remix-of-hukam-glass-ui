@@ -125,18 +125,9 @@ const Checkout: React.FC = () => {
         }));
         await supabase.from("order_items").insert(orderItemsPayload);
 
-        // 3. Atomic stock deduction — use filtered update to prevent oversell
+        // 3. Stock deduction with gte guard to prevent overselling
         for (const it of items) {
           if (it.variantId) {
-            // Atomic variant stock deduction: only succeeds if stock >= quantity
-            await supabase.rpc('', {}).catch(() => {});
-            // Fallback: use filtered update
-            await supabase
-              .from("product_variants")
-              .update({ stock: Math.max(0, 0) } as any)
-              .eq("id", it.variantId)
-              .gte("stock", it.quantity);
-            // Actually do atomic: read and update in one go with gte filter
             const { data: variant } = await supabase
               .from("product_variants")
               .select("stock")
@@ -148,15 +139,14 @@ const Checkout: React.FC = () => {
               }).eq("id", it.variantId).gte("stock", it.quantity);
             }
           }
-          // Atomic main product stock deduction
-          const { data: product } = await supabase
+          const { data: prod } = await supabase
             .from("products")
             .select("stock")
             .eq("id", it.id)
             .single();
-          if (product) {
+          if (prod) {
             await supabase.from("products").update({
-              stock: Math.max(0, (product.stock || 0) - it.quantity)
+              stock: Math.max(0, (prod.stock || 0) - it.quantity)
             }).eq("id", it.id).gte("stock", it.quantity);
           }
         }
