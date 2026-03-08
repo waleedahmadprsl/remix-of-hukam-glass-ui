@@ -62,10 +62,10 @@ const ProductDetail = () => {
   const [selectedImage, setSelectedImage] = React.useState(0);
   const [activeTab, setActiveTab] = React.useState<"features" | "specs">("features");
   const [selectedVariant, setSelectedVariant] = React.useState<{ id: string; variant_name: string; price: number | null; stock: number | null; sku: string | null } | null>(null);
+  const [categoryName, setCategoryName] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (!id) return;
-    // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(id)) {
       setProduct(null);
@@ -85,12 +85,17 @@ const ProductDetail = () => {
       const p = { ...data, images: Array.isArray(data.images) ? data.images as string[] : [] } as DBProduct;
       setProduct(p);
       addToRecentlyViewed(p.id);
-      // SEO meta
+
+      // Fetch category name for breadcrumb
+      if (p.category_id) {
+        const { data: cat } = await supabase.from("categories").select("name").eq("id", p.category_id).single();
+        if (cat) setCategoryName(cat.name);
+      }
+
       if (p.meta_title) document.title = p.meta_title;
       else document.title = `${p.title} | HUKAM`;
       const metaDesc = document.querySelector('meta[name="description"]');
       if (metaDesc) metaDesc.setAttribute("content", p.meta_description || p.description?.slice(0, 160) || "");
-      // JSON-LD Product structured data
       const jsonLd = {
         "@context": "https://schema.org",
         "@type": "Product",
@@ -111,7 +116,7 @@ const ProductDetail = () => {
       script.setAttribute("data-product-jsonld", "true");
       script.text = JSON.stringify(jsonLd);
       document.head.appendChild(script);
-      // Fetch related
+
       const { data: rel } = await supabase
         .from("products")
         .select("*")
@@ -190,16 +195,39 @@ const ProductDetail = () => {
     openCart();
   };
 
+  const handleBuyNow = () => {
+    handleAddToCart();
+    navigate("/checkout");
+  };
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: product.title, text: `Check out ${product.title} on HUKAM!`, url });
+      } catch { /* user cancelled */ }
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast({ title: "Link copied!", description: "Product link copied to clipboard" });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background pt-24 pb-20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Breadcrumb */}
+        {/* Breadcrumb with category */}
         <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
           <button onClick={() => navigate("/")} className="hover:text-foreground transition-colors">Home</button>
           <span>/</span>
           <button onClick={() => navigate("/products")} className="hover:text-foreground transition-colors">Products</button>
+          {categoryName && (
+            <>
+              <span>/</span>
+              <button onClick={() => navigate(`/products?category=${product.category_id}`)} className="hover:text-foreground transition-colors">{categoryName}</button>
+            </>
+          )}
           <span>/</span>
-          <span className="text-foreground font-medium">{product.title}</span>
+          <span className="text-foreground font-medium truncate max-w-[200px]">{product.title}</span>
         </motion.div>
 
         <div className="grid lg:grid-cols-2 gap-12 items-start max-w-7xl mx-auto">
@@ -215,7 +243,11 @@ const ProductDetail = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.3 }}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover cursor-zoom-in"
+                  onClick={() => {
+                    // Simple zoom: open image in new tab for full size
+                    window.open(product.images[selectedImage], '_blank');
+                  }}
                 />
               </AnimatePresence>
               {product.images.length > 1 && (
@@ -244,9 +276,13 @@ const ProductDetail = () => {
 
           {/* Right: Product Info */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }} className="space-y-6">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-tight">{product.title}</h1>
+            <div className="flex items-start justify-between gap-4">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-tight">{product.title}</h1>
+              <button onClick={handleShare} className="p-2 rounded-xl bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all flex-shrink-0" title="Share">
+                <Share2 className="w-5 h-5" />
+              </button>
+            </div>
 
-            {/* Scarcity triggers */}
             {product.stock > 0 && product.stock <= 10 && (
               <div className="flex items-center gap-3 flex-wrap">
                 <span className="text-sm font-semibold text-destructive bg-destructive/10 px-3 py-1.5 rounded-full animate-pulse">
@@ -284,10 +320,8 @@ const ProductDetail = () => {
               onVariantSelect={(v) => setSelectedVariant(v as any)}
             />
 
-            {/* Description */}
             {description && <p className="text-muted-foreground leading-relaxed">{description}</p>}
 
-            {/* Tabs: Features / Specs */}
             {(features.length > 0 || specs.length > 0) && (
               <div>
                 <div className="flex gap-1 p-1 bg-secondary/50 rounded-xl mb-4">
@@ -352,6 +386,16 @@ const ProductDetail = () => {
                   Add to Cart
                 </motion.button>
 
+                <motion.button
+                  onClick={handleBuyNow}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  disabled={activeStock <= 0}
+                  className="flex items-center justify-center gap-2 bg-foreground text-background py-4 rounded-2xl font-bold text-base shadow-lg transition-all hover:shadow-xl disabled:opacity-50"
+                >
+                  <Zap className="w-5 h-5" />
+                  Buy Now
+                </motion.button>
               </div>
             </div>
 
