@@ -124,8 +124,23 @@ const AdminPromos: React.FC = () => {
               <div><label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Min Purchase (Rs)</label><input type="number" value={form.min_purchase} onChange={(e) => setForm({ ...form, min_purchase: Number(e.target.value) })} className="w-full px-4 py-3 bg-background border border-border rounded-lg" /></div>
               <div><label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Usage Limit</label><input type="number" value={form.usage_limit} onChange={(e) => setForm({ ...form, usage_limit: Number(e.target.value) })} placeholder="0 = unlimited" className="w-full px-4 py-3 bg-background border border-border rounded-lg" /></div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-wrap">
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="rounded" /> Active</label>
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Expires</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("justify-start text-left font-normal text-xs h-9 w-[160px]", !form.expires_at && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-1 h-3.5 w-3.5" />
+                      {form.expires_at ? format(form.expires_at, "MMM d, yyyy") : "No expiry"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={form.expires_at || undefined} onSelect={(d) => setForm({ ...form, expires_at: d || null })} initialFocus className={cn("p-3 pointer-events-auto")} />
+                  </PopoverContent>
+                </Popover>
+                {form.expires_at && <button onClick={() => setForm({ ...form, expires_at: null })} className="text-xs text-destructive hover:underline">Clear</button>}
+              </div>
               <button onClick={handleSave} className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold text-sm">{editingId ? "Update" : "Save"}</button>
             </div>
           </motion.div>
