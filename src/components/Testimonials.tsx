@@ -115,7 +115,7 @@ const Testimonials = () => {
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-foreground">{t.reviewer_name}</p>
-                  <p className="text-[10px] text-muted-foreground">Mirpur</p>
+                  <p className="text-[10px] text-muted-foreground">Verified Buyer</p>
                 </div>
               </div>
             </motion.div>

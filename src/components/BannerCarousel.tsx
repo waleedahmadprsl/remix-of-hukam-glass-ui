@@ -23,14 +23,6 @@ const slides: Slide[] = [
     video: heroVideo,
     accent: "from-primary/20 to-transparent",
   },
-  {
-    headline: "Flash Deals — Up to 40% Off",
-    sub: "Limited time offers on top-selling gadgets.",
-    cta: "View Deals",
-    href: "#flash-deals",
-    video: heroVideo,
-    accent: "from-destructive/20 to-transparent",
-  },
 ];
 
 const badges = [

@@ -378,7 +378,7 @@ const Checkout: React.FC = () => {
             whileTap={{ scale: 0.98 }}
             className="w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-bold text-base shadow-lg shadow-primary/25 disabled:opacity-50"
           >
-            {result === "Sending...." ? "Processing..." : "HUKAM Kijiye ⚡"}
+            {result === "Sending...." ? "Processing..." : "Place Order ⚡"}
           </motion.button>
         </div>
       )}

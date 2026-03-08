@@ -137,7 +137,7 @@ const ProductDetail = () => {
 
   const { description, features, specs } = parseDescription(product.description || "");
   const stockStatus = product.stock > 20 ? "In Stock" : product.stock > 5 ? "Low Stock" : product.stock > 0 ? "Only Few Left" : "Out of Stock";
-  const stockColor = product.stock > 20 ? "text-green-600" : product.stock > 5 ? "text-yellow-600" : product.stock > 0 ? "text-orange-600" : "text-destructive";
+  const stockColor = product.stock > 20 ? "text-primary" : product.stock > 5 ? "text-accent-foreground" : product.stock > 0 ? "text-destructive" : "text-destructive";
 
   const handleAddToCart = () => {
     addItem({ id: product.id, name: product.title, price: `₨ ${product.price.toLocaleString()}`, image: product.images[0] || "", quantity: qty });

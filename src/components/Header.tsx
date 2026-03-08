@@ -67,7 +67,10 @@ const Header = () => {
             ))}
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            {/* Theme Toggle */}
+            <ThemeToggle />
+
             {/* Search */}
             <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
               <Search className="w-5 h-5" />
