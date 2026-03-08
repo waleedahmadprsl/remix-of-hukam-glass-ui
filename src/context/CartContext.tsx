@@ -13,11 +13,16 @@ export interface CartItem {
   buyingCost?: number;
 }
 
+/** Composite key: distinguishes same product with different variants */
+export function getCartKey(item: { id: string; variantId?: string | null }): string {
+  return item.variantId ? `${item.id}__${item.variantId}` : item.id;
+}
+
 interface CartContextValue {
   items: CartItem[];
   addItem: (item: Omit<CartItem, "quantity" | "priceNumber"> & { quantity?: number }) => void;
-  removeItem: (id: string) => void;
-  updateQuantity: (id: string, qty: number) => void;
+  removeItem: (cartKey: string) => void;
+  updateQuantity: (cartKey: string, qty: number) => void;
   clearCart: () => void;
   subtotal: () => number;
 }
@@ -39,23 +44,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch { return []; }
   });
 
-  // Persist to localStorage on every change
   React.useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items]);
 
   const addItem = (item: any) => {
     setItems((prev) => {
-      const itemKey = item.variantId ? `${item.id}__${item.variantId}` : item.id;
-      const found = prev.find((p) => {
-        const pKey = p.variantId ? `${p.id}__${p.variantId}` : p.id;
-        return pKey === itemKey;
-      });
+      const itemKey = getCartKey(item);
+      const found = prev.find((p) => getCartKey(p) === itemKey);
       if (found) {
-        return prev.map((p) => {
-          const pKey = p.variantId ? `${p.id}__${p.variantId}` : p.id;
-          return pKey === itemKey ? { ...p, quantity: p.quantity + (item.quantity || 1) } : p;
-        });
+        return prev.map((p) =>
+          getCartKey(p) === itemKey ? { ...p, quantity: p.quantity + (item.quantity || 1) } : p
+        );
       }
       const priceNumber = parsePrice(item.price || item.priceString || "0");
       const newItem: CartItem = {
@@ -74,10 +74,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  const removeItem = (id: string) => setItems((prev) => prev.filter((i) => i.id !== id));
+  const removeItem = (cartKey: string) =>
+    setItems((prev) => prev.filter((i) => getCartKey(i) !== cartKey));
 
-  const updateQuantity = (id: string, qty: number) =>
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, quantity: qty } : i)));
+  const updateQuantity = (cartKey: string, qty: number) =>
+    setItems((prev) => prev.map((i) => (getCartKey(i) === cartKey ? { ...i, quantity: qty } : i)));
 
   const clearCart = () => setItems([]);
 

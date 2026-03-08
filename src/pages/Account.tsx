@@ -235,22 +235,6 @@ const Account: React.FC = () => {
             </div>
           )}
 
-          {/* Address Tab */}
-          {tab === "addresses" && (
-            <div className="space-y-4 max-w-lg">
-              <div className="space-y-2">
-                <Label>Delivery Address</Label>
-                <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="House #, Street, Area" />
-              </div>
-              <div className="space-y-2">
-                <Label>City</Label>
-                <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="Lahore, Karachi, etc." />
-              </div>
-              <Button onClick={saveProfile} disabled={saving} className="gap-2">
-                <Save className="w-4 h-4" /> {saving ? "Saving..." : "Save Address"}
-              </Button>
-            </div>
-          )}
         </motion.div>
       </div>
     </div>

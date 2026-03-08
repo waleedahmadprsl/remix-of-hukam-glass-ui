@@ -85,7 +85,31 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-border/20 pt-4">
+        {/* Payment & Trust Signals */}
+        <div className="border-t border-border/20 pt-5 pb-3">
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
+            {[
+              { label: "Cash on Delivery", emoji: "💵" },
+              { label: "JazzCash", emoji: "📱" },
+              { label: "Easypaisa", emoji: "📲" },
+              { label: "Bank Transfer", emoji: "🏦" },
+            ].map((m) => (
+              <span key={m.label} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary/60 border border-border/30 rounded-full text-[11px] font-medium text-foreground">
+                <span>{m.emoji}</span> {m.label}
+              </span>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-4">
+            {[
+              { label: "Secure Checkout", icon: "🔒" },
+              { label: "60-Min Delivery in Mirpur", icon: "⚡" },
+              { label: "100% Genuine Products", icon: "✅" },
+            ].map((t) => (
+              <span key={t.label} className="text-[11px] text-muted-foreground flex items-center gap-1">
+                <span>{t.icon}</span> {t.label}
+              </span>
+            ))}
+          </div>
           <p className="text-center text-[11px] text-muted-foreground">
             © 2026 HUK<span className="text-primary">A</span>M · All rights reserved
           </p>

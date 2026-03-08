@@ -421,11 +421,11 @@ const Checkout: React.FC = () => {
                       <p className="text-xs text-muted-foreground">Rs.{it.priceNumber} each</p>
                       <div className="flex items-center gap-2 mt-1">
                         <div className="flex items-center border border-border rounded-lg text-sm">
-                          <button onClick={() => updateQuantity(it.id, Math.max(1, it.quantity - 1))} className="px-2 py-0.5 text-muted-foreground hover:text-foreground">−</button>
+                        <button onClick={() => updateQuantity(getCartKey(it), Math.max(1, it.quantity - 1))} className="px-2 py-0.5 text-muted-foreground hover:text-foreground">−</button>
                           <span className="px-2 py-0.5 font-semibold text-foreground">{it.quantity}</span>
-                          <button onClick={() => updateQuantity(it.id, it.quantity + 1)} className="px-2 py-0.5 text-muted-foreground hover:text-foreground">+</button>
+                          <button onClick={() => updateQuantity(getCartKey(it), it.quantity + 1)} className="px-2 py-0.5 text-muted-foreground hover:text-foreground">+</button>
                         </div>
-                        <button onClick={() => removeItem(it.id)} className="text-xs text-destructive hover:underline ml-auto">Remove</button>
+                        <button onClick={() => removeItem(getCartKey(it))} className="text-xs text-destructive hover:underline ml-auto">Remove</button>
                       </div>
                     </div>
                     <p className="font-bold text-foreground text-sm whitespace-nowrap">Rs.{it.priceNumber * it.quantity}</p>

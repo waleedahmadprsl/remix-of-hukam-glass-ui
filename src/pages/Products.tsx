@@ -141,7 +141,7 @@ const Products = () => {
                   const r = ratings[product.id];
                   return (
                     <motion.div key={product.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.3, delay: i * 0.03 }} whileHover={{ y: -6 }} onClick={() => navigate(`/product/${product.id}`)} className="glass-card group overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:border-primary/30">
-                      <div className="relative h-36 sm:h-48 overflow-hidden bg-secondary/30">
+                      <div className="relative h-48 sm:h-56 overflow-hidden bg-secondary/30">
                         {product.images[0] ? (
                           <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                         ) : (
