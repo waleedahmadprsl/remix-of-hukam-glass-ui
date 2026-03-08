@@ -50,6 +50,20 @@ const AdminAnalytics: React.FC = () => {
     fetchData();
   }, []);
 
+  // Filter data by date range
+  const inRange = React.useCallback((dateStr: string) => {
+    try {
+      return isWithinInterval(new Date(dateStr), { start: startOfDay(dateFrom), end: endOfDay(dateTo) });
+    } catch { return false; }
+  }, [dateFrom, dateTo]);
+
+  const filteredOrders = React.useMemo(() => orders.filter(o => inRange(o.created_at)), [orders, inRange]);
+  const filteredPageViews = React.useMemo(() => pageViews.filter(pv => inRange(pv.created_at)), [pageViews, inRange]);
+  const filteredOrderItems = React.useMemo(() => {
+    const orderIds = new Set(filteredOrders.map(o => o.id));
+    return orderItems.filter(oi => orderIds.has(oi.order_id));
+  }, [orderItems, filteredOrders]);
+
   // ── Visitor Analytics ──
   const visitorStats = React.useMemo(() => {
     const now = new Date();
@@ -57,18 +71,18 @@ const AdminAnalytics: React.FC = () => {
     const weekAgo = new Date(today); weekAgo.setDate(weekAgo.getDate() - 7);
     const prevWeekStart = new Date(weekAgo); prevWeekStart.setDate(prevWeekStart.getDate() - 7);
 
-    const totalViews = pageViews.length;
-    const uniqueSessions = new Set(pageViews.map(pv => pv.session_id)).size;
-    const todayViews = pageViews.filter(pv => new Date(pv.created_at) >= today).length;
-    const weekViews = pageViews.filter(pv => new Date(pv.created_at) >= weekAgo).length;
-    const prevWeekViews = pageViews.filter(pv => {
+    const totalViews = filteredPageViews.length;
+    const uniqueSessions = new Set(filteredPageViews.map(pv => pv.session_id)).size;
+    const todayViews = filteredPageViews.filter(pv => new Date(pv.created_at) >= today).length;
+    const weekViews = filteredPageViews.filter(pv => new Date(pv.created_at) >= weekAgo).length;
+    const prevWeekViews = filteredPageViews.filter(pv => {
       const d = new Date(pv.created_at);
       return d >= prevWeekStart && d < weekAgo;
     }).length;
     const weekGrowth = prevWeekViews > 0 ? Math.round(((weekViews - prevWeekViews) / prevWeekViews) * 100) : 0;
 
     return { totalViews, uniqueSessions, todayViews, weekViews, weekGrowth };
-  }, [pageViews]);
+  }, [filteredPageViews]);
 
   // Daily visitors (14 days)
   const dailyVisitors = React.useMemo(() => {
