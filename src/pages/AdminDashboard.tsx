@@ -28,7 +28,7 @@ const AdminDashboard: React.FC = () => {
       supabase.from("products").select("id, stock, title, buying_cost, price"),
       supabase.from("orders").select("total_amount, created_at, status, items").order("created_at", { ascending: false }).limit(500),
       supabase.from("orders").select("id, customer_name, total_amount, status, created_at").order("created_at", { ascending: false }).limit(5),
-      supabase.from("order_items").select("unit_price, buying_cost, quantity, created_at"),
+      supabase.from("order_items").select("unit_price, buying_cost, quantity, created_at, order_id").order("created_at", { ascending: false }).limit(1000),
       supabase.from("shops").select("id").eq("is_active", true),
     ]);
 

@@ -211,7 +211,41 @@ const AdminAnalytics: React.FC = () => {
   return (
     <AdminLayout activeTab="analytics">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-2xl sm:text-4xl font-extrabold text-foreground mb-6">Analytics & Insights</h1>
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <h1 className="text-2xl sm:text-4xl font-extrabold text-foreground">Analytics & Insights</h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("justify-start text-left font-normal text-xs h-9")}>
+                  <CalendarIcon className="mr-1 h-3.5 w-3.5" />
+                  {format(dateFrom, "MMM d, yyyy")}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={dateFrom} onSelect={(d) => d && setDateFrom(d)} initialFocus className={cn("p-3 pointer-events-auto")} />
+              </PopoverContent>
+            </Popover>
+            <span className="text-xs text-muted-foreground">to</span>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("justify-start text-left font-normal text-xs h-9")}>
+                  <CalendarIcon className="mr-1 h-3.5 w-3.5" />
+                  {format(dateTo, "MMM d, yyyy")}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar mode="single" selected={dateTo} onSelect={(d) => d && setDateTo(d)} initialFocus className={cn("p-3 pointer-events-auto")} />
+              </PopoverContent>
+            </Popover>
+            <div className="flex gap-1">
+              {[7, 14, 30, 90].map(d => (
+                <Button key={d} variant="ghost" size="sm" className="h-9 text-xs px-2" onClick={() => { setDateFrom(subDays(new Date(), d)); setDateTo(new Date()); }}>
+                  {d}d
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className="bg-secondary/50">
