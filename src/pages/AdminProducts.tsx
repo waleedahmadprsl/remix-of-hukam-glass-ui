@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { logActivity } from "@/lib/activityLogger";
 import { Trash2, Plus, Edit2, X, Search } from "lucide-react";
 import AdminImageOrderer from "@/components/AdminImageOrderer";
+import AdminVariantManager from "@/components/AdminVariantManager";
 
 interface Product {
   id: string;
