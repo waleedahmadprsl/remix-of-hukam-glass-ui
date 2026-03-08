@@ -111,7 +111,6 @@ const BannerCarousel = () => {
                     style={{ transform: activeIndex === i ? 'scale(1.1)' : 'scale(1)' }}
                   />
                 )}
-                />
                 {/* Gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-background/30" />
                 <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-transparent" />
