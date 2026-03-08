@@ -93,6 +93,11 @@ const App = () => {
                       <Route path="/terms" element={<Terms />} />
                       <Route path="/refund-policy" element={<RefundPolicy />} />
                       <Route path="/track-order" element={<TrackOrder />} />
+                      <Route path="/login" element={<Login />} />
+                      <Route path="/signup" element={<Signup />} />
+                      <Route path="/forgot-password" element={<ForgotPassword />} />
+                      <Route path="/reset-password" element={<ResetPassword />} />
+                      <Route path="/account" element={<Account />} />
                       <Route path="*" element={<NotFound />} />
                     </Route>
                   </Routes>
