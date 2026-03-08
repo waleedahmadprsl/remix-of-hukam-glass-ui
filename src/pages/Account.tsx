@@ -158,7 +158,20 @@ const Account: React.FC = () => {
                 <Label>Email</Label>
                 <Input value={session?.user.email || ""} disabled className="opacity-60" />
               </div>
-              <Button onClick={saveProfile} disabled={saving} className="gap-2">
+              <div className="pt-2 border-t border-border/30 mt-4">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Delivery Address</p>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Address</Label>
+                    <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="House #, Street, Area" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>City</Label>
+                    <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="Lahore, Karachi, etc." />
+                  </div>
+                </div>
+              </div>
+              <Button onClick={saveProfile} disabled={saving} className="gap-2 mt-4">
                 <Save className="w-4 h-4" /> {saving ? "Saving..." : "Save Changes"}
               </Button>
             </div>
