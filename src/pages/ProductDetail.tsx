@@ -70,7 +70,7 @@ const ProductDetail = () => {
 
   const fetchProduct = async (pid: string) => {
     try {
-      const { data, error } = await supabase.from("products").select("id, title, price, compare_at_price, images, stock, is_active, sub_category_id, description, video_url").eq("id", pid).single();
+      const { data, error } = await supabase.from("products").select("id, title, price, compare_at_price, images, stock, is_active, sub_category_id, category_id, description, video_url, warranty_type, return_policy, meta_title, meta_description").eq("id", pid).single();
       if (error || !data) { setProduct(null); setLoading(false); return; }
       const p = { ...data, images: Array.isArray(data.images) ? data.images as string[] : [] };
       setProduct(p);
