@@ -204,7 +204,7 @@ const AdminAnalytics: React.FC = () => {
     return Object.entries(counts).map(([code, data]) => ({ code, ...data }));
   }, [filteredOrders]);
 
-  const totalRevenue = orders.reduce((s, o) => s + Number(o.total_amount), 0);
+  const totalRevenue = filteredOrders.reduce((s: number, o: any) => s + Number(o.total_amount), 0);
 
   if (loading) return <AdminLayout activeTab="analytics"><div className="text-center py-12 text-muted-foreground">Loading analytics...</div></AdminLayout>;
 
