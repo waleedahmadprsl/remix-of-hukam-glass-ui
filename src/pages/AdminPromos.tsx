@@ -20,6 +20,7 @@ interface Promo {
   min_purchase?: number;
   usage_limit?: number | null;
   times_used?: number;
+  expires_at?: string | null;
 }
 
 const AdminPromos: React.FC = () => {
