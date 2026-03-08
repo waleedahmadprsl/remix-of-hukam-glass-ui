@@ -1,10 +1,29 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Truck, ShieldCheck, Clock, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import heroVideo from "@/assets/logo-video.mp4";
 
-const slides = [
+interface Slide {
+  headline: string;
+  sub: string;
+  cta: string;
+  href: string;
+  image?: string;
+  video?: string;
+  accent: string;
+}
+
+const slides: Slide[] = [
+  {
+    headline: "HUKAM — Mirpur's #1 Quick Commerce",
+    sub: "Premium tech accessories delivered to your doorstep in 60 minutes.",
+    cta: "Shop Now",
+    href: "#all-products",
+    video: heroVideo,
+    accent: "from-primary/20 to-transparent",
+  },
   {
     headline: "Premium Tech, Delivered in 60 Minutes",
     sub: "Verified accessories at your doorstep — Cash on Delivery.",
@@ -74,13 +93,24 @@ const BannerCarousel = () => {
           {slides.map((slide, i) => (
             <div key={i} className="min-w-0 shrink-0 grow-0 basis-full">
               <div className="relative h-[44vh] sm:h-[52vh] lg:h-[60vh] flex items-center justify-center overflow-hidden">
-                {/* Background image */}
-                <img
-                  src={slide.image}
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-cover scale-105 transition-transform duration-[8000ms]"
-                  style={{ transform: activeIndex === i ? 'scale(1.1)' : 'scale(1)' }}
-                />
+                {/* Background media */}
+                {slide.video ? (
+                  <video
+                    src={slide.video}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                ) : (
+                  <img
+                    src={slide.image}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover scale-105 transition-transform duration-[8000ms]"
+                    style={{ transform: activeIndex === i ? 'scale(1.1)' : 'scale(1)' }}
+                  />
+                )}
                 {/* Gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-background/30" />
                 <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-transparent" />
