@@ -718,7 +718,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      deduct_stock: {
+        Args: { p_product_id: string; p_quantity: number; p_variant_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
