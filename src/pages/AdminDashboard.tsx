@@ -66,10 +66,14 @@ const AdminDashboard: React.FC = () => {
     });
     setChartData(Object.entries(dayMap).map(([date, v]) => ({ date: date.slice(5), revenue: v.revenue, profit: v.profit })));
 
-    // Top products
+    // Top products from order_items table (reliable, not regex)
+    const { data: topItemsData } = await supabase
+      .from("order_items")
+      .select("product_title, quantity");
     const productCounts: Record<string, number> = {};
-    orders.forEach((o: any) => {
-      if (o.items) { o.items.split("\n").forEach((line: string) => { const match = line.match(/Item \d+: (.+?) \(Qty: (\d+)\)/); if (match) productCounts[match[1]] = (productCounts[match[1]] || 0) + Number(match[2]); }); }
+    (topItemsData || []).forEach((item: any) => {
+      const title = item.product_title || "Unknown";
+      productCounts[title] = (productCounts[title] || 0) + Number(item.quantity || 1);
     });
     setTopProducts(Object.entries(productCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([title, count]) => ({ title, count })));
     setRecentOrders(recentRes.data || []);

@@ -28,6 +28,7 @@ import TrackOrder from "./pages/TrackOrder";
 
 // Admin Pages
 import AdminLogin from "./pages/AdminLogin";
+import AdminResetPassword from "./pages/AdminResetPassword";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminProducts from "./pages/AdminProducts";
 import AdminOrders from "./pages/AdminOrders";
@@ -60,6 +61,7 @@ const App = () => {
                   <Routes>
                     {/* Admin Routes */}
                     <Route path="/admin/login" element={<AdminLogin />} />
+                    <Route path="/admin/reset-password" element={<AdminResetPassword />} />
                     <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
                     <Route path="/admin/products" element={<ProtectedRoute><AdminProducts /></ProtectedRoute>} />
                     <Route path="/admin/orders" element={<ProtectedRoute><AdminOrders /></ProtectedRoute>} />

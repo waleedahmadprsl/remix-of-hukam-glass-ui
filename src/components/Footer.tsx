@@ -32,7 +32,7 @@ const Footer = () => {
           </div>
 
           {/* Quick + Legal Links */}
-          <div className="flex gap-12">
+          <div className="flex gap-6 sm:gap-12">
             <div>
               <h4 className="font-semibold text-foreground mb-3 text-xs uppercase tracking-wider">Navigate</h4>
               <ul className="space-y-1.5">

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -49,6 +49,50 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 222 20% 7%;
+    --foreground: 210 20% 93%;
+
+    --card: 222 18% 10%;
+    --card-foreground: 210 20% 93%;
+
+    --popover: 222 18% 10%;
+    --popover-foreground: 210 20% 93%;
+
+    --primary: 213 94% 68%;
+    --primary-foreground: 222 20% 7%;
+
+    --secondary: 213 30% 15%;
+    --secondary-foreground: 210 20% 93%;
+
+    --muted: 222 15% 15%;
+    --muted-foreground: 210 10% 55%;
+
+    --accent: 213 30% 18%;
+    --accent-foreground: 210 20% 93%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 222 15% 20%;
+    --input: 222 15% 20%;
+    --ring: 213 94% 68%;
+
+    --glass-bg: 222 18% 10% / 0.8;
+    --glass-border: 222 15% 20% / 0.5;
+    --glass-shadow: 213 94% 68% / 0.08;
+    --primary-glow: 213 94% 75%;
+
+    --sidebar-background: 222 18% 9%;
+    --sidebar-foreground: 210 20% 85%;
+    --sidebar-primary: 210 20% 93%;
+    --sidebar-primary-foreground: 222 18% 9%;
+    --sidebar-accent: 222 15% 15%;
+    --sidebar-accent-foreground: 210 20% 93%;
+    --sidebar-border: 222 15% 18%;
+    --sidebar-ring: 213 94% 68%;
   }
 }
 

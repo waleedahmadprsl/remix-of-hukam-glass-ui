@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Truck, ShieldCheck, Clock, Zap } from "lucide-react";
@@ -10,7 +10,6 @@ interface Slide {
   sub: string;
   cta: string;
   href: string;
-  image?: string;
   video?: string;
   accent: string;
 }
@@ -25,28 +24,12 @@ const slides: Slide[] = [
     accent: "from-primary/20 to-transparent",
   },
   {
-    headline: "Premium Tech, Delivered in 60 Minutes",
-    sub: "Verified accessories at your doorstep — Cash on Delivery.",
-    cta: "Shop Now",
-    href: "#all-products",
-    video: heroVideo,
-    accent: "from-primary/20 to-transparent",
-  },
-  {
     headline: "Flash Deals — Up to 40% Off",
     sub: "Limited time offers on top-selling gadgets.",
     cta: "View Deals",
     href: "#flash-deals",
     video: heroVideo,
     accent: "from-destructive/20 to-transparent",
-  },
-  {
-    headline: "New Arrivals Every Week",
-    sub: "Earbuds, chargers, power banks & more — always fresh stock.",
-    cta: "Browse Collection",
-    href: "/products",
-    video: heroVideo,
-    accent: "from-accent/30 to-transparent",
   },
 ];
 
@@ -71,7 +54,7 @@ const BannerCarousel = () => {
     if (!emblaApi) return;
     emblaApi.on("select", onSelect);
     onSelect();
-    const interval = setInterval(() => emblaApi.scrollNext(), 5000);
+    const interval = setInterval(() => emblaApi.scrollNext(), 6000);
     return () => {
       clearInterval(interval);
       emblaApi.off("select", onSelect);
@@ -93,29 +76,17 @@ const BannerCarousel = () => {
           {slides.map((slide, i) => (
             <div key={i} className="min-w-0 shrink-0 grow-0 basis-full">
               <div className="relative h-[44vh] sm:h-[52vh] lg:h-[60vh] flex items-center justify-center overflow-hidden">
-                {/* Background media */}
-                {slide.video ? (
-                  <video
-                    src={slide.video}
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                ) : (
-                  <img
-                    src={slide.image}
-                    alt=""
-                    className="absolute inset-0 w-full h-full object-cover scale-105 transition-transform duration-[8000ms]"
-                    style={{ transform: activeIndex === i ? 'scale(1.1)' : 'scale(1)' }}
-                  />
-                )}
-                {/* Gradient overlay */}
+                <video
+                  src={slide.video}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-background/30" />
                 <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-transparent" />
 
-                {/* Content */}
                 <div className="relative z-10 text-left px-6 sm:px-12 lg:px-20 max-w-5xl w-full">
                   <AnimatePresence mode="wait">
                     {activeIndex === i && (
@@ -140,7 +111,7 @@ const BannerCarousel = () => {
                           initial={{ opacity: 0, y: 30 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-                          className="text-3xl sm:text-4xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.1] mb-4 max-w-xl"
+                          className="text-3xl sm:text-4xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.1] mb-4 max-w-xl font-display"
                         >
                           {slide.headline}
                         </motion.h2>
@@ -187,7 +158,7 @@ const BannerCarousel = () => {
         </div>
       </div>
 
-      {/* Nav arrows — minimal */}
+      {/* Nav arrows */}
       <button
         onClick={() => emblaApi?.scrollPrev()}
         className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-background/60 backdrop-blur-md border border-border/30 flex items-center justify-center text-foreground/70 hover:text-foreground hover:bg-background/80 transition-all"
