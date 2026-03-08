@@ -82,7 +82,7 @@ const Footer = () => {
                 </svg>
               </a>
               {/* TikTok */}
-              <a href="#" aria-label="TikTok" className="w-8 h-8 rounded-full flex items-center justify-center bg-background border border-border/30 text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-all">
+              <a href="https://tiktok.com/@hukam.pk" target="_blank" rel="noopener noreferrer" aria-label="TikTok" className="w-8 h-8 rounded-full flex items-center justify-center bg-background border border-border/30 text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-all">
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
                   <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.88-2.88 2.89 2.89 0 012.88-2.88c.28 0 .56.04.82.11v-3.5a6.37 6.37 0 00-.82-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.92a8.27 8.27 0 004.76 1.5V7a4.83 4.83 0 01-1-.31z" />
                 </svg>
