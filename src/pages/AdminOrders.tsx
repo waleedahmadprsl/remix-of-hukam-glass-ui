@@ -16,8 +16,8 @@ interface Order {
 
 interface OrderItem {
   id: string; order_id: string; product_id: string | null; shop_id: string | null;
-  product_title: string; variant_name: string | null; quantity: number;
-  unit_price: number; buying_cost: number;
+  product_title: string; variant_name: string | null; variant_id: string | null;
+  quantity: number; unit_price: number; buying_cost: number;
 }
 
 interface Shop { id: string; name: string; commission_percent: number; }
