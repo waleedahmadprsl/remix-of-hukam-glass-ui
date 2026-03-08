@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { LogOut, LayoutDashboard, Package, Tag, ShoppingCart, Zap, Activity, BarChart3, Users, Menu, X, Store } from "lucide-react";
+import { LogOut, LayoutDashboard, Package, Tag, ShoppingCart, Zap, Activity, BarChart3, Users, Menu, X, Store, Mail } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 // Add noindex meta for admin pages
@@ -35,6 +35,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, activeTab })
     { id: "promos", label: "Promos", icon: Zap, path: "/admin/promos" },
     { id: "customers", label: "Customers", icon: Users, path: "/admin/customers" },
     { id: "analytics", label: "Analytics", icon: BarChart3, path: "/admin/analytics" },
+    { id: "newsletter", label: "Newsletter", icon: Mail, path: "/admin/newsletter" },
     { id: "logs", label: "Logs", icon: Activity, path: "/admin/logs" },
   ];
 

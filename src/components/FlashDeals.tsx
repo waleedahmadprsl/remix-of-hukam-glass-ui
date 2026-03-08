@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { useCart } from "@/context/CartContext";
 import { useMiniCart } from "@/context/MiniCartContext";
 import { toast } from "@/hooks/use-toast";
+import { useProductRatings, StarRating } from "@/hooks/useProductRatings";
 
 interface Product {
   id: string;
@@ -22,6 +23,7 @@ const FlashDeals = () => {
   const { openCart } = useMiniCart();
   const [products, setProducts] = useState<Product[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const ratings = useProductRatings();
 
   useEffect(() => {
     supabase
@@ -80,6 +82,7 @@ const FlashDeals = () => {
         <div ref={scrollRef} className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-hide -mx-1 px-1">
           {products.map((p, i) => {
             const discount = p.compare_at_price ? Math.round((1 - p.price / p.compare_at_price) * 100) : 0;
+            const r = ratings[p.id];
             return (
               <motion.div
                 key={p.id}
@@ -102,6 +105,7 @@ const FlashDeals = () => {
                 </div>
                 <div className="p-3">
                   <h3 className="font-medium text-foreground text-sm truncate">{p.title}</h3>
+                  {r && <StarRating avg={r.avg} count={r.count} size="xs" />}
                   <div className="flex items-center gap-2 mt-1.5">
                     <span className="text-primary font-bold text-sm">₨ {p.price.toLocaleString()}</span>
                     {p.compare_at_price && (
