@@ -93,12 +93,24 @@ const BannerCarousel = () => {
           {slides.map((slide, i) => (
             <div key={i} className="min-w-0 shrink-0 grow-0 basis-full">
               <div className="relative h-[44vh] sm:h-[52vh] lg:h-[60vh] flex items-center justify-center overflow-hidden">
-                {/* Background image */}
-                <img
-                  src={slide.image}
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-cover scale-105 transition-transform duration-[8000ms]"
-                  style={{ transform: activeIndex === i ? 'scale(1.1)' : 'scale(1)' }}
+                {/* Background media */}
+                {slide.video ? (
+                  <video
+                    src={slide.video}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                ) : (
+                  <img
+                    src={slide.image}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover scale-105 transition-transform duration-[8000ms]"
+                    style={{ transform: activeIndex === i ? 'scale(1.1)' : 'scale(1)' }}
+                  />
+                )}
                 />
                 {/* Gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-background/30" />
