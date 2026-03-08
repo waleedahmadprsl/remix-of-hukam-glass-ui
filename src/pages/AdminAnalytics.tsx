@@ -184,12 +184,12 @@ const AdminAnalytics: React.FC = () => {
   const revenueByShop = React.useMemo(() => {
     const shopMap = new Map(shops.map(s => [s.id, s.name]));
     const rev: Record<string, number> = {};
-    orderItems.forEach(oi => {
+    filteredOrderItems.forEach(oi => {
       const shopName = oi.shop_id ? shopMap.get(oi.shop_id) || "Direct" : "Direct";
       rev[shopName] = (rev[shopName] || 0) + Number(oi.unit_price || 0) * Number(oi.quantity || 1);
     });
     return Object.entries(rev).sort((a, b) => b[1] - a[1]).map(([name, value]) => ({ name, value }));
-  }, [orderItems, shops]);
+  }, [filteredOrderItems, shops]);
 
   // Promo code usage
   const promoUsage = React.useMemo(() => {
