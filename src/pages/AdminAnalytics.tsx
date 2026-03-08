@@ -172,13 +172,13 @@ const AdminAnalytics: React.FC = () => {
     const catMap = new Map(categories.map(c => [c.id, c.name]));
     const prodCatMap = new Map(products.map(p => [p.id, p.category_id]));
     const rev: Record<string, number> = {};
-    orderItems.forEach(oi => {
+    filteredOrderItems.forEach(oi => {
       const catId = prodCatMap.get(oi.product_id);
       const catName = catId ? catMap.get(catId) || "Uncategorized" : "Uncategorized";
       rev[catName] = (rev[catName] || 0) + Number(oi.unit_price || 0) * Number(oi.quantity || 1);
     });
     return Object.entries(rev).sort((a, b) => b[1] - a[1]).map(([name, value]) => ({ name, value }));
-  }, [orderItems, products, categories]);
+  }, [filteredOrderItems, products, categories]);
 
   // Revenue by shop
   const revenueByShop = React.useMemo(() => {
