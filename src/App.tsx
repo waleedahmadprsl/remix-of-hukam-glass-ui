@@ -36,6 +36,7 @@ import AdminPromos from "./pages/AdminPromos";
 import AdminActivityLogs from "./pages/AdminActivityLogs";
 import AdminAnalytics from "./pages/AdminAnalytics";
 import AdminCustomers from "./pages/AdminCustomers";
+import AdminShops from "./pages/AdminShops";
 
 const queryClient = new QueryClient();
 
