@@ -156,7 +156,7 @@ const AdminAnalytics: React.FC = () => {
   }, [filteredOrders]);
 
   // Average order value
-  const avgOrderValue = orders.length > 0 ? Math.round(orders.reduce((s, o) => s + Number(o.total_amount), 0) / orders.length) : 0;
+  const avgOrderValue = filteredOrders.length > 0 ? Math.round(filteredOrders.reduce((s: number, o: any) => s + Number(o.total_amount), 0) / filteredOrders.length) : 0;
 
   // Repeat customers
   const repeatCustomers = React.useMemo(() => {
