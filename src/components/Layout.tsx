@@ -18,6 +18,7 @@ const Layout = () => {
         <Outlet />
       </main>
       <Footer />
+      <FloatingWhatsAppButton />
     </div>
   );
 };
