@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ShoppingBag, ArrowRight, Zap } from "lucide-react";
+import { ShoppingBag, ArrowRight, Zap, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/context/CartContext";
 import { useMiniCart } from "@/context/MiniCartContext";
@@ -21,6 +21,7 @@ const FlashDeals = () => {
   const { addItem } = useCart();
   const { openCart } = useMiniCart();
   const [products, setProducts] = useState<Product[]>([]);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     supabase
@@ -45,6 +46,12 @@ const FlashDeals = () => {
     openCart();
   };
 
+  const scroll = (dir: "left" | "right") => {
+    if (!scrollRef.current) return;
+    const amount = scrollRef.current.clientWidth * 0.7;
+    scrollRef.current.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
+  };
+
   if (!products.length) return null;
 
   return (
@@ -57,12 +64,20 @@ const FlashDeals = () => {
             </div>
             <h2 className="text-lg sm:text-xl font-bold text-foreground">Flash Deals</h2>
           </div>
-          <button onClick={() => navigate("/products")} className="text-xs text-muted-foreground font-medium flex items-center gap-1 hover:text-primary transition-colors">
-            View All <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => scroll("left")} className="w-8 h-8 rounded-full bg-muted/60 border border-border/30 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all" aria-label="Scroll left">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button onClick={() => scroll("right")} className="w-8 h-8 rounded-full bg-muted/60 border border-border/30 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all" aria-label="Scroll right">
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            <button onClick={() => navigate("/products")} className="text-xs text-muted-foreground font-medium flex items-center gap-1 hover:text-primary transition-colors ml-1">
+              View All <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
-        <div className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-hide -mx-1 px-1">
+        <div ref={scrollRef} className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-hide -mx-1 px-1">
           {products.map((p, i) => {
             const discount = p.compare_at_price ? Math.round((1 - p.price / p.compare_at_price) * 100) : 0;
             return (
@@ -77,14 +92,12 @@ const FlashDeals = () => {
               >
                 <div className="relative h-36 sm:h-44 overflow-hidden bg-muted/30">
                   {p.images[0] ? (
-                    <img src={p.images[0]} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={p.images[0]} alt={p.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">No Image</div>
                   )}
                   {discount > 0 && (
-                    <span className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-md">
-                      -{discount}%
-                    </span>
+                    <span className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-md">-{discount}%</span>
                   )}
                 </div>
                 <div className="p-3">
