@@ -84,15 +84,15 @@ const AdminAnalytics: React.FC = () => {
     return { totalViews, uniqueSessions, todayViews, weekViews, weekGrowth };
   }, [filteredPageViews]);
 
-  // Daily visitors (14 days)
+  // Daily visitors within date range
   const dailyVisitors = React.useMemo(() => {
     const days: Record<string, { views: number; sessions: Set<string> }> = {};
-    const now = new Date();
-    for (let i = 13; i >= 0; i--) {
-      const d = new Date(now); d.setDate(d.getDate() - i);
+    const diffDays = Math.ceil((dateTo.getTime() - dateFrom.getTime()) / (1000 * 60 * 60 * 24));
+    for (let i = diffDays; i >= 0; i--) {
+      const d = new Date(dateTo); d.setDate(d.getDate() - i);
       days[d.toISOString().slice(0, 10)] = { views: 0, sessions: new Set() };
     }
-    pageViews.forEach(pv => {
+    filteredPageViews.forEach(pv => {
       const day = pv.created_at.slice(0, 10);
       if (days[day]) { days[day].views++; days[day].sessions.add(pv.session_id); }
     });
@@ -101,7 +101,7 @@ const AdminAnalytics: React.FC = () => {
       views: d.views,
       visitors: d.sessions.size,
     }));
-  }, [pageViews]);
+  }, [filteredPageViews, dateFrom, dateTo]);
 
   // Popular pages
   const popularPages = React.useMemo(() => {
