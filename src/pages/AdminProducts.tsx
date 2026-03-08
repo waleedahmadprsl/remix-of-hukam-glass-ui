@@ -44,6 +44,9 @@ const AdminProducts: React.FC = () => {
     title: "", description: "", price: 0, stock: 0, category_id: "", video_url: "",
     key_features: "", specs: "", status: "active", tags: [] as string[],
     shop_id: "", buying_cost: 0, compare_at_price: 0,
+    weight_kg: 0, dimensions_l: 0, dimensions_w: 0, dimensions_h: 0,
+    warranty_type: "", return_policy: "7-day return",
+    meta_title: "", meta_description: "", search_keywords: [] as string[],
   });
   const [uploadedUrls, setUploadedUrls] = React.useState<string[]>([]);
   const [tagInput, setTagInput] = React.useState("");
