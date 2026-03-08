@@ -5,6 +5,7 @@ import { CheckCircle2, Zap, Shield } from "lucide-react";
 import logoVideo from "@/assets/logo-video.mp4";
 
 const About = () => {
+  const navigate = useNavigate();
   const milestones = [
     { icon: Zap, title: "60-Minute Delivery", desc: "The fastest in Mirpur." },
     { icon: Shield, title: "100% Verified", desc: "Check before you pay at your doorstep." },
