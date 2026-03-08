@@ -93,9 +93,11 @@ const AdminProducts: React.FC = () => {
   };
 
   const resetForm = () => {
-    setForm({ title: "", description: "", price: 0, stock: 0, category_id: "", video_url: "", key_features: "", specs: "", status: "active", tags: [], shop_id: "", buying_cost: 0, compare_at_price: 0 });
-    setUploadedUrls([]); setEditingId(null); setShowForm(false); setTagInput("");
+    setForm({ title: "", description: "", price: 0, stock: 0, category_id: "", video_url: "", key_features: "", specs: "", status: "active", tags: [], shop_id: "", buying_cost: 0, compare_at_price: 0, weight_kg: 0, dimensions_l: 0, dimensions_w: 0, dimensions_h: 0, warranty_type: "", return_policy: "7-day return", meta_title: "", meta_description: "", search_keywords: [] });
+    setUploadedUrls([]); setEditingId(null); setShowForm(false); setTagInput(""); setSeoKeywordInput("");
   };
+  const [seoKeywordInput, setSeoKeywordInput] = React.useState("");
+  const addSeoKeyword = () => { if (seoKeywordInput.trim() && !form.search_keywords.includes(seoKeywordInput.trim())) { setForm({ ...form, search_keywords: [...form.search_keywords, seoKeywordInput.trim()] }); setSeoKeywordInput(""); } };
 
   const parseDescription = (desc: string) => { const parts = desc.split("|||"); return { description: parts[0] || "", key_features: parts[1] || "", specs: parts[2] || "" }; };
   const buildDescription = () => { if (!form.key_features && !form.specs) return form.description; return [form.description, form.key_features, form.specs].join("|||"); };
