@@ -238,23 +238,31 @@ const ProductDetail = () => {
             {/* Price & Stock */}
             <div className="glass-card p-6 rounded-2xl space-y-3">
               <div className="flex items-end gap-3 flex-wrap">
-                <span className="text-4xl font-extrabold text-primary">₨ {product.price.toLocaleString()}</span>
-                {product.compare_at_price && product.compare_at_price > product.price && (
+                <span className="text-4xl font-extrabold text-primary">₨ {activePrice.toLocaleString()}</span>
+                {product.compare_at_price && product.compare_at_price > activePrice && (
                   <>
                     <span className="text-lg text-muted-foreground line-through mb-1">₨ {product.compare_at_price.toLocaleString()}</span>
                     <span className="text-sm font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full mb-1">
-                      -{Math.round((1 - product.price / product.compare_at_price) * 100)}% OFF
+                      -{Math.round((1 - activePrice / product.compare_at_price) * 100)}% OFF
                     </span>
                   </>
                 )}
                 <span className="text-sm text-muted-foreground mb-1">incl. delivery</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${product.stock > 5 ? "bg-green-500" : product.stock > 0 ? "bg-orange-500" : "bg-destructive"}`} />
+                <span className={`w-2 h-2 rounded-full ${activeStock > 5 ? "bg-primary" : activeStock > 0 ? "bg-destructive/70" : "bg-destructive"}`} />
                 <span className={`text-sm font-medium ${stockColor}`}>{stockStatus}</span>
-                {product.stock > 0 && <span className="text-xs text-muted-foreground">({product.stock} units)</span>}
+                {activeStock > 0 && <span className="text-xs text-muted-foreground">({activeStock} units)</span>}
               </div>
             </div>
+
+            {/* Variant Picker */}
+            <VariantPicker
+              productId={product.id}
+              basePrice={product.price}
+              baseStock={product.stock}
+              onVariantSelect={(v) => setSelectedVariant(v as any)}
+            />
 
             {/* Description */}
             {description && <p className="text-muted-foreground leading-relaxed">{description}</p>}
