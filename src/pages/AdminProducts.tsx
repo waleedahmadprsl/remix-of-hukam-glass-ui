@@ -112,6 +112,11 @@ const AdminProducts: React.FC = () => {
       status: form.status, tags: form.tags,
       shop_id: form.shop_id || null, buying_cost: Number(form.buying_cost), compare_at_price: Number(form.compare_at_price),
       auto_sku: editingId ? undefined : autoSku,
+      weight_kg: Number(form.weight_kg) || 0, dimensions_l: Number(form.dimensions_l) || 0,
+      dimensions_w: Number(form.dimensions_w) || 0, dimensions_h: Number(form.dimensions_h) || 0,
+      warranty_type: form.warranty_type || "", return_policy: form.return_policy || "",
+      meta_title: form.meta_title || "", meta_description: form.meta_description || "",
+      search_keywords: form.search_keywords,
     };
     if (editingId && payload.auto_sku === undefined) delete payload.auto_sku;
     try {
