@@ -306,8 +306,17 @@ const ProductDetail = () => {
           </motion.div>
         </div>
 
+        {/* Frequently Bought Together */}
+        <FrequentlyBoughtTogether productId={product.id} categoryId={product.category_id || product.sub_category_id} />
+
         {/* Customer Reviews */}
         <CustomerReviews productId={product.id} />
+
+        {/* Customer Q&A */}
+        <ProductQA productId={product.id} />
+
+        {/* Recently Viewed */}
+        <RecentlyViewed excludeId={product.id} />
 
         {/* Related Products */}
         {related.length > 0 && (

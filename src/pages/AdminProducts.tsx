@@ -262,6 +262,73 @@ const AdminProducts: React.FC = () => {
 
             <AdminImageOrderer images={uploadedUrls} onChange={setUploadedUrls} videoUrl={form.video_url} onVideoChange={(url) => setForm((f) => ({ ...f, video_url: url }))} />
 
+            {/* Logistics Section */}
+            <div className="p-4 bg-secondary/30 rounded-xl space-y-4">
+              <h3 className="text-sm font-bold text-foreground">📦 Logistics (for Courier APIs)</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div><label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Weight (kg)</label><input type="number" step="0.1" value={form.weight_kg} onChange={(e) => setForm({ ...form, weight_kg: Number(e.target.value) })} className="w-full px-4 py-3 bg-background border border-border rounded-lg" /></div>
+                <div><label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Length (cm)</label><input type="number" value={form.dimensions_l} onChange={(e) => setForm({ ...form, dimensions_l: Number(e.target.value) })} className="w-full px-4 py-3 bg-background border border-border rounded-lg" /></div>
+                <div><label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Width (cm)</label><input type="number" value={form.dimensions_w} onChange={(e) => setForm({ ...form, dimensions_w: Number(e.target.value) })} className="w-full px-4 py-3 bg-background border border-border rounded-lg" /></div>
+                <div><label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Height (cm)</label><input type="number" value={form.dimensions_h} onChange={(e) => setForm({ ...form, dimensions_h: Number(e.target.value) })} className="w-full px-4 py-3 bg-background border border-border rounded-lg" /></div>
+              </div>
+            </div>
+
+            {/* Trust Signals */}
+            <div className="p-4 bg-secondary/30 rounded-xl space-y-4">
+              <h3 className="text-sm font-bold text-foreground">🛡️ Trust Signals</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Warranty Type</label>
+                  <select value={form.warranty_type} onChange={(e) => setForm({ ...form, warranty_type: e.target.value })} className="w-full px-4 py-3 bg-background border border-border rounded-lg">
+                    <option value="">No Warranty</option>
+                    <option value="Brand Warranty">Brand Warranty</option>
+                    <option value="Seller Warranty">Seller Warranty</option>
+                    <option value="Manufacturer Warranty">Manufacturer Warranty</option>
+                    <option value="Limited Warranty">Limited Warranty</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Return Policy</label>
+                  <select value={form.return_policy} onChange={(e) => setForm({ ...form, return_policy: e.target.value })} className="w-full px-4 py-3 bg-background border border-border rounded-lg">
+                    <option value="7-day return">7-Day Return</option>
+                    <option value="14-day return">14-Day Return</option>
+                    <option value="30-day return">30-Day Return</option>
+                    <option value="No returns">No Returns</option>
+                    <option value="Exchange only">Exchange Only</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* SEO Engine */}
+            <div className="p-4 bg-secondary/30 rounded-xl space-y-4">
+              <h3 className="text-sm font-bold text-foreground">🔍 SEO Engine</h3>
+              <div><label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Meta Title</label><input value={form.meta_title} onChange={(e) => setForm({ ...form, meta_title: e.target.value })} placeholder="SEO title (max 60 chars)" maxLength={60} className="w-full px-4 py-3 bg-background border border-border rounded-lg" /></div>
+              <div><label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Meta Description</label><textarea value={form.meta_description} onChange={(e) => setForm({ ...form, meta_description: e.target.value })} placeholder="SEO description (max 160 chars)" maxLength={160} rows={2} className="w-full px-4 py-3 bg-background border border-border rounded-lg" /></div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Search Keywords</label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {form.search_keywords.map((k) => (
+                    <span key={k} className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
+                      {k} <button type="button" onClick={() => setForm({ ...form, search_keywords: form.search_keywords.filter((x) => x !== k) })}><X className="w-3 h-3" /></button>
+                    </span>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input value={seoKeywordInput} onChange={(e) => setSeoKeywordInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addSeoKeyword())} placeholder="Add keyword..." className="flex-1 px-3 py-2 bg-background border border-border rounded-lg text-sm" />
+                  <button type="button" onClick={addSeoKeyword} className="px-3 py-2 bg-secondary text-foreground rounded-lg text-sm">Add</button>
+                </div>
+              </div>
+              {form.meta_title && (
+                <div className="p-3 bg-background rounded-lg border border-border">
+                  <p className="text-xs text-muted-foreground mb-1">Google Preview:</p>
+                  <p className="text-sm text-blue-600 font-medium truncate">{form.meta_title}</p>
+                  <p className="text-xs text-green-700 truncate">hukam.pk/product/...</p>
+                  <p className="text-xs text-muted-foreground line-clamp-2">{form.meta_description || form.description.slice(0, 160)}</p>
+                </div>
+              )}
+            </div>
+
             <div className="flex gap-4">
               <button type="submit" className="flex-1 bg-primary text-primary-foreground py-3 rounded-lg font-semibold">{editingId ? "Update" : "Add Product"}</button>
               <button type="button" onClick={resetForm} className="flex-1 bg-secondary text-foreground py-3 rounded-lg font-semibold">Cancel</button>
