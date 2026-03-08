@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useLocation, Outlet } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import FloatingWhatsAppButton from "@/components/FloatingWhatsAppButton";
 
 const Layout = () => {
   const location = useLocation();
