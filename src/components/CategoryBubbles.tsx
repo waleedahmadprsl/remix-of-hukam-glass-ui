@@ -34,23 +34,26 @@ const CategoryBubbles = () => {
   if (!categories.length) return null;
 
   return (
-    <section className="py-6 sm:py-8">
+    <section className="py-5 sm:py-6">
       <div className="container mx-auto px-4">
-        <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto pb-2 scrollbar-hide justify-start sm:justify-center">
+        <div className="flex items-center gap-3 sm:gap-5 overflow-x-auto pb-2 scrollbar-hide justify-start sm:justify-center">
           {categories.map((cat, i) => {
             const Icon = fallbackIcons[i % fallbackIcons.length];
             return (
               <motion.button
                 key={cat.id}
-                whileHover={{ scale: 1.08, y: -4 }}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.06, duration: 0.4 }}
+                whileHover={{ y: -4 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => navigate(`/products?category=${cat.id}`)}
-                className="flex flex-col items-center gap-2 min-w-[72px] group"
+                className="flex flex-col items-center gap-2 min-w-[68px] group"
               >
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-secondary/60 backdrop-blur-md border border-border/40 flex items-center justify-center group-hover:border-primary/50 group-hover:bg-primary/10 transition-all duration-300">
-                  <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-secondary/50 border border-border/30 flex items-center justify-center group-hover:border-primary/40 group-hover:bg-primary/8 group-hover:shadow-md group-hover:shadow-primary/8 transition-all duration-300">
+                  <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground group-hover:text-primary transition-colors duration-300" />
                 </div>
-                <span className="text-[11px] sm:text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors text-center leading-tight">
+                <span className="text-[10px] sm:text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors text-center leading-tight">
                   {cat.name}
                 </span>
               </motion.button>
