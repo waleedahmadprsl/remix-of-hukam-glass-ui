@@ -19,81 +19,78 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="bg-foreground/[0.03] border-t border-border/30 pt-16 pb-8">
+    <footer className="bg-muted/40 border-t border-border/20 pt-10 pb-6">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-8">
           {/* Brand */}
-          <div className="flex flex-col gap-3">
-            <img src={logoIcon} alt="HUKAM" className="h-10 w-fit" />
-            <p className="text-sm text-muted-foreground font-medium">
+          <div className="flex flex-col gap-2">
+            <img src={logoIcon} alt="HUKAM" className="h-8 w-fit" />
+            <p className="text-xs text-muted-foreground leading-relaxed">
               Order Nahi, HUK<span className="text-brand-blue">A</span>M Kijiye.
             </p>
-            <div className="text-sm text-muted-foreground space-y-1">
-              <p>contact@hukam.pk</p>
-              <p>hukam.pk</p>
+            <p className="text-xs text-muted-foreground">contact@hukam.pk</p>
+          </div>
+
+          {/* Quick + Legal Links */}
+          <div className="flex gap-12">
+            <div>
+              <h4 className="font-semibold text-foreground mb-3 text-xs uppercase tracking-wider">Navigate</h4>
+              <ul className="space-y-1.5">
+                {quickLinks.map((link) => (
+                  <li key={link.label}>
+                    <button
+                      onClick={() => navigate(link.path)}
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer text-left"
+                    >
+                      {link.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold text-foreground mb-3 text-xs uppercase tracking-wider">Legal</h4>
+              <ul className="space-y-1.5">
+                {legalLinks.map((link) => (
+                  <li key={link.label}>
+                    <button
+                      onClick={() => navigate(link.path)}
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer text-left"
+                    >
+                      {link.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
 
-          {/* Quick Links */}
+          {/* Socials */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4 text-sm uppercase tracking-wider">Quick Links</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              {quickLinks.map((link) => (
-                <li key={link.label}>
-                  <button
-                    onClick={() => navigate(link.path)}
-                    className="hover:text-foreground transition-colors cursor-pointer text-left"
-                  >
-                    {link.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Legal */}
-          <div>
-            <h4 className="font-semibold text-foreground mb-4 text-sm uppercase tracking-wider">Legal & Trust</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              {legalLinks.map((link) => (
-                <li key={link.label}>
-                  <button
-                    onClick={() => navigate(link.path)}
-                    className="hover:text-foreground transition-colors underline-offset-2 hover:underline cursor-pointer text-left"
-                  >
-                    {link.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-        {/* Socials */}
-        <div>
-          <h4 className="font-semibold text-foreground mb-4 text-sm uppercase tracking-wider">Follow Us</h4>
-          <div className="flex items-center gap-3">
-            <a href="#" aria-label="TikTok" className="w-10 h-10 rounded-full flex items-center justify-center bg-background border border-border/50 text-muted-foreground hover:text-brand-blue hover:border-primary/40 transition-all duration-300">
-              <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.88-2.88 2.89 2.89 0 012.88-2.88c.28 0 .56.04.82.11v-3.5a6.37 6.37 0 00-.82-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.92a8.27 8.27 0 004.76 1.5V7a4.83 4.83 0 01-1-.31z" />
-              </svg>
-            </a>
-            <a href="#" aria-label="Instagram" className="w-10 h-10 rounded-full flex items-center justify-center bg-background border border-border/50 text-muted-foreground hover:text-brand-blue hover:border-primary/40 transition-all duration-300">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                <rect x="2" y="2" width="20" height="20" rx="5" /><circle cx="12" cy="12" r="5" /><circle cx="17.5" cy="6.5" r="1.5" />
-              </svg>
-            </a>
+            <h4 className="font-semibold text-foreground mb-3 text-xs uppercase tracking-wider">Follow Us</h4>
+            <div className="flex items-center gap-2">
+              <a href="#" aria-label="TikTok" className="w-8 h-8 rounded-full flex items-center justify-center bg-background border border-border/30 text-muted-foreground hover:text-primary hover:border-primary/40 transition-all">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                  <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.88-2.88 2.89 2.89 0 012.88-2.88c.28 0 .56.04.82.11v-3.5a6.37 6.37 0 00-.82-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.92a8.27 8.27 0 004.76 1.5V7a4.83 4.83 0 01-1-.31z" />
+                </svg>
+              </a>
+              <a href="#" aria-label="Instagram" className="w-8 h-8 rounded-full flex items-center justify-center bg-background border border-border/30 text-muted-foreground hover:text-primary hover:border-primary/40 transition-all">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                  <rect x="2" y="2" width="20" height="20" rx="5" /><circle cx="12" cy="12" r="5" /><circle cx="17.5" cy="6.5" r="1.5" />
+                </svg>
+              </a>
+            </div>
           </div>
         </div>
-        </div>
 
-      <div className="border-t border-border/30 pt-6">
-        <p className="text-center text-xs text-muted-foreground">
-          © 2026 HUK<span className="text-brand-blue">A</span>M. All rights reserved.
-        </p>
+        <div className="border-t border-border/20 pt-4">
+          <p className="text-center text-[11px] text-muted-foreground">
+            © 2026 HUK<span className="text-brand-blue">A</span>M · All rights reserved
+          </p>
+        </div>
       </div>
-    </div>
-  </footer>
-);
+    </footer>
+  );
 };
 
 export default Footer;
