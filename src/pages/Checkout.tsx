@@ -2,7 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { ShoppingCart, FileText, CheckCircle2, Truck, ArrowRight } from "lucide-react";
 
@@ -260,8 +260,13 @@ const Checkout: React.FC = () => {
                       setDiscountedTotal(null);
                       toast({ title: "Promo code invalid", description: "Please enter a valid active code." });
                     } else {
-                      const discount = subtotal() * ((data.discount_percentage || 0) / 100);
-                      const newTotal = subtotal() - discount;
+                      let discount = 0;
+                      if (data.discount_type === "percentage") {
+                        discount = subtotal() * ((data.discount_percentage || 0) / 100);
+                      } else {
+                        discount = data.discount_amount || 0;
+                      }
+                      const newTotal = Math.max(0, subtotal() - discount);
                       setDiscountedTotal(newTotal);
                       setPromoStatus("applied");
                       toast({ title: "Promo applied", description: `You saved Rs.${discount.toFixed(0)}!` });
@@ -293,7 +298,7 @@ const Checkout: React.FC = () => {
               whileTap={{ scale: 0.98 }}
               className="hidden sm:block w-full bg-primary text-primary-foreground py-4 rounded-2xl font-bold text-lg shadow-lg shadow-primary/25 transition-all hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {result === "Sending...." ? "Processing..." : "HUKAM Kijiye (Place Order) ⚡"}
+              {result === "Sending...." ? "Processing..." : "Place Order ⚡"}
             </motion.button>
           </motion.form>
 
@@ -373,7 +378,7 @@ const Checkout: React.FC = () => {
             whileTap={{ scale: 0.98 }}
             className="w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-bold text-base shadow-lg shadow-primary/25 disabled:opacity-50"
           >
-            {result === "Sending...." ? "Processing..." : "HUKAM Kijiye ⚡"}
+            {result === "Sending...." ? "Processing..." : "Place Order ⚡"}
           </motion.button>
         </div>
       )}

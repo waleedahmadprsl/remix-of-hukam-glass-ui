@@ -5,7 +5,7 @@ import { Check, Zap, Clock, Share2, ChevronLeft, ShoppingCart, Star, Shield, Tru
 import { useCart } from "@/context/CartContext";
 import { useMiniCart } from "@/context/MiniCartContext";
 import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import CustomerReviews from "@/components/CustomerReviews";
 import FrequentlyBoughtTogether from "@/components/FrequentlyBoughtTogether";
 import ProductQA from "@/components/ProductQA";
@@ -87,6 +87,27 @@ const ProductDetail = () => {
       else document.title = `${p.title} | HUKAM`;
       const metaDesc = document.querySelector('meta[name="description"]');
       if (metaDesc) metaDesc.setAttribute("content", p.meta_description || p.description?.slice(0, 160) || "");
+      // JSON-LD Product structured data
+      const jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": p.title,
+        "description": p.description?.slice(0, 300) || "",
+        "image": p.images[0] || "",
+        "offers": {
+          "@type": "Offer",
+          "price": p.price,
+          "priceCurrency": "PKR",
+          "availability": p.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+        },
+      };
+      const existing = document.querySelector('script[data-product-jsonld]');
+      if (existing) existing.remove();
+      const script = document.createElement("script");
+      script.type = "application/ld+json";
+      script.setAttribute("data-product-jsonld", "true");
+      script.text = JSON.stringify(jsonLd);
+      document.head.appendChild(script);
       // Fetch related
       const { data: rel } = await supabase
         .from("products")
@@ -137,7 +158,7 @@ const ProductDetail = () => {
 
   const { description, features, specs } = parseDescription(product.description || "");
   const stockStatus = product.stock > 20 ? "In Stock" : product.stock > 5 ? "Low Stock" : product.stock > 0 ? "Only Few Left" : "Out of Stock";
-  const stockColor = product.stock > 20 ? "text-green-600" : product.stock > 5 ? "text-yellow-600" : product.stock > 0 ? "text-orange-600" : "text-destructive";
+  const stockColor = product.stock > 20 ? "text-primary" : product.stock > 5 ? "text-accent-foreground" : product.stock > 0 ? "text-destructive" : "text-destructive";
 
   const handleAddToCart = () => {
     addItem({ id: product.id, name: product.title, price: `₨ ${product.price.toLocaleString()}`, image: product.images[0] || "", quantity: qty });

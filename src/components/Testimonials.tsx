@@ -2,7 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Star, Quote, ChevronLeft, ChevronRight } from "lucide-react";
 import logoVideo from "@/assets/logo-video.mp4";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Review {
   id: string;
@@ -115,7 +115,7 @@ const Testimonials = () => {
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-foreground">{t.reviewer_name}</p>
-                  <p className="text-[10px] text-muted-foreground">Mirpur</p>
+                  <p className="text-[10px] text-muted-foreground">Verified Buyer</p>
                 </div>
               </div>
             </motion.div>

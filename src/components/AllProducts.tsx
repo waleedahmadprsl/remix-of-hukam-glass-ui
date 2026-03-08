@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingBag, Grid3X3, ChevronLeft, ChevronRight } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/context/CartContext";
 import { useMiniCart } from "@/context/MiniCartContext";
 import { toast } from "@/hooks/use-toast";
@@ -125,7 +125,7 @@ const AllProducts = () => {
                       <p className="text-primary font-bold text-sm">₨ {product.price.toLocaleString()}</p>
                       {hasDiscount && <p className="text-muted-foreground text-[11px] line-through">₨ {product.compare_at_price!.toLocaleString()}</p>}
                     </div>
-                    <button onClick={(e) => handleAdd(e, product)} className="mt-2.5 w-full flex items-center justify-center gap-1.5 bg-foreground/5 text-foreground text-[11px] font-medium py-2 rounded-lg hover:bg-primary hover:text-primary-foreground transition-all duration-200 sm:opacity-0 sm:group-hover:opacity-100">
+                    <button onClick={(e) => handleAdd(e, product)} className="mt-2.5 w-full flex items-center justify-center gap-1.5 bg-foreground/5 text-foreground text-[11px] font-medium py-2 rounded-lg hover:bg-primary hover:text-primary-foreground transition-all duration-200">
                       <ShoppingBag className="w-3 h-3" /> Add to Cart
                     </button>
                   </div>

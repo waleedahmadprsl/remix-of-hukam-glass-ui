@@ -2,12 +2,13 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ShoppingCart, Search, Heart } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 import { useCart } from "@/context/CartContext";
 import { useMiniCart } from "@/context/MiniCartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import WishlistDrawer from "@/components/WishlistDrawer";
 import hukamName from "@/assets/hukam-name.png";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NavLink {
   label: string;
@@ -66,7 +67,10 @@ const Header = () => {
             ))}
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            {/* Theme Toggle */}
+            <ThemeToggle />
+
             {/* Search */}
             <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
               <Search className="w-5 h-5" />
