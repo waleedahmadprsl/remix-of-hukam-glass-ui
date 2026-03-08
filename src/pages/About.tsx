@@ -82,7 +82,7 @@ const About = () => {
             <div>
               <h2 className="text-3xl font-bold text-foreground mb-4">The Problem</h2>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Living in the heart of Mirpur, our founder—known simply as Hukam—noticed a persistent frustration. If you needed a phone charger, a USB cable, or high-quality earbuds, you had to wait 2-7 days for a delivery from Islamabad or Lahore. This wasn't acceptable.
+                Living in the heart of Mirpur, our founder—known simply as Hukam—noticed a persistent frustration. Whether you needed the latest fashion, quality electronics, or everyday home essentials, you had to wait 2-7 days for a delivery from Islamabad or Lahore. This wasn't acceptable.
               </p>
             </div>
 
