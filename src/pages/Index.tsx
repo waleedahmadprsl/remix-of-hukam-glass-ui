@@ -15,7 +15,7 @@ const Index = () => {
       "name": "HUKAM",
       "url": "https://hukam.pk",
       "logo": "https://hukam.pk/favicon.png",
-      "description": "Mirpur's #1 Quick Commerce — Premium tech accessories delivered in 60 minutes.",
+      "description": "Your one-stop marketplace for fashion, electronics, home & more — delivered fast to your doorstep.",
       "address": { "@type": "PostalAddress", "addressLocality": "Mirpur", "addressCountry": "PK" },
       "contactPoint": { "@type": "ContactPoint", "telephone": "+92-327-778-6498", "contactType": "customer service" }
     };

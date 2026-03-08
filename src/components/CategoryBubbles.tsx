@@ -3,15 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import {
-  Headphones,
-  BatteryCharging,
-  Cable,
-  Smartphone,
-  Monitor,
+  Laptop,
+  ShoppingBag,
+  Shirt,
+  Home,
+  Heart,
   Package,
 } from "lucide-react";
 
-const fallbackIcons = [Headphones, BatteryCharging, Cable, Smartphone, Monitor, Package];
+const fallbackIcons = [Laptop, ShoppingBag, Shirt, Home, Heart, Package];
 
 interface Cat {
   id: string;

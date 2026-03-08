@@ -12,10 +12,10 @@ interface Review {
 }
 
 const fallbackTestimonials = [
-  { id: "f1", reviewer_name: "Ali M.", comment: "Got my iPhone charger in 45 minutes, amazing service!", rating: 5 },
-  { id: "f2", reviewer_name: "Sara K.", comment: "Best earbuds I've bought. Delivered right to my door, no hassle.", rating: 5 },
+  { id: "f1", reviewer_name: "Ali M.", comment: "Ordered a jacket and it arrived in under an hour. Incredible service!", rating: 5 },
+  { id: "f2", reviewer_name: "Sara K.", comment: "Great selection of home decor. Everything was exactly as pictured.", rating: 5 },
   { id: "f3", reviewer_name: "Usman R.", comment: "Pay at door is a game changer. Verified the product before paying!", rating: 5 },
-  { id: "f4", reviewer_name: "Hina T.", comment: "Super fast delivery and genuine products. Highly recommend!", rating: 5 },
+  { id: "f4", reviewer_name: "Hina T.", comment: "From electronics to beauty products — HUKAM has it all. Highly recommend!", rating: 5 },
 ];
 
 const avatarColors = [
@@ -57,7 +57,7 @@ const Testimonials = () => {
               What customers say
             </span>
             <h2 className="text-xl sm:text-2xl font-bold text-foreground">
-              Trusted by Mirpur
+              Loved by Our Customers
             </h2>
           </div>
           <div className="flex items-center gap-2">

@@ -9,7 +9,7 @@ const About = () => {
   const milestones = [
     { icon: Zap, title: "60-Minute Delivery", desc: "The fastest in Mirpur." },
     { icon: Shield, title: "100% Verified", desc: "Check before you pay at your doorstep." },
-    { icon: CheckCircle2, title: "Premium Products", desc: "A highly curated tech selection." },
+    { icon: CheckCircle2, title: "Premium Products", desc: "A curated selection across every category." },
   ];
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -82,21 +82,21 @@ const About = () => {
             <div>
               <h2 className="text-3xl font-bold text-foreground mb-4">The Problem</h2>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Living in the heart of Mirpur, our founder—known simply as Hukam—noticed a persistent frustration. If you needed a phone charger, a USB cable, or high-quality earbuds, you had to wait 2-7 days for a delivery from Islamabad or Lahore. This wasn't acceptable.
+                Living in the heart of Mirpur, our founder—known simply as Hukam—noticed a persistent frustration. Whether you needed the latest fashion, quality electronics, or everyday home essentials, you had to wait 2-7 days for a delivery from Islamabad or Lahore. This wasn't acceptable.
               </p>
             </div>
 
             <div>
               <h2 className="text-3xl font-bold text-foreground mb-4">Our Mission: 60 Minutes</h2>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Hukam decided to solve the problem directly. The goal was simple: locally source, authenticate, and deliver verified mobile accessories in just 60 minutes. No long waits. No mystery boxes. No compromises on quality. The brand HUKAM was born from a simple belief: "Mirpur deserves premium tech, delivered faster."
+                Hukam decided to solve the problem directly. The goal was simple: locally source, verify, and deliver quality products across every category in just 60 minutes. No long waits. No mystery boxes. No compromises on quality. The brand HUKAM was born from a simple belief: "Mirpur deserves a world-class marketplace, delivered faster."
               </p>
             </div>
 
             <div>
               <h2 className="text-3xl font-bold text-foreground mb-4">The HUKAM Promise</h2>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Every product in our vault is hand-inspected. Every customer checks the item before paying. Every delivery respects your time. We've built this on the principle of hyper-local, hyper-reliable, hyper-fast service.
+                Every product in our marketplace is verified for quality. Every customer checks the item before paying. Every delivery respects your time. We've built this on the principle of hyper-local, hyper-reliable, hyper-fast service.
               </p>
             </div>
           </motion.div>
