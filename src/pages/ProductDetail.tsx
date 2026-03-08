@@ -185,17 +185,13 @@ const ProductDetail = () => {
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-tight">{product.title}</h1>
 
             {/* Scarcity triggers */}
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex items-center gap-1.5 text-sm text-muted-foreground bg-secondary/50 px-3 py-1.5 rounded-full">
-                <Eye className="w-4 h-4" />
-                <span>{viewingCount} people viewing</span>
-              </div>
-              {product.stock > 0 && product.stock <= 10 && (
+            {product.stock > 0 && product.stock <= 10 && (
+              <div className="flex items-center gap-3 flex-wrap">
                 <span className="text-sm font-semibold text-orange-600 bg-orange-50 px-3 py-1.5 rounded-full animate-pulse">
                   🔥 Only {product.stock} left in stock!
                 </span>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Price & Stock */}
             <div className="glass-card p-6 rounded-2xl space-y-3">
