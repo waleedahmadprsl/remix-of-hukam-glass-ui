@@ -1,7 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Package, Clock, CheckCircle2, Truck, XCircle, MapPin, Hash } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 const statusSteps = ["pending", "confirmed", "dispatched", "delivered"];
 

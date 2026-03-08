@@ -1,6 +1,6 @@
 import React from "react";
 import { Session } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 interface AuthContextType {
   session: Session | null;
