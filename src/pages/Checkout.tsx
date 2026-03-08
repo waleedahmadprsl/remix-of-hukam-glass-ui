@@ -193,18 +193,15 @@ const Checkout: React.FC = () => {
       return;
     }
 
+    // Order saved to DB — show success immediately
+    setResult("HUKAM Accepted! Your tech is being dispatched. A rider will contact you shortly.");
+    clearCart();
+
+    // Web3Forms email notification — fire-and-forget
     try {
-      const res = await fetch("https://api.web3forms.com/submit", { method: "POST", body: fd });
-      const data = await res.json();
-      if (data.success) {
-        setResult("HUKAM Accepted! Your tech is being dispatched. A rider will contact you shortly.");
-        clearCart();
-      } else {
-        setResult(data.message || "Error submitting order");
-      }
+      await fetch("https://api.web3forms.com/submit", { method: "POST", body: fd });
     } catch (err) {
-      console.error("Web3Forms exception:", err);
-      setResult("Error submitting order");
+      console.error("Web3Forms notification failed (order is still placed):", err);
     }
   };
 

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import BannerCarousel from "@/components/BannerCarousel";
 import CategoryBubbles from "@/components/CategoryBubbles";
+import ValuePropositions from "@/components/ValuePropositions";
 import FlashDeals from "@/components/FlashDeals";
 import TrendingProducts from "@/components/TrendingProducts";
 import AllProducts from "@/components/AllProducts";
@@ -29,12 +30,13 @@ const Index = () => {
   return (
     <div className="bg-background">
       <BannerCarousel />
+      <ValuePropositions />
       <CategoryBubbles />
       <FlashDeals />
       <TrendingProducts />
       <AllProducts />
-      <Newsletter />
       <Testimonials />
+      <Newsletter />
     </div>
   );
 };
