@@ -81,6 +81,18 @@ const Checkout: React.FC = () => {
       const orderId = data?.[0]?.id;
       setPlacedOrderId(orderId || null);
 
+      // Insert normalized order_items for multi-vendor tracking
+      if (orderId) {
+        const orderItemsPayload = items.map((it) => ({
+          order_id: orderId,
+          product_id: it.id,
+          product_title: it.name,
+          quantity: it.quantity,
+          unit_price: it.priceNumber,
+        }));
+        await supabase.from("order_items").insert(orderItemsPayload);
+      }
+
       if (form.email && orderId) {
         try {
           await supabase.functions.invoke("send-order-email", {

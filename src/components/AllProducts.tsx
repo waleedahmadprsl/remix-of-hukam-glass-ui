@@ -11,14 +11,13 @@ interface DBProduct {
   id: string;
   title: string;
   price: number;
+  compare_at_price: number | null;
   images: string[];
+  category_id: string | null;
   sub_category_id: string | null;
 }
 
-interface Category {
-  id: string;
-  name: string;
-}
+interface Category { id: string; name: string; parent_id: string | null; }
 
 const AllProducts = () => {
   const navigate = useNavigate();
@@ -26,28 +25,23 @@ const AllProducts = () => {
   const { openCart } = useMiniCart();
   const [products, setProducts] = useState<DBProduct[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [subCategories, setSubCategories] = useState<{ id: string; category_id: string }[]>([]);
   const [active, setActive] = useState("All");
 
   useEffect(() => {
     Promise.all([
-      supabase.from("products").select("id, title, price, images, sub_category_id").eq("is_active", true).order("created_at", { ascending: false }),
-      supabase.from("categories").select("id, name"),
-      supabase.from("sub_categories").select("id, category_id"),
-    ]).then(([pRes, cRes, sRes]) => {
+      supabase.from("products").select("id, title, price, compare_at_price, images, category_id, sub_category_id").eq("is_active", true).order("created_at", { ascending: false }),
+      supabase.from("categories").select("id, name, parent_id").is("parent_id", null),
+    ]).then(([pRes, cRes]) => {
       setProducts((pRes.data || []).map((p: any) => ({ ...p, images: Array.isArray(p.images) ? p.images : [] })));
       setCategories(cRes.data || []);
-      setSubCategories(sRes.data || []);
     });
   }, []);
 
-  const getCatId = (p: DBProduct) => {
-    if (!p.sub_category_id) return null;
-    const sub = subCategories.find((s) => s.id === p.sub_category_id);
-    return sub?.category_id || null;
+  const getRootCategory = (p: DBProduct) => {
+    return p.category_id || p.sub_category_id || null;
   };
 
-  const filtered = active === "All" ? products : products.filter((p) => getCatId(p) === active);
+  const filtered = active === "All" ? products : products.filter((p) => getRootCategory(p) === active);
 
   const handleAdd = (e: React.MouseEvent, p: DBProduct) => {
     e.stopPropagation();
@@ -72,13 +66,7 @@ const AllProducts = () => {
 
         <div className="flex flex-wrap justify-center gap-2 mb-10">
           {tabs.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setActive(cat.id)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 border ${
-                active === cat.id ? "bg-primary text-primary-foreground border-primary" : "bg-background/60 text-muted-foreground border-border/50 hover:border-primary/40"
-              }`}
-            >
+            <button key={cat.id} onClick={() => setActive(cat.id)} className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 border ${active === cat.id ? "bg-primary text-primary-foreground border-primary" : "bg-background/60 text-muted-foreground border-border/50 hover:border-primary/40"}`}>
               {cat.name}
             </button>
           ))}
@@ -86,33 +74,40 @@ const AllProducts = () => {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 max-w-5xl mx-auto">
           <AnimatePresence mode="popLayout">
-            {filtered.map((product) => (
-              <motion.div
-                key={product.id}
-                layout
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.3 }}
-                onClick={() => navigate(`/product/${product.id}`)}
-                className="glass-card group overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:border-primary/40"
-              >
-                <div className="relative h-32 sm:h-44 overflow-hidden bg-secondary/30">
-                  <img src={product.images[0] || "/placeholder.svg"} alt={product.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                </div>
-                <div className="p-4 relative">
-                  <h3 className="font-semibold text-foreground text-sm sm:text-base">{product.title}</h3>
-                  <p className="text-primary font-bold mt-1 text-sm">₨ {product.price.toLocaleString()}</p>
-                  <motion.div
-                    onClick={(e) => handleAdd(e, product)}
-                    className="absolute bottom-0 left-0 right-0 bg-primary text-primary-foreground flex items-center justify-center gap-2 py-2.5 font-medium text-xs sm:text-sm translate-y-full group-hover:translate-y-0 transition-transform duration-300 cursor-pointer"
-                  >
-                    <ShoppingBag className="w-3.5 h-3.5" />
-                    HUKAM Kijiye
-                  </motion.div>
-                </div>
-              </motion.div>
-            ))}
+            {filtered.map((product) => {
+              const hasDiscount = product.compare_at_price && product.compare_at_price > product.price;
+              const discountPercent = hasDiscount ? Math.round((1 - product.price / product.compare_at_price!) * 100) : 0;
+              return (
+                <motion.div
+                  key={product.id} layout
+                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.3 }}
+                  onClick={() => navigate(`/product/${product.id}`)}
+                  className="glass-card group overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:border-primary/40"
+                >
+                  <div className="relative h-32 sm:h-44 overflow-hidden bg-secondary/30">
+                    <img src={product.images[0] || "/placeholder.svg"} alt={product.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                    {hasDiscount && (
+                      <span className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">
+                        -{discountPercent}%
+                      </span>
+                    )}
+                  </div>
+                  <div className="p-4 relative">
+                    <h3 className="font-semibold text-foreground text-sm sm:text-base">{product.title}</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-primary font-bold text-sm">₨ {product.price.toLocaleString()}</p>
+                      {hasDiscount && <p className="text-muted-foreground text-xs line-through">₨ {product.compare_at_price!.toLocaleString()}</p>}
+                    </div>
+                    <motion.div
+                      onClick={(e) => handleAdd(e, product)}
+                      className="absolute bottom-0 left-0 right-0 bg-primary text-primary-foreground flex items-center justify-center gap-2 py-2.5 font-medium text-xs sm:text-sm translate-y-full group-hover:translate-y-0 transition-transform duration-300 cursor-pointer"
+                    >
+                      <ShoppingBag className="w-3.5 h-3.5" /> HUKAM Kijiye
+                    </motion.div>
+                  </div>
+                </motion.div>
+              );
+            })}
           </AnimatePresence>
         </div>
       </div>

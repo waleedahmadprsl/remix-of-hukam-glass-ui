@@ -12,6 +12,7 @@ interface DBProduct {
   id: string;
   title: string;
   price: number;
+  compare_at_price: number | null;
   images: string[];
   stock: number;
   is_active: boolean;
@@ -61,7 +62,7 @@ const ProductDetail = () => {
 
   const fetchProduct = async (pid: string) => {
     try {
-      const { data, error } = await supabase.from("products").select("*").eq("id", pid).single();
+      const { data, error } = await supabase.from("products").select("id, title, price, compare_at_price, images, stock, is_active, sub_category_id, description, video_url").eq("id", pid).single();
       if (error || !data) { setProduct(null); setLoading(false); return; }
       const p = { ...data, images: Array.isArray(data.images) ? data.images as string[] : [] };
       setProduct(p);
@@ -184,8 +185,16 @@ const ProductDetail = () => {
 
             {/* Price & Stock */}
             <div className="glass-card p-6 rounded-2xl space-y-3">
-              <div className="flex items-end gap-3">
+              <div className="flex items-end gap-3 flex-wrap">
                 <span className="text-4xl font-extrabold text-primary">₨ {product.price.toLocaleString()}</span>
+                {product.compare_at_price && product.compare_at_price > product.price && (
+                  <>
+                    <span className="text-lg text-muted-foreground line-through mb-1">₨ {product.compare_at_price.toLocaleString()}</span>
+                    <span className="text-sm font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full mb-1">
+                      -{Math.round((1 - product.price / product.compare_at_price) * 100)}% OFF
+                    </span>
+                  </>
+                )}
                 <span className="text-sm text-muted-foreground mb-1">incl. delivery</span>
               </div>
               <div className="flex items-center gap-2">
