@@ -7,6 +7,9 @@ import { useMiniCart } from "@/context/MiniCartContext";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import CustomerReviews from "@/components/CustomerReviews";
+import FrequentlyBoughtTogether from "@/components/FrequentlyBoughtTogether";
+import ProductQA from "@/components/ProductQA";
+import RecentlyViewed, { addToRecentlyViewed } from "@/components/RecentlyViewed";
 
 interface DBProduct {
   id: string;
