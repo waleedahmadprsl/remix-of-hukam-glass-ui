@@ -46,7 +46,7 @@ const Header = () => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (q.trim().length < 2) { setSearchResults([]); return; }
     debounceRef.current = setTimeout(async () => {
-      const { data } = await supabase.from("products").select("id, title, price, images").eq("is_active", true).ilike("title", `%${q}%`).limit(5);
+      const { data } = await supabase.from("products").select("id, title, price, images").eq("is_active", true).or(`title.ilike.%${q}%,description.ilike.%${q}%`).limit(5);
       setSearchResults((data || []).map((p: any) => ({ ...p, images: Array.isArray(p.images) ? p.images : [] })));
     }, 300);
   };

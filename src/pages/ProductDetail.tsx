@@ -343,7 +343,7 @@ const ProductDetail = () => {
                     </span>
                   </>
                 )}
-                <span className="text-sm text-muted-foreground mb-1">incl. delivery</span>
+                <span className="text-sm text-muted-foreground mb-1">+ Rs.50 delivery</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className={`w-2 h-2 rounded-full ${activeStock > 5 ? "bg-primary" : activeStock > 0 ? "bg-destructive/70" : "bg-destructive"}`} />
