@@ -113,7 +113,9 @@ const AllProducts = () => {
                     <img
                       src={product.images[0] || "/placeholder.svg"}
                       alt={product.title}
+                      loading="lazy"
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
                     />
                     {hasDiscount && (
                       <span className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-md">
@@ -127,12 +129,12 @@ const AllProducts = () => {
                       <p className="text-primary font-bold text-sm">₨ {product.price.toLocaleString()}</p>
                       {hasDiscount && <p className="text-muted-foreground text-[11px] line-through">₨ {product.compare_at_price!.toLocaleString()}</p>}
                     </div>
-                    <motion.div
+                    <button
                       onClick={(e) => handleAdd(e, product)}
-                      className="absolute bottom-0 left-0 right-0 bg-foreground text-background flex items-center justify-center gap-2 py-2 font-medium text-xs translate-y-full group-hover:translate-y-0 transition-transform duration-300 cursor-pointer"
+                      className="mt-2.5 w-full flex items-center justify-center gap-1.5 bg-foreground/5 text-foreground text-[11px] font-medium py-2 rounded-lg hover:bg-primary hover:text-primary-foreground transition-all duration-200 sm:opacity-0 sm:group-hover:opacity-100"
                     >
                       <ShoppingBag className="w-3 h-3" /> Add to Cart
-                    </motion.div>
+                    </button>
                   </div>
                 </motion.div>
               );

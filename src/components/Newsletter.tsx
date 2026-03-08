@@ -1,18 +1,36 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Mail, ArrowRight } from "lucide-react";
+import { Mail, ArrowRight, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Newsletter = () => {
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
-    toast({ title: "Subscribed!", description: "You'll hear from us soon." });
-    setEmail("");
+    if (!email || loading) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase.from("newsletter_subscribers").insert({ email });
+      if (error) {
+        if (error.code === "23505") {
+          toast({ title: "Already subscribed!", description: "This email is already on our list." });
+        } else {
+          throw error;
+        }
+      } else {
+        toast({ title: "Subscribed! 🎉", description: "You'll hear from us soon." });
+      }
+      setEmail("");
+    } catch {
+      toast({ title: "Oops", description: "Something went wrong. Try again.", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -39,9 +57,10 @@ const Newsletter = () => {
               onChange={(e) => setEmail(e.target.value)}
               className="flex-1 bg-background/60 border-border/40"
               required
+              disabled={loading}
             />
-            <Button type="submit" size="sm" className="gap-1.5 rounded-lg">
-              Subscribe <ArrowRight className="w-3.5 h-3.5" />
+            <Button type="submit" size="sm" className="gap-1.5 rounded-lg" disabled={loading}>
+              {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>Subscribe <ArrowRight className="w-3.5 h-3.5" /></>}
             </Button>
           </form>
         </div>
