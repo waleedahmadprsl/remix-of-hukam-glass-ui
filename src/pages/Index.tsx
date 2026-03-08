@@ -1,19 +1,17 @@
-import HeroSection from "@/components/HeroSection";
-import TrustBadges from "@/components/TrustBadges";
-import HowItWorks from "@/components/HowItWorks";
-import ProductShowcase from "@/components/ProductShowcase";
+import BannerCarousel from "@/components/BannerCarousel";
+import CategoryBubbles from "@/components/CategoryBubbles";
+import FlashDeals from "@/components/FlashDeals";
+import TrendingProducts from "@/components/TrendingProducts";
 import AllProducts from "@/components/AllProducts";
-import AboutUs from "@/components/AboutUs";
 import Testimonials from "@/components/Testimonials";
 
 const Index = () => (
   <div className="bg-background">
-    <HeroSection />
-    <TrustBadges />
-    <HowItWorks />
-    <ProductShowcase />
+    <BannerCarousel />
+    <CategoryBubbles />
+    <FlashDeals />
+    <TrendingProducts />
     <AllProducts />
-    <AboutUs />
     <Testimonials />
   </div>
 );

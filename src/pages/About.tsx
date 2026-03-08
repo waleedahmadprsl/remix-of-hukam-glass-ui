@@ -170,7 +170,7 @@ const About = () => {
               <li className="flex gap-4 items-start">
                 <div className="w-2 h-2 rounded-full bg-primary mt-2.5 flex-shrink-0" />
                 <span className="text-lg text-foreground">
-                  <strong>WhatsApp ordering</strong> – 24/7 support, conversational UX
+                   <strong>Easy online ordering</strong> – 24/7 support, seamless checkout
                 </span>
               </li>
 
