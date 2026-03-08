@@ -134,12 +134,12 @@ const AdminAnalytics: React.FC = () => {
   // ── Sales Performance ──
   const dailyRevenue = React.useMemo(() => {
     const days: Record<string, number> = {};
-    const now = new Date();
-    for (let i = 13; i >= 0; i--) {
-      const d = new Date(now); d.setDate(d.getDate() - i);
+    const diffDays = Math.ceil((dateTo.getTime() - dateFrom.getTime()) / (1000 * 60 * 60 * 24));
+    for (let i = diffDays; i >= 0; i--) {
+      const d = new Date(dateTo); d.setDate(d.getDate() - i);
       days[d.toISOString().slice(0, 10)] = 0;
     }
-    orders.forEach(o => {
+    filteredOrders.forEach(o => {
       const day = o.created_at.slice(0, 10);
       if (days[day] !== undefined) days[day] += Number(o.total_amount);
     });
@@ -147,7 +147,7 @@ const AdminAnalytics: React.FC = () => {
       date: new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
       revenue,
     }));
-  }, [orders]);
+  }, [filteredOrders, dateFrom, dateTo]);
 
   const statusData = React.useMemo(() => {
     const counts: Record<string, number> = {};
