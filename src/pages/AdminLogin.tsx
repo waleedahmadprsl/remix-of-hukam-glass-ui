@@ -8,7 +8,18 @@ const AdminLogin: React.FC = () => {
   const [password, setPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
+  const [resetMode, setResetMode] = React.useState(false);
+  const [resetSent, setResetSent] = React.useState(false);
   const navigate = useNavigate();
+
+  // Add noindex
+  React.useEffect(() => {
+    const meta = document.createElement("meta");
+    meta.name = "robots";
+    meta.content = "noindex, nofollow";
+    document.head.appendChild(meta);
+    return () => { document.head.removeChild(meta); };
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,8 +35,7 @@ const AdminLogin: React.FC = () => {
       if (signInError) {
         setError(signInError.message);
       } else if (data && data.user) {
-        // verify role
-        const { data: profile, error: profileError } = await (supabase as any)
+        const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("role")
           .eq("id", data.user.id)
@@ -49,6 +59,24 @@ const AdminLogin: React.FC = () => {
     }
   };
 
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) { setError("Please enter your email."); return; }
+    setLoading(true);
+    setError("");
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/admin/reset-password`,
+      });
+      if (error) throw error;
+      setResetSent(true);
+    } catch (err: any) {
+      setError(err.message || "Failed to send reset email");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/30 flex items-center justify-center p-4">
       <motion.div
@@ -57,53 +85,85 @@ const AdminLogin: React.FC = () => {
         className="glass-card p-8 rounded-3xl w-full max-w-md"
       >
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
+          <h1 className="text-3xl font-bold text-foreground mb-2 font-display">
             HUK<span className="text-brand-blue">A</span>M Admin
           </h1>
-          <p className="text-muted-foreground">Founder Control Panel</p>
+          <p className="text-muted-foreground">
+            {resetMode ? "Reset your password" : "Founder Control Panel"}
+          </p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              placeholder="admin@hukam.pk"
-              className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/10"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              placeholder="••••••••"
-              className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/10"
-            />
-          </div>
-
-          {error && (
-            <div className="p-3 bg-destructive/10 border border-destructive/40 rounded-lg text-sm text-destructive">
-              {error}
+        {resetMode ? (
+          resetSent ? (
+            <div className="text-center space-y-4">
+              <p className="text-sm text-muted-foreground">Password reset email sent to <strong>{email}</strong>. Check your inbox.</p>
+              <button onClick={() => { setResetMode(false); setResetSent(false); }} className="text-primary text-sm font-semibold hover:underline">
+                Back to Login
+              </button>
             </div>
-          )}
+          ) : (
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-2">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="admin@hukam.pk"
+                  className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/10"
+                />
+              </div>
+              {error && (
+                <div className="p-3 bg-destructive/10 border border-destructive/40 rounded-lg text-sm text-destructive">{error}</div>
+              )}
+              <motion.button type="submit" disabled={loading} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold disabled:opacity-70">
+                {loading ? "Sending..." : "Send Reset Link"}
+              </motion.button>
+              <button type="button" onClick={() => { setResetMode(false); setError(""); }} className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Back to Login
+              </button>
+            </form>
+          )
+        ) : (
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-foreground mb-2">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="admin@hukam.pk"
+                className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/10"
+              />
+            </div>
 
-          <motion.button
-            type="submit"
-            disabled={loading}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold disabled:opacity-70"
-          >
-            {loading ? "Logging in..." : "HUKAM Login"}
-          </motion.button>
-        </form>
+            <div>
+              <label className="block text-sm font-semibold text-foreground mb-2">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+                className="w-full px-4 py-3 bg-background border border-border/40 rounded-lg focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/10"
+              />
+            </div>
+
+            {error && (
+              <div className="p-3 bg-destructive/10 border border-destructive/40 rounded-lg text-sm text-destructive">{error}</div>
+            )}
+
+            <motion.button type="submit" disabled={loading} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold disabled:opacity-70">
+              {loading ? "Logging in..." : "HUKAM Login"}
+            </motion.button>
+
+            <button type="button" onClick={() => { setResetMode(true); setError(""); }} className="w-full text-sm text-muted-foreground hover:text-primary transition-colors">
+              Forgot password?
+            </button>
+          </form>
+        )}
 
         <p className="text-xs text-muted-foreground text-center mt-6">
           Only authorized founders can access this panel.

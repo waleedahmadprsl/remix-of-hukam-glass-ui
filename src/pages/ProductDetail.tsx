@@ -296,7 +296,7 @@ const ProductDetail = () => {
                   className="flex items-center justify-center gap-2 bg-primary text-primary-foreground py-4 rounded-2xl font-bold text-base shadow-lg shadow-primary/25 transition-all hover:shadow-xl"
                 >
                   <ShoppingCart className="w-5 h-5" />
-                  HUKAM Kijiye (Add to Cart)
+                  Add to Cart
                 </motion.button>
 
               </div>

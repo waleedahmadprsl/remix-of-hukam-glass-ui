@@ -52,28 +52,34 @@ const TrackOrder: React.FC = () => {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phone.trim()) { setError("Please enter your phone number."); return; }
+    if (!phone.trim() || !orderId.trim()) {
+      setError("Both phone number and Order ID are required for security.");
+      return;
+    }
     setLoading(true); setError(""); setOrder(null);
 
     try {
       const cleanPhone = phone.replace(/[\s\-()]/g, "");
-      let query = supabase
-        .from("orders")
-        .select("id, customer_name, customer_phone, customer_email, items, total_amount, status, created_at, delivery_address, tracking_id, shipping_cost");
+      const cleanOrderId = orderId.trim().toLowerCase();
 
-      if (orderId.trim()) {
-        query = query
-          .or(`customer_phone.ilike.%${cleanPhone}%,customer_phone.ilike.%${cleanPhone.replace(/^\+/, '')}%`)
-          .ilike("id", `${orderId.trim()}%`);
-      } else {
-        query = query
-          .or(`customer_phone.ilike.%${cleanPhone}%,customer_phone.ilike.%${cleanPhone.replace(/^\+/, '')}%`);
+      // Validate UUID format loosely
+      if (cleanOrderId.length < 8) {
+        setError("Please enter at least the first 8 characters of your Order ID.");
+        setLoading(false);
+        return;
       }
 
-      const { data, error: err } = await query.order("created_at", { ascending: false }).limit(1);
+      const { data, error: err } = await supabase
+        .from("orders")
+        .select("id, customer_name, customer_phone, customer_email, items, total_amount, status, created_at, delivery_address, tracking_id, shipping_cost")
+        .or(`customer_phone.ilike.%${cleanPhone}%,customer_phone.ilike.%${cleanPhone.replace(/^\+/, '')}%`)
+        .ilike("id", `${cleanOrderId}%`)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
       if (err) throw err;
       if (data && data.length > 0) setOrder(data[0] as Order);
-      else setError("No order found. Please check your phone number or Order ID and try again.");
+      else setError("No order found. Please check your phone number and Order ID.");
     } catch (err: any) {
       setError("Something went wrong. Please try again.");
       console.error(err);
@@ -89,8 +95,8 @@ const TrackOrder: React.FC = () => {
       <div className="mx-auto max-w-xl">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
           <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary mb-2 block">HUKAM</span>
-          <h1 className="text-2xl sm:text-4xl font-extrabold text-foreground mb-2">Track Your Order</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">Enter your phone number to check your order status.</p>
+          <h1 className="text-2xl sm:text-4xl font-extrabold text-foreground mb-2 font-display">Track Your Order</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Enter your phone number and Order ID to check status.</p>
         </motion.div>
 
         <motion.form onSubmit={handleSearch} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="space-y-3 mb-8">
@@ -99,8 +105,9 @@ const TrackOrder: React.FC = () => {
             <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+92 342 680 7645" required className="w-full px-4 py-3.5 bg-background border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all text-base" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Order ID (Optional)</label>
-            <input type="text" value={orderId} onChange={(e) => setOrderId(e.target.value)} placeholder="e.g. a1b2c3d4..." className="w-full px-4 py-3.5 bg-background border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all text-base" />
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Order ID *</label>
+            <input type="text" value={orderId} onChange={(e) => setOrderId(e.target.value)} placeholder="e.g. a1b2c3d4..." required className="w-full px-4 py-3.5 bg-background border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all text-base" />
+            <p className="text-[11px] text-muted-foreground mt-1">You received your Order ID via WhatsApp/SMS when you placed your order.</p>
           </div>
           <motion.button type="submit" disabled={loading} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3.5 rounded-xl font-bold text-base shadow-lg shadow-primary/25 disabled:opacity-50 transition-all">
             {loading ? <span className="animate-pulse">Searching...</span> : <><Search className="w-5 h-5" />Track Order</>}
@@ -115,7 +122,6 @@ const TrackOrder: React.FC = () => {
 
         {order && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5 sm:p-8 rounded-2xl sm:rounded-3xl space-y-6">
-            {/* Order header */}
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider">Order</p>
@@ -128,7 +134,6 @@ const TrackOrder: React.FC = () => {
               </div>
             </div>
 
-            {/* Tracking ID */}
             {order.tracking_id && (
               <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-xl">
                 <Hash className="w-4 h-4 text-primary" />
@@ -136,7 +141,6 @@ const TrackOrder: React.FC = () => {
               </div>
             )}
 
-            {/* Visual Timeline Stepper */}
             {order.status === "canceled" ? (
               <div className="flex items-center gap-3 bg-destructive/10 p-4 rounded-xl">
                 <XCircle className="w-6 h-6 text-destructive flex-shrink-0" />
@@ -147,7 +151,6 @@ const TrackOrder: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-1">
-                {/* Current status highlight */}
                 <div className="p-4 bg-primary/5 rounded-xl mb-4">
                   <p className="text-sm font-bold text-primary">{statusLabels[order.status] || order.status}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{statusDescriptions[order.status]}</p>
@@ -156,9 +159,7 @@ const TrackOrder: React.FC = () => {
                 {/* Desktop horizontal stepper */}
                 <div className="hidden sm:block py-4">
                   <div className="relative flex items-center justify-between">
-                    {/* Background track */}
                     <div className="absolute top-5 left-6 right-6 h-1 bg-border rounded-full" />
-                    {/* Progress fill */}
                     <motion.div
                       className="absolute top-5 left-6 h-1 bg-primary rounded-full"
                       initial={{ width: 0 }}
@@ -174,9 +175,7 @@ const TrackOrder: React.FC = () => {
                             initial={{ scale: 0.8 }}
                             animate={{ scale: isCurrent ? 1.15 : 1 }}
                             className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 ${
-                              isCompleted
-                                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
-                                : "bg-secondary text-muted-foreground"
+                              isCompleted ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30" : "bg-secondary text-muted-foreground"
                             } ${isCurrent ? "ring-4 ring-primary/20" : ""}`}
                           >
                             {statusIcons[step]}
@@ -202,9 +201,7 @@ const TrackOrder: React.FC = () => {
                             initial={{ scale: 0.8 }}
                             animate={{ scale: isCurrent ? 1.1 : 1 }}
                             className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
-                              isCompleted
-                                ? "bg-primary text-primary-foreground shadow-md shadow-primary/25"
-                                : "bg-secondary text-muted-foreground"
+                              isCompleted ? "bg-primary text-primary-foreground shadow-md shadow-primary/25" : "bg-secondary text-muted-foreground"
                             } ${isCurrent ? "ring-4 ring-primary/20" : ""}`}
                           >
                             {statusIcons[step]}
@@ -233,7 +230,6 @@ const TrackOrder: React.FC = () => {
               </div>
             )}
 
-            {/* Items */}
             {order.items && (
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Items</p>
@@ -245,7 +241,6 @@ const TrackOrder: React.FC = () => {
               </div>
             )}
 
-            {/* Delivery address */}
             {order.delivery_address && (
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />

@@ -198,7 +198,7 @@ const Products = () => {
                         className="absolute bottom-0 left-0 right-0 bg-primary text-primary-foreground flex items-center justify-center gap-2 py-3 font-medium text-sm translate-y-full group-hover:translate-y-0 transition-transform duration-300 cursor-pointer"
                       >
                         <ShoppingBag className="w-4 h-4" />
-                        HUKAM Kijiye
+                        Add to Cart
                       </motion.div>
                     </div>
                   </motion.div>

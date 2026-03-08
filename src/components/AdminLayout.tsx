@@ -24,6 +24,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, activeTab })
   const navigate = useNavigate();
   const { logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  useAdminNoIndex();
 
   const tabs = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/admin" },
