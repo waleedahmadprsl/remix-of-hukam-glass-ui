@@ -113,10 +113,10 @@ const AdminAnalytics: React.FC = () => {
 
   // ── Conversion Funnel ──
   const funnelData = React.useMemo(() => {
-    const totalSessions = new Set(pageViews.map(pv => pv.session_id)).size;
-    const productViewSessions = new Set(pageViews.filter(pv => pv.page_path.startsWith("/product/")).map(pv => pv.session_id)).size;
-    const checkoutSessions = new Set(pageViews.filter(pv => pv.page_path === "/checkout").map(pv => pv.session_id)).size;
-    const completedOrders = orders.length;
+    const totalSessions = new Set(filteredPageViews.map(pv => pv.session_id)).size;
+    const productViewSessions = new Set(filteredPageViews.filter(pv => pv.page_path.startsWith("/product/")).map(pv => pv.session_id)).size;
+    const checkoutSessions = new Set(filteredPageViews.filter(pv => pv.page_path === "/checkout").map(pv => pv.session_id)).size;
+    const completedOrders = filteredOrders.length;
 
     return [
       { stage: "Visitors", count: totalSessions, pct: 100 },
@@ -124,7 +124,7 @@ const AdminAnalytics: React.FC = () => {
       { stage: "Checkout", count: checkoutSessions, pct: totalSessions > 0 ? Math.round((checkoutSessions / totalSessions) * 100) : 0 },
       { stage: "Orders", count: completedOrders, pct: totalSessions > 0 ? Math.round((completedOrders / totalSessions) * 100) : 0 },
     ];
-  }, [pageViews, orders]);
+  }, [filteredPageViews, filteredOrders]);
 
   const conversionRate = React.useMemo(() => {
     const sessions = new Set(pageViews.map(pv => pv.session_id)).size;
