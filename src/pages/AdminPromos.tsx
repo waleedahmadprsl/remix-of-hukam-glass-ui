@@ -57,6 +57,7 @@ const AdminPromos: React.FC = () => {
       is_active: form.is_active,
       min_purchase: form.min_purchase || 0,
       usage_limit: form.usage_limit || null,
+      expires_at: form.expires_at ? form.expires_at.toISOString() : null,
     };
     if (editingId) {
       const { error } = await supabase.from("promo_codes").update(payload).eq("id", editingId);
