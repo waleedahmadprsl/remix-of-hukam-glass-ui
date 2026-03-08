@@ -55,14 +55,12 @@ export default function AboutUs() {
               Founded by a local tech enthusiast known simply as Hukam, this brand was born from a simple frustration — why should Mirpur wait 3-5 days for a phone charger? We deliver premium tech accessories to your doorstep in under 60 minutes, because your time matters.
             </p>
             <motion.a
-              href="https://wa.me/923426807645?text=Hi%20HUKAM!"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/products"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.97 }}
               className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-full text-sm font-semibold shadow-lg shadow-primary/20"
             >
-              Talk to HUKAM ⚡
+              Browse Products
             </motion.a>
           </motion.div>
 

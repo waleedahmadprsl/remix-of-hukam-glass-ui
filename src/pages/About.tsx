@@ -1,9 +1,11 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CheckCircle2, Zap, Shield } from "lucide-react";
 import logoVideo from "@/assets/logo-video.mp4";
 
 const About = () => {
+  const navigate = useNavigate();
   const milestones = [
     { icon: Zap, title: "60-Minute Delivery", desc: "The fastest in Mirpur." },
     { icon: Shield, title: "100% Verified", desc: "Check before you pay at your doorstep." },
@@ -168,7 +170,7 @@ const About = () => {
               <li className="flex gap-4 items-start">
                 <div className="w-2 h-2 rounded-full bg-primary mt-2.5 flex-shrink-0" />
                 <span className="text-lg text-foreground">
-                  <strong>WhatsApp ordering</strong> – 24/7 support, conversational UX
+                   <strong>Easy online ordering</strong> – 24/7 support, seamless checkout
                 </span>
               </li>
 
@@ -195,16 +197,14 @@ const About = () => {
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
             Order your first product today and join thousands of satisfied customers in Mirpur.
           </p>
-          <motion.a
-            href="https://wa.me/923426807645"
-            target="_blank"
-            rel="noopener noreferrer"
+          <motion.button
+            onClick={() => navigate("/products")}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.97 }}
-            className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-10 py-4 rounded-full text-lg font-semibold animate-pulse-glow transition-all"
+            className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-10 py-4 rounded-full text-lg font-semibold transition-all shadow-lg shadow-primary/25"
           >
-            HUKAM on WhatsApp ⚡
-          </motion.a>
+            Shop Now
+          </motion.button>
         </motion.div>
       </div>
     </div>

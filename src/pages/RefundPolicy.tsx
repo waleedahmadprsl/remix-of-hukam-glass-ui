@@ -151,17 +151,15 @@ const RefundPolicy = () => {
             Questions About Our Guarantee?
           </h2>
           <p className="text-muted-foreground mb-8">
-            Message us directly on WhatsApp or email contact@hukam.pk
+            Reach out anytime at contact@hukam.pk
           </p>
           <motion.a
-            href="https://wa.me/923426807645"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/contact"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.97 }}
             className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-3 rounded-full font-semibold transition-all"
           >
-            Chat with Us
+            Contact Us
           </motion.a>
         </motion.div>
       </div>

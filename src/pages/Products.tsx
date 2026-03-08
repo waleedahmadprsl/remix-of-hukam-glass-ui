@@ -184,10 +184,10 @@ const Products = () => {
 
         <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mt-20 glass-card p-10 sm:p-12 text-center rounded-3xl">
           <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">Can't Find What You Need?</h2>
-          <p className="text-muted-foreground mb-8 max-w-lg mx-auto">Chat with us on WhatsApp for custom requests or bulk orders.</p>
-          <motion.a href="https://wa.me/923426807645" target="_blank" rel="noopener noreferrer" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }} className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-4 rounded-full font-semibold shadow-lg shadow-primary/25 transition-all hover:shadow-xl">
-            HUKAM on WhatsApp ⚡
-          </motion.a>
+          <p className="text-muted-foreground mb-8 max-w-lg mx-auto">Reach out for custom requests or bulk orders.</p>
+          <motion.button onClick={() => navigate("/contact")} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }} className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-4 rounded-full font-semibold shadow-lg shadow-primary/25 transition-all hover:shadow-xl">
+            Contact Us
+          </motion.button>
         </motion.div>
       </div>
     </div>
