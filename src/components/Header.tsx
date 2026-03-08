@@ -7,7 +7,7 @@ import { useMiniCart } from "@/context/MiniCartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import WishlistDrawer from "@/components/WishlistDrawer";
 import hukamName from "@/assets/hukam-name.png";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NavLink {
   label: string;
