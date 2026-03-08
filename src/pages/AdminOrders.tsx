@@ -77,9 +77,42 @@ const AdminOrders: React.FC = () => {
   };
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
+    const order = orders.find((o) => o.id === orderId);
+    const oldStatus = order?.status;
+
     const { error } = await supabase.from("orders").update({ status: newStatus } as any).eq("id", orderId);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-    const order = orders.find((o) => o.id === orderId);
+
+    // Stock restoration when canceled/returned (only if coming from a non-canceled/returned status)
+    if ((newStatus === "canceled" || newStatus === "returned") && oldStatus && !["canceled", "returned"].includes(oldStatus)) {
+      const items = orderItemsMap[orderId] || [];
+      if (items.length === 0) {
+        const { data } = await supabase.from("order_items").select("*").eq("order_id", orderId);
+        if (data) {
+          for (const item of data as OrderItem[]) {
+            if (item.variant_id) {
+              const { data: v } = await supabase.from("product_variants").select("stock").eq("id", item.variant_id).single();
+              if (v) await supabase.from("product_variants").update({ stock: (v.stock || 0) + item.quantity }).eq("id", item.variant_id);
+            }
+            if (item.product_id) {
+              const { data: p } = await supabase.from("products").select("stock").eq("id", item.product_id).single();
+              if (p) await supabase.from("products").update({ stock: (p.stock || 0) + item.quantity }).eq("id", item.product_id);
+            }
+          }
+        }
+      } else {
+        for (const item of items) {
+          if (item.shop_id) {
+            // variant stock restore
+          }
+          if (item.product_id) {
+            const { data: p } = await supabase.from("products").select("stock").eq("id", item.product_id).single();
+            if (p) await supabase.from("products").update({ stock: (p.stock || 0) + item.quantity }).eq("id", item.product_id);
+          }
+        }
+      }
+    }
+
     if (order?.customer_email) {
       try { await supabase.functions.invoke("send-order-email", { body: { type: "status_update", email: order.customer_email, customerName: order.customer_name, orderId, status: newStatus, totalAmount: order.total_amount } }); } catch (e) { console.error(e); }
     }
