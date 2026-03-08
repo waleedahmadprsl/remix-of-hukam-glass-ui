@@ -293,7 +293,7 @@ const ProductDetail = () => {
             <div className="grid grid-cols-3 gap-3">
               {[
                 { icon: Truck, label: "60-Min Delivery", sub: "In Mirpur" },
-                { icon: Shield, label: "Verified Product", sub: "100% Genuine" },
+                { icon: Shield, label: product.warranty_type || "Verified Product", sub: product.return_policy || "100% Genuine" },
                 { icon: Check, label: "Cash on Delivery", sub: "Pay at door" },
               ].map((badge) => (
                 <div key={badge.label} className="glass-card p-3 rounded-xl text-center">
