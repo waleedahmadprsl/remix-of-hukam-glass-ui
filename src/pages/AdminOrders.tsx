@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { logActivity } from "@/lib/activityLogger";
 import { playBeep } from "@/lib/audio";
 import { toast } from "@/hooks/use-toast";
-import { ChevronDown, ChevronUp, Phone, Mail, MapPin, FileText, Tag, Package, Truck, Search, Store } from "lucide-react";
+import { ChevronDown, ChevronUp, Phone, Mail, MapPin, FileText, Tag, Package, Truck, Search, Store, Download } from "lucide-react";
 
 interface Order {
   id: string; customer_name: string; customer_email: string | null; customer_phone: string;
@@ -168,10 +168,44 @@ const AdminOrders: React.FC = () => {
     toast({ title: "Bulk update complete", description: `${selectedIds.size} orders updated` });
   };
 
+  const exportCSV = () => {
+    const rows = [["Order ID", "Date", "Customer", "Phone", "Email", "Address", "Status", "Promo", "Shipping", "Discount", "Total", "Tracking ID"]];
+    filtered.forEach((o) => {
+      rows.push([
+        o.id,
+        new Date(o.created_at).toLocaleDateString(),
+        o.customer_name,
+        o.customer_phone,
+        o.customer_email || "",
+        `"${o.delivery_address.replace(/"/g, '""')}"`,
+        o.status,
+        o.promo_code || "",
+        String(o.shipping_cost || 0),
+        String(o.discount_amount || 0),
+        String(o.total_amount),
+        o.tracking_id || "",
+      ]);
+    });
+    const csv = rows.map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `hukam-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Exported!", description: `${filtered.length} orders exported to CSV` });
+  };
+
   return (
     <AdminLayout activeTab="orders">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-2xl sm:text-4xl font-extrabold text-foreground mb-1">Order Command Center</h1>
+        <div className="flex items-center justify-between mb-1 flex-wrap gap-3">
+          <h1 className="text-2xl sm:text-4xl font-extrabold text-foreground">Order Command Center</h1>
+          <button onClick={exportCSV} className="flex items-center gap-2 bg-secondary text-foreground px-4 py-2 rounded-xl text-sm font-semibold hover:bg-secondary/80 transition-colors">
+            <Download className="w-4 h-4" /> Export CSV
+          </button>
+        </div>
         <p className="text-sm text-muted-foreground mb-6">Real-time orders with vendor split</p>
 
         <div className="flex gap-2 mb-4 overflow-x-auto pb-2 -mx-2 px-2">

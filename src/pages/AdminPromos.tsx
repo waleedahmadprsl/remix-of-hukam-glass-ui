@@ -3,7 +3,12 @@ import { motion } from "framer-motion";
 import { AdminLayout } from "@/components/AdminLayout";
 import { supabase } from "@/lib/supabase";
 import { logActivity } from "@/lib/activityLogger";
-import { Trash2, Edit2, Plus, X } from "lucide-react";
+import { Trash2, Edit2, Plus, X, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface Promo {
   id: string;
@@ -15,6 +20,7 @@ interface Promo {
   min_purchase?: number;
   usage_limit?: number | null;
   times_used?: number;
+  expires_at?: string | null;
 }
 
 const AdminPromos: React.FC = () => {
@@ -23,7 +29,7 @@ const AdminPromos: React.FC = () => {
   const [showForm, setShowForm] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [form, setForm] = React.useState({
-    code: "", discount_type: "percentage", discount_amount: 0, discount_percentage: 0, is_active: true, min_purchase: 0, usage_limit: 0,
+    code: "", discount_type: "percentage", discount_amount: 0, discount_percentage: 0, is_active: true, min_purchase: 0, usage_limit: 0, expires_at: null as Date | null,
   });
 
   React.useEffect(() => { fetchPromos(); }, []);
@@ -36,7 +42,7 @@ const AdminPromos: React.FC = () => {
   };
 
   const resetForm = () => {
-    setForm({ code: "", discount_type: "percentage", discount_amount: 0, discount_percentage: 0, is_active: true, min_purchase: 0, usage_limit: 0 });
+    setForm({ code: "", discount_type: "percentage", discount_amount: 0, discount_percentage: 0, is_active: true, min_purchase: 0, usage_limit: 0, expires_at: null });
     setEditingId(null);
     setShowForm(false);
   };
@@ -51,6 +57,7 @@ const AdminPromos: React.FC = () => {
       is_active: form.is_active,
       min_purchase: form.min_purchase || 0,
       usage_limit: form.usage_limit || null,
+      expires_at: form.expires_at ? form.expires_at.toISOString() : null,
     };
     if (editingId) {
       const { error } = await supabase.from("promo_codes").update(payload).eq("id", editingId);
@@ -117,8 +124,23 @@ const AdminPromos: React.FC = () => {
               <div><label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Min Purchase (Rs)</label><input type="number" value={form.min_purchase} onChange={(e) => setForm({ ...form, min_purchase: Number(e.target.value) })} className="w-full px-4 py-3 bg-background border border-border rounded-lg" /></div>
               <div><label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Usage Limit</label><input type="number" value={form.usage_limit} onChange={(e) => setForm({ ...form, usage_limit: Number(e.target.value) })} placeholder="0 = unlimited" className="w-full px-4 py-3 bg-background border border-border rounded-lg" /></div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-wrap">
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="rounded" /> Active</label>
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Expires</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("justify-start text-left font-normal text-xs h-9 w-[160px]", !form.expires_at && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-1 h-3.5 w-3.5" />
+                      {form.expires_at ? format(form.expires_at, "MMM d, yyyy") : "No expiry"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={form.expires_at || undefined} onSelect={(d) => setForm({ ...form, expires_at: d || null })} initialFocus className={cn("p-3 pointer-events-auto")} />
+                  </PopoverContent>
+                </Popover>
+                {form.expires_at && <button onClick={() => setForm({ ...form, expires_at: null })} className="text-xs text-destructive hover:underline">Clear</button>}
+              </div>
               <button onClick={handleSave} className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold text-sm">{editingId ? "Update" : "Save"}</button>
             </div>
           </motion.div>
@@ -127,7 +149,7 @@ const AdminPromos: React.FC = () => {
         {loading ? <div className="text-center py-12 text-muted-foreground">Loading...</div> : (
           <div className="overflow-x-auto glass-card rounded-2xl">
             <table className="w-full text-sm min-w-[600px]">
-              <thead><tr className="text-left text-muted-foreground text-xs border-b border-border/40"><th className="px-4 py-3">Code</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Value</th><th className="px-4 py-3">Min Purchase</th><th className="px-4 py-3">Usage</th><th className="px-4 py-3">Active</th><th className="px-4 py-3">Actions</th></tr></thead>
+              <thead><tr className="text-left text-muted-foreground text-xs border-b border-border/40"><th className="px-4 py-3">Code</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Value</th><th className="px-4 py-3">Min Purchase</th><th className="px-4 py-3">Usage</th><th className="px-4 py-3">Expires</th><th className="px-4 py-3">Active</th><th className="px-4 py-3">Actions</th></tr></thead>
               <tbody>
                 {promos.map((p) => (
                   <tr key={p.id} className="border-b border-border/20 hover:bg-secondary/20 transition-colors">
@@ -136,9 +158,16 @@ const AdminPromos: React.FC = () => {
                     <td className="px-4 py-3 text-foreground">{p.discount_type === "free_shipping" ? "–" : p.discount_type === "percentage" ? `${p.discount_percentage}%` : `Rs.${p.discount_amount}`}</td>
                     <td className="px-4 py-3 text-muted-foreground">Rs.{p.min_purchase || 0}</td>
                     <td className="px-4 py-3 text-muted-foreground">{p.times_used || 0}{p.usage_limit ? ` / ${p.usage_limit}` : ""}</td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs">
+                      {p.expires_at ? (
+                        <span className={new Date(p.expires_at) < new Date() ? "text-destructive font-semibold" : ""}>
+                          {new Date(p.expires_at).toLocaleDateString()}{new Date(p.expires_at) < new Date() ? " (expired)" : ""}
+                        </span>
+                      ) : "—"}
+                    </td>
                     <td className="px-4 py-3"><button onClick={() => toggleActive(p.id, p.is_active)} className={`text-xs font-semibold px-2 py-1 rounded-full ${p.is_active ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>{p.is_active ? "Active" : "Off"}</button></td>
                     <td className="px-4 py-3 flex gap-1">
-                      <button onClick={() => { setEditingId(p.id); setForm({ code: p.code, discount_type: p.discount_type, discount_amount: p.discount_amount || 0, discount_percentage: p.discount_percentage || 0, is_active: p.is_active, min_purchase: p.min_purchase || 0, usage_limit: p.usage_limit || 0 }); setShowForm(true); }} className="p-1.5 text-primary hover:bg-primary/10 rounded-lg"><Edit2 className="w-4 h-4" /></button>
+                      <button onClick={() => { setEditingId(p.id); setForm({ code: p.code, discount_type: p.discount_type, discount_amount: p.discount_amount || 0, discount_percentage: p.discount_percentage || 0, is_active: p.is_active, min_purchase: p.min_purchase || 0, usage_limit: p.usage_limit || 0, expires_at: p.expires_at ? new Date(p.expires_at) : null }); setShowForm(true); }} className="p-1.5 text-primary hover:bg-primary/10 rounded-lg"><Edit2 className="w-4 h-4" /></button>
                       <button onClick={() => handleDelete(p.id, p.code)} className="p-1.5 text-destructive hover:bg-destructive/10 rounded-lg"><Trash2 className="w-4 h-4" /></button>
                     </td>
                   </tr>

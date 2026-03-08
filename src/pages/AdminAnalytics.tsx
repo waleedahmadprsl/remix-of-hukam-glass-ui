@@ -8,10 +8,14 @@ import {
 } from "recharts";
 import {
   TrendingUp, ShoppingCart, Package, DollarSign, Eye, Users, MousePointerClick,
-  Repeat, ArrowUpRight, ArrowDownRight, Store,
+  Repeat, ArrowUpRight, ArrowDownRight, Store, CalendarIcon,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
+import { format, subDays, isWithinInterval, startOfDay, endOfDay } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 const COLORS = ["hsl(213, 94%, 68%)", "hsl(142, 71%, 45%)", "hsl(38, 92%, 50%)", "hsl(0, 84%, 60%)", "hsl(262, 83%, 58%)", "hsl(180, 60%, 50%)"];
 
 const AdminAnalytics: React.FC = () => {
@@ -22,6 +26,8 @@ const AdminAnalytics: React.FC = () => {
   const [categories, setCategories] = React.useState<any[]>([]);
   const [shops, setShops] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [dateFrom, setDateFrom] = React.useState<Date>(subDays(new Date(), 14));
+  const [dateTo, setDateTo] = React.useState<Date>(new Date());
 
   React.useEffect(() => {
     const fetchData = async () => {
@@ -44,6 +50,20 @@ const AdminAnalytics: React.FC = () => {
     fetchData();
   }, []);
 
+  // Filter data by date range
+  const inRange = React.useCallback((dateStr: string) => {
+    try {
+      return isWithinInterval(new Date(dateStr), { start: startOfDay(dateFrom), end: endOfDay(dateTo) });
+    } catch { return false; }
+  }, [dateFrom, dateTo]);
+
+  const filteredOrders = React.useMemo(() => orders.filter(o => inRange(o.created_at)), [orders, inRange]);
+  const filteredPageViews = React.useMemo(() => pageViews.filter(pv => inRange(pv.created_at)), [pageViews, inRange]);
+  const filteredOrderItems = React.useMemo(() => {
+    const orderIds = new Set(filteredOrders.map(o => o.id));
+    return orderItems.filter(oi => orderIds.has(oi.order_id));
+  }, [orderItems, filteredOrders]);
+
   // ── Visitor Analytics ──
   const visitorStats = React.useMemo(() => {
     const now = new Date();
@@ -51,28 +71,28 @@ const AdminAnalytics: React.FC = () => {
     const weekAgo = new Date(today); weekAgo.setDate(weekAgo.getDate() - 7);
     const prevWeekStart = new Date(weekAgo); prevWeekStart.setDate(prevWeekStart.getDate() - 7);
 
-    const totalViews = pageViews.length;
-    const uniqueSessions = new Set(pageViews.map(pv => pv.session_id)).size;
-    const todayViews = pageViews.filter(pv => new Date(pv.created_at) >= today).length;
-    const weekViews = pageViews.filter(pv => new Date(pv.created_at) >= weekAgo).length;
-    const prevWeekViews = pageViews.filter(pv => {
+    const totalViews = filteredPageViews.length;
+    const uniqueSessions = new Set(filteredPageViews.map(pv => pv.session_id)).size;
+    const todayViews = filteredPageViews.filter(pv => new Date(pv.created_at) >= today).length;
+    const weekViews = filteredPageViews.filter(pv => new Date(pv.created_at) >= weekAgo).length;
+    const prevWeekViews = filteredPageViews.filter(pv => {
       const d = new Date(pv.created_at);
       return d >= prevWeekStart && d < weekAgo;
     }).length;
     const weekGrowth = prevWeekViews > 0 ? Math.round(((weekViews - prevWeekViews) / prevWeekViews) * 100) : 0;
 
     return { totalViews, uniqueSessions, todayViews, weekViews, weekGrowth };
-  }, [pageViews]);
+  }, [filteredPageViews]);
 
-  // Daily visitors (14 days)
+  // Daily visitors within date range
   const dailyVisitors = React.useMemo(() => {
     const days: Record<string, { views: number; sessions: Set<string> }> = {};
-    const now = new Date();
-    for (let i = 13; i >= 0; i--) {
-      const d = new Date(now); d.setDate(d.getDate() - i);
+    const diffDays = Math.ceil((dateTo.getTime() - dateFrom.getTime()) / (1000 * 60 * 60 * 24));
+    for (let i = diffDays; i >= 0; i--) {
+      const d = new Date(dateTo); d.setDate(d.getDate() - i);
       days[d.toISOString().slice(0, 10)] = { views: 0, sessions: new Set() };
     }
-    pageViews.forEach(pv => {
+    filteredPageViews.forEach(pv => {
       const day = pv.created_at.slice(0, 10);
       if (days[day]) { days[day].views++; days[day].sessions.add(pv.session_id); }
     });
@@ -81,22 +101,22 @@ const AdminAnalytics: React.FC = () => {
       views: d.views,
       visitors: d.sessions.size,
     }));
-  }, [pageViews]);
+  }, [filteredPageViews, dateFrom, dateTo]);
 
   // Popular pages
   const popularPages = React.useMemo(() => {
     const counts: Record<string, number> = {};
-    pageViews.forEach(pv => { counts[pv.page_path] = (counts[pv.page_path] || 0) + 1; });
+    filteredPageViews.forEach(pv => { counts[pv.page_path] = (counts[pv.page_path] || 0) + 1; });
     return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10)
       .map(([path, views]) => ({ path, views }));
-  }, [pageViews]);
+  }, [filteredPageViews]);
 
   // ── Conversion Funnel ──
   const funnelData = React.useMemo(() => {
-    const totalSessions = new Set(pageViews.map(pv => pv.session_id)).size;
-    const productViewSessions = new Set(pageViews.filter(pv => pv.page_path.startsWith("/product/")).map(pv => pv.session_id)).size;
-    const checkoutSessions = new Set(pageViews.filter(pv => pv.page_path === "/checkout").map(pv => pv.session_id)).size;
-    const completedOrders = orders.length;
+    const totalSessions = new Set(filteredPageViews.map(pv => pv.session_id)).size;
+    const productViewSessions = new Set(filteredPageViews.filter(pv => pv.page_path.startsWith("/product/")).map(pv => pv.session_id)).size;
+    const checkoutSessions = new Set(filteredPageViews.filter(pv => pv.page_path === "/checkout").map(pv => pv.session_id)).size;
+    const completedOrders = filteredOrders.length;
 
     return [
       { stage: "Visitors", count: totalSessions, pct: 100 },
@@ -104,22 +124,22 @@ const AdminAnalytics: React.FC = () => {
       { stage: "Checkout", count: checkoutSessions, pct: totalSessions > 0 ? Math.round((checkoutSessions / totalSessions) * 100) : 0 },
       { stage: "Orders", count: completedOrders, pct: totalSessions > 0 ? Math.round((completedOrders / totalSessions) * 100) : 0 },
     ];
-  }, [pageViews, orders]);
+  }, [filteredPageViews, filteredOrders]);
 
   const conversionRate = React.useMemo(() => {
-    const sessions = new Set(pageViews.map(pv => pv.session_id)).size;
-    return sessions > 0 ? ((orders.length / sessions) * 100).toFixed(1) : "0.0";
-  }, [pageViews, orders]);
+    const sessions = new Set(filteredPageViews.map(pv => pv.session_id)).size;
+    return sessions > 0 ? ((filteredOrders.length / sessions) * 100).toFixed(1) : "0.0";
+  }, [filteredPageViews, filteredOrders]);
 
   // ── Sales Performance ──
   const dailyRevenue = React.useMemo(() => {
     const days: Record<string, number> = {};
-    const now = new Date();
-    for (let i = 13; i >= 0; i--) {
-      const d = new Date(now); d.setDate(d.getDate() - i);
+    const diffDays = Math.ceil((dateTo.getTime() - dateFrom.getTime()) / (1000 * 60 * 60 * 24));
+    for (let i = diffDays; i >= 0; i--) {
+      const d = new Date(dateTo); d.setDate(d.getDate() - i);
       days[d.toISOString().slice(0, 10)] = 0;
     }
-    orders.forEach(o => {
+    filteredOrders.forEach(o => {
       const day = o.created_at.slice(0, 10);
       if (days[day] !== undefined) days[day] += Number(o.total_amount);
     });
@@ -127,54 +147,54 @@ const AdminAnalytics: React.FC = () => {
       date: new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
       revenue,
     }));
-  }, [orders]);
+  }, [filteredOrders, dateFrom, dateTo]);
 
   const statusData = React.useMemo(() => {
     const counts: Record<string, number> = {};
-    orders.forEach(o => { counts[o.status] = (counts[o.status] || 0) + 1; });
+    filteredOrders.forEach(o => { counts[o.status] = (counts[o.status] || 0) + 1; });
     return Object.entries(counts).map(([name, value]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1), value }));
-  }, [orders]);
+  }, [filteredOrders]);
 
   // Average order value
-  const avgOrderValue = orders.length > 0 ? Math.round(orders.reduce((s, o) => s + Number(o.total_amount), 0) / orders.length) : 0;
+  const avgOrderValue = filteredOrders.length > 0 ? Math.round(filteredOrders.reduce((s: number, o: any) => s + Number(o.total_amount), 0) / filteredOrders.length) : 0;
 
   // Repeat customers
   const repeatCustomers = React.useMemo(() => {
     const phoneCounts: Record<string, number> = {};
-    orders.forEach(o => { phoneCounts[o.customer_phone] = (phoneCounts[o.customer_phone] || 0) + 1; });
+    filteredOrders.forEach(o => { phoneCounts[o.customer_phone] = (phoneCounts[o.customer_phone] || 0) + 1; });
     const repeat = Object.values(phoneCounts).filter(c => c > 1).length;
     const total = Object.keys(phoneCounts).length;
     return { repeat, total, pct: total > 0 ? Math.round((repeat / total) * 100) : 0 };
-  }, [orders]);
+  }, [filteredOrders]);
 
   // Revenue by category
   const revenueByCategory = React.useMemo(() => {
     const catMap = new Map(categories.map(c => [c.id, c.name]));
     const prodCatMap = new Map(products.map(p => [p.id, p.category_id]));
     const rev: Record<string, number> = {};
-    orderItems.forEach(oi => {
+    filteredOrderItems.forEach(oi => {
       const catId = prodCatMap.get(oi.product_id);
       const catName = catId ? catMap.get(catId) || "Uncategorized" : "Uncategorized";
       rev[catName] = (rev[catName] || 0) + Number(oi.unit_price || 0) * Number(oi.quantity || 1);
     });
     return Object.entries(rev).sort((a, b) => b[1] - a[1]).map(([name, value]) => ({ name, value }));
-  }, [orderItems, products, categories]);
+  }, [filteredOrderItems, products, categories]);
 
   // Revenue by shop
   const revenueByShop = React.useMemo(() => {
     const shopMap = new Map(shops.map(s => [s.id, s.name]));
     const rev: Record<string, number> = {};
-    orderItems.forEach(oi => {
+    filteredOrderItems.forEach(oi => {
       const shopName = oi.shop_id ? shopMap.get(oi.shop_id) || "Direct" : "Direct";
       rev[shopName] = (rev[shopName] || 0) + Number(oi.unit_price || 0) * Number(oi.quantity || 1);
     });
     return Object.entries(rev).sort((a, b) => b[1] - a[1]).map(([name, value]) => ({ name, value }));
-  }, [orderItems, shops]);
+  }, [filteredOrderItems, shops]);
 
   // Promo code usage
   const promoUsage = React.useMemo(() => {
     const counts: Record<string, { count: number; revenue: number }> = {};
-    orders.forEach(o => {
+    filteredOrders.forEach(o => {
       if (o.promo_code) {
         if (!counts[o.promo_code]) counts[o.promo_code] = { count: 0, revenue: 0 };
         counts[o.promo_code].count++;
@@ -182,16 +202,50 @@ const AdminAnalytics: React.FC = () => {
       }
     });
     return Object.entries(counts).map(([code, data]) => ({ code, ...data }));
-  }, [orders]);
+  }, [filteredOrders]);
 
-  const totalRevenue = orders.reduce((s, o) => s + Number(o.total_amount), 0);
+  const totalRevenue = filteredOrders.reduce((s: number, o: any) => s + Number(o.total_amount), 0);
 
   if (loading) return <AdminLayout activeTab="analytics"><div className="text-center py-12 text-muted-foreground">Loading analytics...</div></AdminLayout>;
 
   return (
     <AdminLayout activeTab="analytics">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-2xl sm:text-4xl font-extrabold text-foreground mb-6">Analytics & Insights</h1>
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <h1 className="text-2xl sm:text-4xl font-extrabold text-foreground">Analytics & Insights</h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("justify-start text-left font-normal text-xs h-9")}>
+                  <CalendarIcon className="mr-1 h-3.5 w-3.5" />
+                  {format(dateFrom, "MMM d, yyyy")}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={dateFrom} onSelect={(d) => d && setDateFrom(d)} initialFocus className={cn("p-3 pointer-events-auto")} />
+              </PopoverContent>
+            </Popover>
+            <span className="text-xs text-muted-foreground">to</span>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("justify-start text-left font-normal text-xs h-9")}>
+                  <CalendarIcon className="mr-1 h-3.5 w-3.5" />
+                  {format(dateTo, "MMM d, yyyy")}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar mode="single" selected={dateTo} onSelect={(d) => d && setDateTo(d)} initialFocus className={cn("p-3 pointer-events-auto")} />
+              </PopoverContent>
+            </Popover>
+            <div className="flex gap-1">
+              {[7, 14, 30, 90].map(d => (
+                <Button key={d} variant="ghost" size="sm" className="h-9 text-xs px-2" onClick={() => { setDateFrom(subDays(new Date(), d)); setDateTo(new Date()); }}>
+                  {d}d
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className="bg-secondary/50">
@@ -206,7 +260,7 @@ const AdminAnalytics: React.FC = () => {
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
               {[
                 { label: "Total Revenue", value: `Rs.${totalRevenue.toLocaleString()}`, icon: DollarSign },
-                { label: "Total Orders", value: orders.length, icon: ShoppingCart },
+                { label: "Total Orders", value: filteredOrders.length, icon: ShoppingCart },
                 { label: "Avg Order Value", value: `Rs.${avgOrderValue.toLocaleString()}`, icon: TrendingUp },
                 { label: "Products", value: products.length, icon: Package },
                 { label: "Total Visitors", value: visitorStats.uniqueSessions, icon: Users },
