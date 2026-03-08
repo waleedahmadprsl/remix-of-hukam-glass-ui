@@ -168,6 +168,35 @@ const AdminOrders: React.FC = () => {
     toast({ title: "Bulk update complete", description: `${selectedIds.size} orders updated` });
   };
 
+  const exportCSV = () => {
+    const rows = [["Order ID", "Date", "Customer", "Phone", "Email", "Address", "Status", "Promo", "Shipping", "Discount", "Total", "Tracking ID"]];
+    filtered.forEach((o) => {
+      rows.push([
+        o.id,
+        new Date(o.created_at).toLocaleDateString(),
+        o.customer_name,
+        o.customer_phone,
+        o.customer_email || "",
+        `"${o.delivery_address.replace(/"/g, '""')}"`,
+        o.status,
+        o.promo_code || "",
+        String(o.shipping_cost || 0),
+        String(o.discount_amount || 0),
+        String(o.total_amount),
+        o.tracking_id || "",
+      ]);
+    });
+    const csv = rows.map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `hukam-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Exported!", description: `${filtered.length} orders exported to CSV` });
+  };
+
   return (
     <AdminLayout activeTab="orders">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
