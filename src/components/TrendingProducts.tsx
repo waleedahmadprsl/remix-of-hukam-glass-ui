@@ -80,10 +80,28 @@ const TrendingProducts = () => {
             <h2 className="text-lg sm:text-xl font-bold text-foreground">Trending Now</h2>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => scroll("left")} className="w-8 h-8 rounded-full bg-muted/60 border border-border/30 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all" aria-label="Scroll left">
+            <button
+              onClick={() => scroll("left")}
+              disabled={!canScrollLeft}
+              className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all duration-200 ${
+                canScrollLeft
+                  ? "bg-card border-border/50 text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm hover:shadow-md"
+                  : "bg-muted/30 border-border/20 text-muted-foreground/40 cursor-not-allowed"
+              }`}
+              aria-label="Scroll left"
+            >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <button onClick={() => scroll("right")} className="w-8 h-8 rounded-full bg-muted/60 border border-border/30 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all" aria-label="Scroll right">
+            <button
+              onClick={() => scroll("right")}
+              disabled={!canScrollRight}
+              className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all duration-200 ${
+                canScrollRight
+                  ? "bg-card border-border/50 text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm hover:shadow-md"
+                  : "bg-muted/30 border-border/20 text-muted-foreground/40 cursor-not-allowed"
+              }`}
+              aria-label="Scroll right"
+            >
               <ChevronRight className="w-4 h-4" />
             </button>
             <button onClick={() => navigate("/products")} className="text-xs text-muted-foreground font-medium flex items-center gap-1 hover:text-primary transition-colors ml-1">
@@ -92,7 +110,7 @@ const TrendingProducts = () => {
           </div>
         </div>
 
-        <div ref={scrollRef} className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-hide -mx-1 px-1">
+        <div ref={scrollRef} className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory -mx-1 px-1" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
           {products.map((p, i) => {
             const hasDiscount = p.compare_at_price && p.compare_at_price > p.price;
             const r = ratings[p.id];
