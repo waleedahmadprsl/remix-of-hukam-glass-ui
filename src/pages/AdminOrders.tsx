@@ -155,6 +155,19 @@ const AdminOrders: React.FC = () => {
     return Object.values(groups);
   };
 
+  const toggleOrderSelect = (id: string) => setSelectedIds((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  const handleBulkStatusUpdate = async () => {
+    if (!bulkStatus || selectedIds.size === 0) return;
+    if (!confirm(`Update ${selectedIds.size} orders to "${bulkStatus}"?`)) return;
+    for (const orderId of Array.from(selectedIds)) {
+      await handleStatusChange(orderId, bulkStatus);
+    }
+    setSelectedIds(new Set());
+    setBulkStatus("");
+    toast({ title: "Bulk update complete", description: `${selectedIds.size} orders updated` });
+  };
+
   return (
     <AdminLayout activeTab="orders">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
