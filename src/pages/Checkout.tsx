@@ -15,6 +15,7 @@ const steps = [
 
 const Checkout: React.FC = () => {
   const { items, subtotal, clearCart, updateQuantity, removeItem } = useCart();
+  const { session, profile } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = React.useState({ fullName: "", email: "", phone: "", address: "", instructions: "" });
   const [promoCode, setPromoCode] = React.useState("");
