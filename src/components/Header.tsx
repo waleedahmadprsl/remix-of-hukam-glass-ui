@@ -1,14 +1,16 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ShoppingCart, Search, Heart } from "lucide-react";
+import { Menu, X, ShoppingCart, Search, Heart, User, LogOut, ChevronDown } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useCart } from "@/context/CartContext";
 import { useMiniCart } from "@/context/MiniCartContext";
 import { useWishlist } from "@/context/WishlistContext";
+import { useAuth } from "@/context/AuthContext";
 import WishlistDrawer from "@/components/WishlistDrawer";
 import hukamName from "@/assets/hukam-name.png";
 import { supabase } from "@/lib/supabase";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface NavLink {
   label: string;
@@ -28,11 +30,13 @@ const Header = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<{ id: string; title: string; price: number; images: string[] }[]>([]);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const navigate = useNavigate();
   const [wishlistOpen, setWishlistOpen] = useState(false);
   const { items } = useCart();
   const { openCart } = useMiniCart();
   const { items: wishlistItems } = useWishlist();
+  const { session, profile, logout } = useAuth();
   const cartCount = items.reduce((s, it) => s + it.quantity, 0);
   const wishlistCount = wishlistItems.length;
 
@@ -46,6 +50,16 @@ const Header = () => {
       setSearchResults((data || []).map((p: any) => ({ ...p, images: Array.isArray(p.images) ? p.images : [] })));
     }, 300);
   };
+
+  const handleLogout = async () => {
+    setUserMenuOpen(false);
+    await logout();
+    navigate("/");
+  };
+
+  const initials = profile?.full_name
+    ? profile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    : session?.user?.email?.[0]?.toUpperCase() || "U";
 
   return (
     <>
@@ -68,7 +82,6 @@ const Header = () => {
           </nav>
 
           <div className="flex items-center gap-1">
-            {/* Theme Toggle */}
             <ThemeToggle />
 
             {/* Search */}
@@ -91,6 +104,43 @@ const Header = () => {
                 <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">{cartCount}</span>
               )}
             </button>
+
+            {/* User Menu */}
+            {session ? (
+              <div className="relative">
+                <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-1 p-1.5 rounded-full hover:bg-secondary/50 transition-colors">
+                  <Avatar className="w-8 h-8">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">{initials}</AvatarFallback>
+                  </Avatar>
+                  <ChevronDown className="w-3 h-3 text-muted-foreground hidden sm:block" />
+                </button>
+                <AnimatePresence>
+                  {userMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-xl shadow-lg overflow-hidden z-50"
+                    >
+                      <div className="px-4 py-3 border-b border-border">
+                        <p className="text-sm font-medium text-foreground truncate">{profile?.full_name || "User"}</p>
+                        <p className="text-xs text-muted-foreground truncate">{session.user.email}</p>
+                      </div>
+                      <button onClick={() => { setUserMenuOpen(false); navigate("/account"); }} className="w-full text-left px-4 py-2.5 text-sm text-foreground hover:bg-secondary/50 flex items-center gap-2">
+                        <User className="w-4 h-4" /> My Account
+                      </button>
+                      <button onClick={handleLogout} className="w-full text-left px-4 py-2.5 text-sm text-destructive hover:bg-secondary/50 flex items-center gap-2">
+                        <LogOut className="w-4 h-4" /> Logout
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <button onClick={() => navigate("/login")} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
+                <User className="w-5 h-5" />
+              </button>
+            )}
 
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -155,6 +205,15 @@ const Header = () => {
                 {link.label}
               </motion.button>
             ))}
+            {session ? (
+              <motion.button initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: navLinks.length * 0.08 }} onClick={() => { navigate("/account"); setMenuOpen(false); }} className="text-2xl font-semibold text-primary cursor-pointer">
+                My Account
+              </motion.button>
+            ) : (
+              <motion.button initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: navLinks.length * 0.08 }} onClick={() => { navigate("/login"); setMenuOpen(false); }} className="text-2xl font-semibold text-primary cursor-pointer">
+                Login / Sign Up
+              </motion.button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
