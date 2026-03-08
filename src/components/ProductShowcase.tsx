@@ -11,6 +11,7 @@ interface DBProduct {
   id: string;
   title: string;
   price: number;
+  compare_at_price: number | null;
   images: string[];
 }
 
@@ -23,7 +24,7 @@ const ProductShowcase = () => {
   useEffect(() => {
     supabase
       .from("products")
-      .select("id, title, price, images")
+      .select("id, title, price, compare_at_price, images")
       .eq("is_active", true)
       .order("created_at", { ascending: false })
       .limit(4)
@@ -74,6 +75,9 @@ const ProductShowcase = () => {
 
 const Card = ({ product, i, onAdd }: { product: DBProduct; i: number; onAdd: (e: React.MouseEvent, p: DBProduct) => void }) => {
   const navigate = useNavigate();
+  const hasDiscount = product.compare_at_price && product.compare_at_price > product.price;
+  const discountPercent = hasDiscount ? Math.round((1 - product.price / product.compare_at_price!) * 100) : 0;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -85,10 +89,20 @@ const Card = ({ product, i, onAdd }: { product: DBProduct; i: number; onAdd: (e:
     >
       <div className="relative h-48 overflow-hidden bg-secondary/30">
         <img src={product.images[0] || "/placeholder.svg"} alt={product.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+        {hasDiscount && (
+          <span className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">
+            -{discountPercent}%
+          </span>
+        )}
       </div>
       <div className="p-5 relative">
         <h3 className="font-semibold text-foreground">{product.title}</h3>
-        <p className="text-primary font-bold mt-1">₨ {product.price.toLocaleString()}</p>
+        <div className="flex items-center gap-2 mt-1">
+          <p className="text-primary font-bold">₨ {product.price.toLocaleString()}</p>
+          {hasDiscount && (
+            <p className="text-muted-foreground text-sm line-through">₨ {product.compare_at_price!.toLocaleString()}</p>
+          )}
+        </div>
         <motion.div
           onClick={(e) => onAdd(e, product)}
           className="absolute bottom-0 left-0 right-0 bg-primary text-primary-foreground flex items-center justify-center gap-2 py-3 font-medium text-sm translate-y-full group-hover:translate-y-0 transition-transform duration-300 cursor-pointer"
