@@ -114,7 +114,7 @@ const Products = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 max-w-7xl mx-auto">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="rounded-2xl overflow-hidden border border-border/40">
-                <div className="h-36 sm:h-48 bg-muted animate-pulse" />
+                <div className="h-48 sm:h-56 bg-muted animate-pulse" />
                 <div className="p-4 space-y-2">
                   <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
                   <div className="h-3 bg-muted rounded animate-pulse w-1/3" />
