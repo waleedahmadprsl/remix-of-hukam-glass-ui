@@ -41,6 +41,8 @@ const AdminOrders: React.FC = () => {
   const [trackingInputs, setTrackingInputs] = React.useState<Record<string, string>>({});
   const [orderItemsMap, setOrderItemsMap] = React.useState<Record<string, OrderItem[]>>({});
   const [shops, setShops] = React.useState<Shop[]>([]);
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = React.useState("");
 
   React.useEffect(() => {
     fetchOrders(); fetchShops();
