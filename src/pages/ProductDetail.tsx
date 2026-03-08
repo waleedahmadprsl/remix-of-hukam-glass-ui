@@ -28,6 +28,8 @@ interface DBProduct {
   return_policy: string | null;
   meta_title: string | null;
   meta_description: string | null;
+  shop_id: string | null;
+  buying_cost: number | null;
 }
 
 function parseDescription(desc: string) {
