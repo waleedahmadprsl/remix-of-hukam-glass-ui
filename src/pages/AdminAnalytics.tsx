@@ -127,9 +127,9 @@ const AdminAnalytics: React.FC = () => {
   }, [filteredPageViews, filteredOrders]);
 
   const conversionRate = React.useMemo(() => {
-    const sessions = new Set(pageViews.map(pv => pv.session_id)).size;
-    return sessions > 0 ? ((orders.length / sessions) * 100).toFixed(1) : "0.0";
-  }, [pageViews, orders]);
+    const sessions = new Set(filteredPageViews.map(pv => pv.session_id)).size;
+    return sessions > 0 ? ((filteredOrders.length / sessions) * 100).toFixed(1) : "0.0";
+  }, [filteredPageViews, filteredOrders]);
 
   // ── Sales Performance ──
   const dailyRevenue = React.useMemo(() => {
