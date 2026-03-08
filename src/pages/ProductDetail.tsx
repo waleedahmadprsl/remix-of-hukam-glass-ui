@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Zap, Clock, Share2, ChevronLeft, ShoppingCart, Star, Shield, Truck } from "lucide-react";
+import { Check, Zap, Clock, Share2, ChevronLeft, ShoppingCart, Star, Shield, Truck, Copy } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useMiniCart } from "@/context/MiniCartContext";
 import { toast } from "@/hooks/use-toast";
@@ -62,10 +62,13 @@ const ProductDetail = () => {
   const [selectedImage, setSelectedImage] = React.useState(0);
   const [activeTab, setActiveTab] = React.useState<"features" | "specs">("features");
   const [selectedVariant, setSelectedVariant] = React.useState<{ id: string; variant_name: string; price: number | null; stock: number | null; sku: string | null } | null>(null);
+  const [categoryName, setCategoryName] = React.useState<string | null>(null);
+  const [zoomStyle, setZoomStyle] = React.useState<React.CSSProperties>({});
+  const [isZooming, setIsZooming] = React.useState(false);
+  const imageContainerRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     if (!id) return;
-    // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(id)) {
       setProduct(null);
@@ -85,12 +88,23 @@ const ProductDetail = () => {
       const p = { ...data, images: Array.isArray(data.images) ? data.images as string[] : [] } as DBProduct;
       setProduct(p);
       addToRecentlyViewed(p.id);
+
+      // Fetch category name for breadcrumbs
+      if (p.category_id) {
+        const { data: cat } = await supabase.from("categories").select("name").eq("id", p.category_id).single();
+        setCategoryName(cat?.name || null);
+      } else if (p.sub_category_id) {
+        const { data: subCat } = await supabase.from("sub_categories").select("name, category_id, categories(name)").eq("id", p.sub_category_id).single();
+        setCategoryName((subCat as any)?.categories?.name || subCat?.name || null);
+      } else {
+        setCategoryName(null);
+      }
+
       // SEO meta
       if (p.meta_title) document.title = p.meta_title;
       else document.title = `${p.title} | HUKAM`;
       const metaDesc = document.querySelector('meta[name="description"]');
       if (metaDesc) metaDesc.setAttribute("content", p.meta_description || p.description?.slice(0, 160) || "");
-      // JSON-LD Product structured data
       const jsonLd = {
         "@context": "https://schema.org",
         "@type": "Product",
@@ -111,7 +125,7 @@ const ProductDetail = () => {
       script.setAttribute("data-product-jsonld", "true");
       script.text = JSON.stringify(jsonLd);
       document.head.appendChild(script);
-      // Fetch related
+
       const { data: rel } = await supabase
         .from("products")
         .select("*")
@@ -124,6 +138,46 @@ const ProductDetail = () => {
       setProduct(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Image zoom handlers
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!imageContainerRef.current) return;
+    const rect = imageContainerRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setZoomStyle({ transformOrigin: `${x}% ${y}%`, transform: "scale(2)" });
+    setIsZooming(true);
+  };
+
+  const handleMouseLeave = () => {
+    setZoomStyle({});
+    setIsZooming(false);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!imageContainerRef.current || !e.touches[0]) return;
+    const rect = imageContainerRef.current.getBoundingClientRect();
+    const x = ((e.touches[0].clientX - rect.left) / rect.width) * 100;
+    const y = ((e.touches[0].clientY - rect.top) / rect.height) * 100;
+    setZoomStyle({ transformOrigin: `${x}% ${y}%`, transform: "scale(2)" });
+    setIsZooming(true);
+  };
+
+  // Share handler
+  const handleShare = async () => {
+    const url = window.location.href;
+    const title = product?.title || "Check out this product on HUKAM";
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, url });
+      } catch (err) {
+        // User cancelled or share failed — ignore
+      }
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast({ title: "Link copied!", description: "Product link copied to clipboard" });
     }
   };
 
@@ -193,19 +247,32 @@ const ProductDetail = () => {
   return (
     <div className="min-h-screen bg-background pt-24 pb-20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Breadcrumb */}
+        {/* Breadcrumb with Category */}
         <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
           <button onClick={() => navigate("/")} className="hover:text-foreground transition-colors">Home</button>
           <span>/</span>
           <button onClick={() => navigate("/products")} className="hover:text-foreground transition-colors">Products</button>
+          {categoryName && (
+            <>
+              <span>/</span>
+              <button onClick={() => navigate(`/products?category=${product.category_id || product.sub_category_id}`)} className="hover:text-foreground transition-colors">{categoryName}</button>
+            </>
+          )}
           <span>/</span>
-          <span className="text-foreground font-medium">{product.title}</span>
+          <span className="text-foreground font-medium truncate max-w-[200px]">{product.title}</span>
         </motion.div>
 
         <div className="grid lg:grid-cols-2 gap-12 items-start max-w-7xl mx-auto">
-          {/* Left: Image Gallery */}
+          {/* Left: Image Gallery with Zoom */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <div className="glass-card rounded-3xl overflow-hidden mb-4 relative group aspect-square">
+            <div
+              ref={imageContainerRef}
+              className="glass-card rounded-3xl overflow-hidden mb-4 relative group aspect-square cursor-zoom-in"
+              onMouseMove={handleMouseMove}
+              onMouseLeave={handleMouseLeave}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleMouseLeave}
+            >
               <AnimatePresence mode="wait">
                 <motion.img
                   key={selectedImage}
@@ -215,14 +282,23 @@ const ProductDetail = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.3 }}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-transform duration-150"
+                  style={isZooming ? zoomStyle : {}}
                 />
               </AnimatePresence>
-              {product.images.length > 1 && (
+              {product.images.length > 1 && !isZooming && (
                 <div className="absolute bottom-4 right-4 bg-foreground/60 text-background px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
                   {selectedImage + 1} / {product.images.length}
                 </div>
               )}
+              {/* Share button */}
+              <button
+                onClick={handleShare}
+                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-foreground/20 backdrop-blur-sm text-background flex items-center justify-center hover:bg-foreground/40 transition-colors z-10"
+                aria-label="Share product"
+              >
+                <Share2 className="w-4 h-4" />
+              </button>
             </div>
             {product.images.length > 1 && (
               <div className="flex gap-3">

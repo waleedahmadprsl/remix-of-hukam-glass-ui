@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Search, SlidersHorizontal } from "lucide-react";
+import { ShoppingBag, Search, SlidersHorizontal, Heart, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useCart } from "@/context/CartContext";
 import { useMiniCart } from "@/context/MiniCartContext";
+import { useWishlist } from "@/context/WishlistContext";
 import { toast } from "@/hooks/use-toast";
 import ProductFilterSidebar, { type FilterState } from "@/components/ProductFilterSidebar";
 import { useProductRatings, StarRating } from "@/hooks/useProductRatings";
@@ -21,6 +22,8 @@ interface DBProduct {
   description: string;
   compare_at_price: number | null;
   tags: string[] | null;
+  shop_id: string | null;
+  buying_cost: number | null;
 }
 
 interface Category {
@@ -30,16 +33,24 @@ interface Category {
   parent_id: string | null;
 }
 
+type SortOption = "newest" | "price-asc" | "price-desc";
+
+const ITEMS_PER_PAGE = 12;
+
 const Products = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { addItem } = useCart();
   const { openCart } = useMiniCart();
+  const { isInWishlist, toggleItem } = useWishlist();
   const [products, setProducts] = useState<DBProduct[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(searchParams.get("q") || "");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [sort, setSort] = useState<SortOption>("newest");
+  const [page, setPage] = useState(0);
+  const gridRef = useRef<HTMLDivElement>(null);
   const ratings = useProductRatings();
   const [filters, setFilters] = useState<FilterState>({
     minPrice: 0,
@@ -58,10 +69,13 @@ const Products = () => {
     setSearchParams(params, { replace: true });
   }, [search, filters.categories]);
 
+  // Reset page when filters/search/sort change
+  useEffect(() => { setPage(0); }, [search, filters, sort]);
+
   const fetchData = async () => {
     try {
       const [prodRes, catRes] = await Promise.all([
-        supabase.from("products").select("id, title, price, images, stock, is_active, sub_category_id, category_id, description, compare_at_price, tags").eq("is_active", true).order("created_at", { ascending: false }),
+        supabase.from("products").select("id, title, price, images, stock, is_active, sub_category_id, category_id, description, compare_at_price, tags, shop_id, buying_cost").eq("is_active", true).order("created_at", { ascending: false }),
         supabase.from("categories").select("id, name, slug, parent_id"),
       ]);
       setProducts((prodRes.data || []).map((p: any) => ({ ...p, images: Array.isArray(p.images) ? p.images : [], tags: Array.isArray(p.tags) ? p.tags : [] })));
@@ -76,18 +90,46 @@ const Products = () => {
   const allTags = [...new Set(products.flatMap((p) => p.tags || []))].filter(Boolean);
 
   const filtered = products.filter((p) => {
-    const matchSearch = p.title.toLowerCase().includes(search.toLowerCase());
+    const q = search.toLowerCase();
+    const matchSearch = !q || p.title.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q) || (p.tags || []).some((t) => t.toLowerCase().includes(q));
     const matchPrice = p.price >= filters.minPrice && (filters.maxPrice >= 50000 || p.price <= filters.maxPrice);
     const matchCat = filters.categories.length === 0 || filters.categories.includes(p.category_id || "") || filters.categories.includes(p.sub_category_id || "");
     const matchTags = filters.tags.length === 0 || filters.tags.some((t) => (p.tags || []).includes(t));
     return matchSearch && matchPrice && matchCat && matchTags;
   });
 
+  // Sort
+  const sorted = [...filtered].sort((a, b) => {
+    if (sort === "price-asc") return a.price - b.price;
+    if (sort === "price-desc") return b.price - a.price;
+    return 0; // newest — already sorted by created_at desc from DB
+  });
+
+  const totalPages = Math.ceil(sorted.length / ITEMS_PER_PAGE);
+  const paged = sorted.slice(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE);
+
+  const goPage = (p: number) => {
+    setPage(p);
+    gridRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const handleAddToCart = (e: React.MouseEvent, product: DBProduct) => {
     e.stopPropagation();
-    addItem({ id: product.id, name: product.title, price: `₨ ${product.price.toLocaleString()}`, image: product.images[0] || "" });
+    addItem({
+      id: product.id,
+      name: product.title,
+      price: `₨ ${product.price.toLocaleString()}`,
+      image: product.images[0] || "",
+      shopId: product.shop_id || null,
+      buyingCost: product.buying_cost || 0,
+    });
     toast({ title: "Added to Cart", description: product.title });
     openCart();
+  };
+
+  const handleWishlistToggle = (e: React.MouseEvent, product: DBProduct) => {
+    e.stopPropagation();
+    toggleItem({ id: product.id, title: product.title, price: product.price, image: product.images[0] || "" });
   };
 
   return (
@@ -102,7 +144,16 @@ const Products = () => {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="max-w-4xl mx-auto mb-8 flex gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <input type="text" placeholder="Search products..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-12 pr-4 py-3.5 bg-background/80 backdrop-blur-md border border-border rounded-2xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all" />
+            <input type="text" placeholder="Search products, tags, descriptions..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-12 pr-4 py-3.5 bg-background/80 backdrop-blur-md border border-border rounded-2xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all" />
+          </div>
+          {/* Sort dropdown */}
+          <div className="relative">
+            <select value={sort} onChange={(e) => setSort(e.target.value as SortOption)} className="appearance-none pl-10 pr-4 py-3.5 bg-background border border-border rounded-2xl text-foreground text-sm font-medium focus:outline-none focus:border-primary cursor-pointer">
+              <option value="newest">Newest</option>
+              <option value="price-asc">Price: Low → High</option>
+              <option value="price-desc">Price: High → Low</option>
+            </select>
+            <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           </div>
           <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setShowMobileFilters(true)} className="lg:hidden flex items-center gap-2 px-4 py-3.5 bg-background border border-border rounded-2xl text-foreground">
             <SlidersHorizontal className="w-4 h-4" />
@@ -124,8 +175,8 @@ const Products = () => {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground mb-6 text-center">
-            {`${filtered.length} product${filtered.length !== 1 ? "s" : ""} found`}
+          <p ref={gridRef} className="text-sm text-muted-foreground mb-6 text-center">
+            {`${sorted.length} product${sorted.length !== 1 ? "s" : ""} found`}
           </p>
         )}
 
@@ -137,8 +188,9 @@ const Products = () => {
           <div className="flex-1">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
               <AnimatePresence mode="popLayout">
-                {filtered.map((product, i) => {
+                {paged.map((product, i) => {
                   const r = ratings[product.id];
+                  const wishlisted = isInWishlist(product.id);
                   return (
                     <motion.div key={product.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.3, delay: i * 0.03 }} whileHover={{ y: -6 }} onClick={() => navigate(`/product/${product.id}`)} className="glass-card group overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:border-primary/30">
                       <div className="relative h-48 sm:h-56 overflow-hidden bg-secondary/30">
@@ -153,10 +205,18 @@ const Products = () => {
                           </span>
                         )}
                         {product.stock > 0 && product.stock <= 5 && (
-                          <span className="absolute top-2 right-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">
+                          <span className="absolute top-2 right-10 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">
                             🔥 {product.stock} left
                           </span>
                         )}
+                        {/* Wishlist Heart */}
+                        <button
+                          onClick={(e) => handleWishlistToggle(e, product)}
+                          className={`absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center transition-all ${wishlisted ? "bg-destructive/90 text-destructive-foreground" : "bg-foreground/20 backdrop-blur-sm text-background hover:bg-foreground/40"}`}
+                          aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                        >
+                          <Heart className={`w-4 h-4 ${wishlisted ? "fill-current" : ""}`} />
+                        </button>
                       </div>
                       <div className="p-4 relative">
                         <h3 className="font-semibold text-foreground text-sm">{product.title}</h3>
@@ -178,7 +238,32 @@ const Products = () => {
               </AnimatePresence>
             </div>
 
-            {!loading && filtered.length === 0 && (
+            {/* Pagination */}
+            {!loading && totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8">
+                <button onClick={() => goPage(page - 1)} disabled={page === 0} className="w-9 h-9 rounded-full bg-secondary text-foreground flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:bg-primary hover:text-primary-foreground transition-colors">
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                {Array.from({ length: totalPages }).map((_, i) => {
+                  // Show max 5 page buttons around current
+                  if (totalPages <= 7 || Math.abs(i - page) <= 2 || i === 0 || i === totalPages - 1) {
+                    return (
+                      <button key={i} onClick={() => goPage(i)} className={`w-9 h-9 rounded-full text-sm font-semibold transition-colors ${i === page ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-primary/10"}`}>
+                        {i + 1}
+                      </button>
+                    );
+                  }
+                  if (i === 1 && page > 3) return <span key={i} className="text-muted-foreground">…</span>;
+                  if (i === totalPages - 2 && page < totalPages - 4) return <span key={i} className="text-muted-foreground">…</span>;
+                  return null;
+                })}
+                <button onClick={() => goPage(page + 1)} disabled={page >= totalPages - 1} className="w-9 h-9 rounded-full bg-secondary text-foreground flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:bg-primary hover:text-primary-foreground transition-colors">
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {!loading && sorted.length === 0 && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20">
                 <p className="text-xl text-muted-foreground">No products found. Try adjusting your filters.</p>
               </motion.div>

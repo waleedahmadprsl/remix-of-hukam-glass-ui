@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Mail, Phone, MapPin, Clock } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, MessageCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 const Contact = () => {
@@ -16,7 +16,6 @@ const Contact = () => {
     e.preventDefault();
     setResult("Sending....");
 
-    // Save to database
     try {
       await supabase.from("contact_submissions").insert([{
         name: formData.name,
@@ -93,6 +92,19 @@ const Contact = () => {
                 </motion.a>
               ))}
             </div>
+
+            {/* WhatsApp CTA */}
+            <motion.a
+              href="https://wa.me/923426807645?text=Hi%20HUKAM!%20I%20have%20a%20question"
+              target="_blank"
+              rel="noopener noreferrer"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="flex items-center justify-center gap-3 w-full bg-[hsl(142,70%,45%)] text-white py-4 rounded-2xl font-bold text-base shadow-lg shadow-[hsl(142,70%,45%)]/25 mt-6 transition-all hover:shadow-xl"
+            >
+              <MessageCircle className="w-5 h-5" />
+              Chat on WhatsApp
+            </motion.a>
           </motion.div>
 
           {/* Form */}
@@ -133,8 +145,23 @@ const Contact = () => {
           </motion.div>
         </div>
 
+        {/* Map Section */}
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mt-16 glass-card rounded-3xl overflow-hidden">
+          <iframe
+            title="HUKAM Location - Mirpur, Azad Kashmir"
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d106437.50730498553!2d73.6799!3d33.1477!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x38e1a7a0c0000001%3A0x7d87c66c483a2c83!2sMirpur%2C%20Azad%20Kashmir!5e0!3m2!1sen!2spk!4v1700000000000!5m2!1sen!2spk"
+            width="100%"
+            height="300"
+            style={{ border: 0 }}
+            allowFullScreen
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            className="w-full"
+          />
+        </motion.div>
+
         {/* Support CTA */}
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mt-20 glass-card p-10 sm:p-12 rounded-3xl text-center">
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mt-12 glass-card p-10 sm:p-12 rounded-3xl text-center">
           <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">Need Quick Support?</h2>
           <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">Email us at contact@hukam.pk or fill out the form above. Our team responds within minutes!</p>
         </motion.div>

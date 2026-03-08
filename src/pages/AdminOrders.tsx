@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { logActivity } from "@/lib/activityLogger";
 import { playBeep } from "@/lib/audio";
 import { toast } from "@/hooks/use-toast";
-import { ChevronDown, ChevronUp, Phone, Mail, MapPin, FileText, Tag, Package, Truck, Search, Store, Download } from "lucide-react";
+import { ChevronDown, ChevronUp, Phone, Mail, MapPin, FileText, Tag, Package, Truck, Search, Store, Download, Printer, RotateCcw } from "lucide-react";
 
 interface Order {
   id: string; customer_name: string; customer_email: string | null; customer_phone: string;
@@ -43,6 +43,7 @@ const AdminOrders: React.FC = () => {
   const [shops, setShops] = React.useState<Shop[]>([]);
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const [bulkStatus, setBulkStatus] = React.useState("");
+  const [returnModal, setReturnModal] = React.useState<{ orderId: string; amount: string; reason: string } | null>(null);
 
   React.useEffect(() => {
     fetchOrders(); fetchShops();
@@ -85,7 +86,6 @@ const AdminOrders: React.FC = () => {
     const { error } = await supabase.from("orders").update({ status: newStatus } as any).eq("id", orderId);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
 
-    // Stock restoration when canceled/returned (only if coming from a non-canceled/returned status)
     if ((newStatus === "canceled" || newStatus === "returned") && oldStatus && !["canceled", "returned"].includes(oldStatus)) {
       const items = orderItemsMap[orderId] || [];
       if (items.length === 0) {
@@ -104,8 +104,9 @@ const AdminOrders: React.FC = () => {
         }
       } else {
         for (const item of items) {
-          if (item.shop_id) {
-            // variant stock restore
+          if (item.variant_id) {
+            const { data: v } = await supabase.from("product_variants").select("stock").eq("id", item.variant_id).single();
+            if (v) await supabase.from("product_variants").update({ stock: (v.stock || 0) + item.quantity }).eq("id", item.variant_id);
           }
           if (item.product_id) {
             const { data: p } = await supabase.from("products").select("stock").eq("id", item.product_id).single();
@@ -144,7 +145,6 @@ const AdminOrders: React.FC = () => {
     return counts;
   }, [orders]);
 
-  // Group order items by shop
   const groupByShop = (items: OrderItem[]) => {
     const groups: Record<string, { shop: Shop | null; items: OrderItem[] }> = {};
     items.forEach((item) => {
@@ -197,6 +197,48 @@ const AdminOrders: React.FC = () => {
     toast({ title: "Exported!", description: `${filtered.length} orders exported to CSV` });
   };
 
+  // Generate Invoice — opens print-friendly window
+  const generateInvoice = (order: Order) => {
+    const items = orderItemsMap[order.id] || [];
+    const shippingCost = Number(order.shipping_cost || 0);
+    const discountAmt = Number(order.discount_amount || 0);
+    const invoiceHtml = `
+      <!DOCTYPE html><html><head><title>Invoice #${order.id.slice(0, 8)}</title>
+      <style>body{font-family:system-ui,sans-serif;max-width:700px;margin:0 auto;padding:40px 20px;color:#111}
+      h1{font-size:24px;margin-bottom:4px}h2{font-size:14px;color:#666;font-weight:normal}
+      table{width:100%;border-collapse:collapse;margin:20px 0}th,td{text-align:left;padding:8px 12px;border-bottom:1px solid #eee}
+      th{background:#f8f8f8;font-size:12px;text-transform:uppercase;color:#666}
+      .total-row{font-weight:bold;font-size:16px}.logo{font-size:28px;font-weight:900;color:#111}
+      .meta{display:flex;justify-content:space-between;margin:20px 0;font-size:13px;color:#444}
+      .footer{margin-top:40px;text-align:center;font-size:11px;color:#999}
+      @media print{body{padding:20px}}</style></head><body>
+      <div class="logo">HUKAM</div>
+      <h1>Invoice</h1><h2>Order #${order.id.slice(0, 8)}</h2>
+      <div class="meta"><div><strong>Customer:</strong> ${order.customer_name}<br>${order.customer_phone}<br>${order.customer_email || ""}<br>${order.delivery_address}</div>
+      <div style="text-align:right"><strong>Date:</strong> ${new Date(order.created_at).toLocaleDateString()}<br><strong>Status:</strong> ${order.status}</div></div>
+      <table><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>
+      ${items.length > 0 ? items.map(i => `<tr><td>${i.product_title}${i.variant_name ? ` (${i.variant_name})` : ""}</td><td>${i.quantity}</td><td>Rs.${i.unit_price}</td><td>Rs.${(i.unit_price * i.quantity).toLocaleString()}</td></tr>`).join("") :
+      (order.items || "").split("\n").map(l => `<tr><td colspan="4">${l}</td></tr>`).join("")}
+      </tbody></table>
+      <table style="width:250px;margin-left:auto"><tbody>
+      <tr><td>Subtotal</td><td style="text-align:right">Rs.${(order.total_amount + discountAmt - shippingCost).toLocaleString()}</td></tr>
+      ${shippingCost > 0 ? `<tr><td>Shipping</td><td style="text-align:right">Rs.${shippingCost}</td></tr>` : ""}
+      ${discountAmt > 0 ? `<tr><td>Discount</td><td style="text-align:right;color:green">-Rs.${discountAmt}</td></tr>` : ""}
+      <tr class="total-row"><td>Total</td><td style="text-align:right">Rs.${order.total_amount.toLocaleString()}</td></tr>
+      </tbody></table>
+      <div class="footer">Thank you for shopping with HUKAM! | hukam.pk</div>
+      <script>window.print();</script></body></html>`;
+    const win = window.open("", "_blank");
+    if (win) { win.document.write(invoiceHtml); win.document.close(); }
+  };
+
+  // Return/Refund handler
+  const handleProcessReturn = () => {
+    if (!returnModal) return;
+    toast({ title: "Return Initiated", description: `Refund of Rs.${returnModal.amount || "0"} for #${returnModal.orderId.slice(0, 8)} — ${returnModal.reason || "No reason"}. Process manually.` });
+    setReturnModal(null);
+  };
+
   return (
     <AdminLayout activeTab="orders">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -221,7 +263,6 @@ const AdminOrders: React.FC = () => {
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name, phone, or order ID..." className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-xl text-sm focus:outline-none focus:border-primary" />
         </div>
 
-        {/* Bulk Actions */}
         {selectedIds.size > 0 && (
           <div className="flex items-center gap-3 mb-4 p-3 bg-primary/5 rounded-xl border border-primary/20">
             <span className="text-sm font-semibold text-foreground">{selectedIds.size} selected</span>
@@ -233,6 +274,39 @@ const AdminOrders: React.FC = () => {
             <button onClick={() => setSelectedIds(new Set())} className="text-xs text-muted-foreground hover:text-foreground">Clear</button>
           </div>
         )}
+
+        {/* Return/Refund Modal */}
+        <AnimatePresence>
+          {returnModal && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setReturnModal(null)}>
+              <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} onClick={(e) => e.stopPropagation()} className="bg-background border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl">
+                <h3 className="text-lg font-bold text-foreground mb-4">Process Return / Refund</h3>
+                <p className="text-xs text-muted-foreground mb-4">Order #{returnModal.orderId.slice(0, 8)}</p>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase">Refund Amount (Rs.)</label>
+                    <input value={returnModal.amount} onChange={(e) => setReturnModal({ ...returnModal, amount: e.target.value })} placeholder="0" type="number" className="w-full mt-1 px-3 py-2 bg-secondary border border-border rounded-lg text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase">Reason</label>
+                    <select value={returnModal.reason} onChange={(e) => setReturnModal({ ...returnModal, reason: e.target.value })} className="w-full mt-1 px-3 py-2 bg-secondary border border-border rounded-lg text-sm">
+                      <option value="">Select reason...</option>
+                      <option value="Defective product">Defective product</option>
+                      <option value="Wrong item sent">Wrong item sent</option>
+                      <option value="Customer changed mind">Customer changed mind</option>
+                      <option value="Damaged in transit">Damaged in transit</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <button onClick={handleProcessReturn} className="flex-1 bg-primary text-primary-foreground py-2 rounded-lg text-sm font-semibold">Process Return</button>
+                    <button onClick={() => setReturnModal(null)} className="px-4 py-2 bg-secondary text-foreground rounded-lg text-sm">Cancel</button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {loading ? <div className="text-center py-12 text-muted-foreground">Loading orders...</div> : filtered.length === 0 ? <div className="text-center py-12 text-muted-foreground">No orders found.</div> : (
           <div className="space-y-3">
@@ -271,7 +345,6 @@ const AdminOrders: React.FC = () => {
                             {order.instructions && <div className="flex items-start gap-2"><FileText className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" /><div><p className="text-xs text-muted-foreground">Instructions</p><p className="text-sm text-foreground">{order.instructions}</p></div></div>}
                           </div>
                           <div className="space-y-3">
-                            {/* Shop-Split Items View */}
                             {items.length > 0 ? (
                               <div className="space-y-3">
                                 {shopGroups.map((group, gi) => (
@@ -314,6 +387,16 @@ const AdminOrders: React.FC = () => {
                                   <button onClick={() => saveTracking(order.id)} className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-semibold">Save</button>
                                 </div>
                               </div>
+                            </div>
+
+                            {/* Invoice + Return buttons */}
+                            <div className="flex gap-2 pt-2">
+                              <button onClick={() => generateInvoice(order)} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-foreground rounded-lg text-xs font-semibold hover:bg-secondary/80 transition-colors">
+                                <Printer className="w-3.5 h-3.5" /> Invoice
+                              </button>
+                              <button onClick={() => setReturnModal({ orderId: order.id, amount: String(order.total_amount), reason: "" })} className="flex items-center gap-1.5 px-3 py-1.5 bg-destructive/10 text-destructive rounded-lg text-xs font-semibold hover:bg-destructive/20 transition-colors">
+                                <RotateCcw className="w-3.5 h-3.5" /> Return/Refund
+                              </button>
                             </div>
                           </div>
                         </div>

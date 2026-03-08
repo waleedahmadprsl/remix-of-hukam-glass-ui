@@ -6,6 +6,15 @@ import { Package, ShoppingCart, TrendingUp, AlertTriangle, Clock, DollarSign, Wa
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
 interface DayData { date: string; revenue: number; profit: number; }
+interface LowStockProduct { id: string; title: string; stock: number; price: number; }
+
+const statusColors: Record<string, string> = {
+  pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+  confirmed: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+  dispatched: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
+  delivered: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+  canceled: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+};
 
 const AdminDashboard: React.FC = () => {
   const [stats, setStats] = React.useState({
@@ -16,6 +25,7 @@ const AdminDashboard: React.FC = () => {
   const [chartData, setChartData] = React.useState<DayData[]>([]);
   const [topProducts, setTopProducts] = React.useState<{ title: string; count: number }[]>([]);
   const [recentOrders, setRecentOrders] = React.useState<any[]>([]);
+  const [lowStockProducts, setLowStockProducts] = React.useState<LowStockProduct[]>([]);
 
   React.useEffect(() => { fetchAll(); }, []);
 
@@ -41,16 +51,20 @@ const AdminDashboard: React.FC = () => {
     const pendingOrders = orders.filter((o: any) => o.status === "pending").length;
     const outOfStock = products.filter((p: any) => p.stock <= 0).length;
 
-    // True Net Profit from order_items
     const totalCOGS = orderItems.reduce((s: number, i: any) => s + Number(i.buying_cost || 0) * Number(i.quantity || 1), 0);
     const totalItemRevenue = orderItems.reduce((s: number, i: any) => s + Number(i.unit_price || 0) * Number(i.quantity || 1), 0);
     const netProfit = totalItemRevenue - totalCOGS;
     const grossMargin = totalItemRevenue > 0 ? Math.round(((totalItemRevenue - totalCOGS) / totalItemRevenue) * 100) : 0;
-
-    // Inventory Valuation
     const inventoryValue = products.reduce((s: number, p: any) => s + Number(p.buying_cost || 0) * Number(p.stock || 0), 0);
 
-    // Revenue + Profit by day (last 14 days)
+    // Low stock products (stock <= 5, sorted ascending)
+    const lowStock = products
+      .filter((p: any) => p.stock <= 5)
+      .sort((a: any, b: any) => a.stock - b.stock)
+      .slice(0, 10)
+      .map((p: any) => ({ id: p.id, title: p.title, stock: p.stock, price: p.price }));
+    setLowStockProducts(lowStock);
+
     const dayMap: Record<string, { revenue: number; profit: number }> = {};
     for (let i = 13; i >= 0; i--) {
       const d = new Date(); d.setDate(d.getDate() - i);
@@ -66,10 +80,7 @@ const AdminDashboard: React.FC = () => {
     });
     setChartData(Object.entries(dayMap).map(([date, v]) => ({ date: date.slice(5), revenue: v.revenue, profit: v.profit })));
 
-    // Top products from order_items table (reliable, not regex)
-    const { data: topItemsData } = await supabase
-      .from("order_items")
-      .select("product_title, quantity");
+    const { data: topItemsData } = await supabase.from("order_items").select("product_title, quantity");
     const productCounts: Record<string, number> = {};
     (topItemsData || []).forEach((item: any) => {
       const title = item.product_title || "Unknown";
@@ -146,6 +157,29 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
+        {/* Inventory Alerts */}
+        {lowStockProducts.length > 0 && (
+          <div className="glass-card p-4 sm:p-6 rounded-2xl mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              <h3 className="font-bold text-foreground">Inventory Alerts — Low Stock</h3>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {lowStockProducts.map((p) => (
+                <div key={p.id} className="flex items-center justify-between p-3 bg-destructive/5 border border-destructive/20 rounded-xl">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{p.title}</p>
+                    <p className="text-xs text-muted-foreground">₨ {p.price.toLocaleString()}</p>
+                  </div>
+                  <span className={`text-xs font-bold px-2 py-1 rounded-full flex-shrink-0 ml-2 ${p.stock <= 0 ? "bg-destructive/20 text-destructive" : "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400"}`}>
+                    {p.stock <= 0 ? "Out" : `${p.stock} left`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="glass-card p-4 sm:p-6 rounded-2xl">
           <h3 className="font-bold text-foreground mb-4">Recent Orders</h3>
           <div className="overflow-x-auto">
@@ -168,14 +202,6 @@ const AdminDashboard: React.FC = () => {
       </motion.div>
     </AdminLayout>
   );
-};
-
-const statusColors: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  confirmed: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  dispatched: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-  delivered: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  canceled: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
 };
 
 export default AdminDashboard;
