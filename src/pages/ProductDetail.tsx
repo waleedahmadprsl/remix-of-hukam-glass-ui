@@ -10,6 +10,7 @@ import CustomerReviews from "@/components/CustomerReviews";
 import FrequentlyBoughtTogether from "@/components/FrequentlyBoughtTogether";
 import ProductQA from "@/components/ProductQA";
 import RecentlyViewed, { addToRecentlyViewed } from "@/components/RecentlyViewed";
+import VariantPicker from "@/components/VariantPicker";
 
 interface DBProduct {
   id: string;
@@ -58,7 +59,7 @@ const ProductDetail = () => {
   const [qty, setQty] = React.useState(1);
   const [selectedImage, setSelectedImage] = React.useState(0);
   const [activeTab, setActiveTab] = React.useState<"features" | "specs">("features");
-  
+  const [selectedVariant, setSelectedVariant] = React.useState<{ id: string; variant_name: string; price: number | null; stock: number | null; sku: string | null } | null>(null);
 
   React.useEffect(() => {
     if (!id) return;
@@ -157,12 +158,15 @@ const ProductDetail = () => {
   }
 
   const { description, features, specs } = parseDescription(product.description || "");
-  const stockStatus = product.stock > 20 ? "In Stock" : product.stock > 5 ? "Low Stock" : product.stock > 0 ? "Only Few Left" : "Out of Stock";
-  const stockColor = product.stock > 20 ? "text-primary" : product.stock > 5 ? "text-accent-foreground" : product.stock > 0 ? "text-destructive" : "text-destructive";
+  const activePrice = selectedVariant?.price ?? product.price;
+  const activeStock = selectedVariant?.stock ?? product.stock;
+  const stockStatus = activeStock > 20 ? "In Stock" : activeStock > 5 ? "Low Stock" : activeStock > 0 ? "Only Few Left" : "Out of Stock";
+  const stockColor = activeStock > 20 ? "text-primary" : activeStock > 5 ? "text-accent-foreground" : activeStock > 0 ? "text-destructive" : "text-destructive";
 
   const handleAddToCart = () => {
-    addItem({ id: product.id, name: product.title, price: `₨ ${product.price.toLocaleString()}`, image: product.images[0] || "", quantity: qty });
-    toast({ title: "Added to HUKAM Cart", description: `${product.title} x${qty}` });
+    const cartName = selectedVariant ? `${product.title} — ${selectedVariant.variant_name}` : product.title;
+    addItem({ id: selectedVariant?.id || product.id, name: cartName, price: `₨ ${activePrice.toLocaleString()}`, image: product.images[0] || "", quantity: qty });
+    toast({ title: "Added to Cart", description: `${cartName} x${qty}` });
     openCart();
   };
 
@@ -225,7 +229,7 @@ const ProductDetail = () => {
             {/* Scarcity triggers */}
             {product.stock > 0 && product.stock <= 10 && (
               <div className="flex items-center gap-3 flex-wrap">
-                <span className="text-sm font-semibold text-orange-600 bg-orange-50 px-3 py-1.5 rounded-full animate-pulse">
+                <span className="text-sm font-semibold text-destructive bg-destructive/10 px-3 py-1.5 rounded-full animate-pulse">
                   🔥 Only {product.stock} left in stock!
                 </span>
               </div>
@@ -234,23 +238,31 @@ const ProductDetail = () => {
             {/* Price & Stock */}
             <div className="glass-card p-6 rounded-2xl space-y-3">
               <div className="flex items-end gap-3 flex-wrap">
-                <span className="text-4xl font-extrabold text-primary">₨ {product.price.toLocaleString()}</span>
-                {product.compare_at_price && product.compare_at_price > product.price && (
+                <span className="text-4xl font-extrabold text-primary">₨ {activePrice.toLocaleString()}</span>
+                {product.compare_at_price && product.compare_at_price > activePrice && (
                   <>
                     <span className="text-lg text-muted-foreground line-through mb-1">₨ {product.compare_at_price.toLocaleString()}</span>
                     <span className="text-sm font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full mb-1">
-                      -{Math.round((1 - product.price / product.compare_at_price) * 100)}% OFF
+                      -{Math.round((1 - activePrice / product.compare_at_price) * 100)}% OFF
                     </span>
                   </>
                 )}
                 <span className="text-sm text-muted-foreground mb-1">incl. delivery</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${product.stock > 5 ? "bg-green-500" : product.stock > 0 ? "bg-orange-500" : "bg-destructive"}`} />
+                <span className={`w-2 h-2 rounded-full ${activeStock > 5 ? "bg-primary" : activeStock > 0 ? "bg-destructive/70" : "bg-destructive"}`} />
                 <span className={`text-sm font-medium ${stockColor}`}>{stockStatus}</span>
-                {product.stock > 0 && <span className="text-xs text-muted-foreground">({product.stock} units)</span>}
+                {activeStock > 0 && <span className="text-xs text-muted-foreground">({activeStock} units)</span>}
               </div>
             </div>
+
+            {/* Variant Picker */}
+            <VariantPicker
+              productId={product.id}
+              basePrice={product.price}
+              baseStock={product.stock}
+              onVariantSelect={(v) => setSelectedVariant(v as any)}
+            />
 
             {/* Description */}
             {description && <p className="text-muted-foreground leading-relaxed">{description}</p>}
