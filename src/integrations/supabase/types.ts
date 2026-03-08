@@ -115,6 +115,77 @@ export type Database = {
         }
         Relationships: []
       }
+      order_items: {
+        Row: {
+          buying_cost: number | null
+          created_at: string | null
+          id: string
+          order_id: string
+          product_id: string | null
+          product_title: string
+          quantity: number | null
+          shop_id: string | null
+          unit_price: number | null
+          variant_id: string | null
+          variant_name: string | null
+        }
+        Insert: {
+          buying_cost?: number | null
+          created_at?: string | null
+          id?: string
+          order_id: string
+          product_id?: string | null
+          product_title: string
+          quantity?: number | null
+          shop_id?: string | null
+          unit_price?: number | null
+          variant_id?: string | null
+          variant_name?: string | null
+        }
+        Update: {
+          buying_cost?: number | null
+          created_at?: string | null
+          id?: string
+          order_id?: string
+          product_id?: string | null
+          product_title?: string
+          quantity?: number | null
+          shop_id?: string | null
+          unit_price?: number | null
+          variant_id?: string | null
+          variant_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           created_at: string
@@ -212,13 +283,17 @@ export type Database = {
       }
       products: {
         Row: {
+          auto_sku: string | null
+          buying_cost: number | null
           category_id: string | null
+          compare_at_price: number | null
           created_at: string
           description: string
           id: string
           images: Json
           is_active: boolean
           price: number
+          shop_id: string | null
           status: string | null
           stock: number
           sub_category_id: string | null
@@ -228,13 +303,17 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
+          auto_sku?: string | null
+          buying_cost?: number | null
           category_id?: string | null
+          compare_at_price?: number | null
           created_at?: string
           description?: string
           id?: string
           images?: Json
           is_active?: boolean
           price?: number
+          shop_id?: string | null
           status?: string | null
           stock?: number
           sub_category_id?: string | null
@@ -244,13 +323,17 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
+          auto_sku?: string | null
+          buying_cost?: number | null
           category_id?: string | null
+          compare_at_price?: number | null
           created_at?: string
           description?: string
           id?: string
           images?: Json
           is_active?: boolean
           price?: number
+          shop_id?: string | null
           status?: string | null
           stock?: number
           sub_category_id?: string | null
@@ -265,6 +348,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
           {
@@ -370,6 +460,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      shops: {
+        Row: {
+          address: string | null
+          commission_percent: number | null
+          contact_name: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          phone: string | null
+          sku_prefix: string
+          slug: string
+        }
+        Insert: {
+          address?: string | null
+          commission_percent?: number | null
+          contact_name?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          phone?: string | null
+          sku_prefix: string
+          slug: string
+        }
+        Update: {
+          address?: string | null
+          commission_percent?: number | null
+          contact_name?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          phone?: string | null
+          sku_prefix?: string
+          slug?: string
+        }
+        Relationships: []
       }
       sub_categories: {
         Row: {
