@@ -72,8 +72,14 @@ const ProductDetail = () => {
     try {
       const { data, error } = await supabase.from("products").select("id, title, price, compare_at_price, images, stock, is_active, sub_category_id, category_id, description, video_url, warranty_type, return_policy, meta_title, meta_description").eq("id", pid).single();
       if (error || !data) { setProduct(null); setLoading(false); return; }
-      const p = { ...data, images: Array.isArray(data.images) ? data.images as string[] : [] };
+      const p = { ...data, images: Array.isArray(data.images) ? data.images as string[] : [] } as DBProduct;
       setProduct(p);
+      addToRecentlyViewed(p.id);
+      // SEO meta
+      if (p.meta_title) document.title = p.meta_title;
+      else document.title = `${p.title} | HUKAM`;
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) metaDesc.setAttribute("content", p.meta_description || p.description?.slice(0, 160) || "");
       // Fetch related
       const { data: rel } = await supabase
         .from("products")
