@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Grid3X3 } from "lucide-react";
+import { ShoppingBag, Grid3X3, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/context/CartContext";
 import { useMiniCart } from "@/context/MiniCartContext";
@@ -26,6 +26,10 @@ const AllProducts = () => {
   const [products, setProducts] = useState<DBProduct[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [active, setActive] = useState("All");
+  const [page, setPage] = useState(0);
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  const ITEMS_PER_PAGE = 8;
 
   useEffect(() => {
     Promise.all([
@@ -40,11 +44,24 @@ const AllProducts = () => {
   const getRootCategory = (p: DBProduct) => p.category_id || p.sub_category_id || null;
   const filtered = active === "All" ? products : products.filter((p) => getRootCategory(p) === active);
 
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paged = filtered.slice(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE);
+
+  useEffect(() => { setPage(0); }, [active]);
+
   const handleAdd = (e: React.MouseEvent, p: DBProduct) => {
     e.stopPropagation();
     addItem({ id: p.id, name: p.title, price: `₨ ${p.price.toLocaleString()}`, image: p.images[0] || "" });
     toast({ title: "Added to Cart", description: p.title });
     openCart();
+  };
+
+  const goPage = (dir: "prev" | "next") => {
+    setPage((prev) => {
+      const n = dir === "next" ? prev + 1 : prev - 1;
+      return Math.max(0, Math.min(n, totalPages - 1));
+    });
+    gridRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
 
   const tabs = [{ id: "All", name: "All" }, ...categories.map((c) => ({ id: c.id, name: c.name }))];
@@ -58,12 +75,37 @@ const AllProducts = () => {
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="flex items-center gap-2.5 mb-2"
+          className="flex items-center justify-between mb-2"
         >
-          <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
-            <Grid3X3 className="w-4 h-4 text-primary" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
+              <Grid3X3 className="w-4 h-4 text-primary" />
+            </div>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">All Products</h2>
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">All Products</h2>
+          {totalPages > 1 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground hidden sm:inline">
+                {page + 1} / {totalPages}
+              </span>
+              <button
+                onClick={() => goPage("prev")}
+                disabled={page === 0}
+                className="w-8 h-8 rounded-full bg-muted/60 border border-border/30 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                aria-label="Previous products"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => goPage("next")}
+                disabled={page >= totalPages - 1}
+                className="w-8 h-8 rounded-full bg-muted/60 border border-border/30 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                aria-label="Next products"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </motion.div>
         <motion.p
           initial={{ opacity: 0 }}
@@ -93,9 +135,9 @@ const AllProducts = () => {
         </div>
 
         {/* Product grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 max-w-5xl mx-auto">
+        <div ref={gridRef} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 max-w-5xl mx-auto">
           <AnimatePresence mode="popLayout">
-            {filtered.map((product, i) => {
+            {paged.map((product, i) => {
               const hasDiscount = product.compare_at_price && product.compare_at_price > product.price;
               const discountPercent = hasDiscount ? Math.round((1 - product.price / product.compare_at_price!) * 100) : 0;
               return (
@@ -141,6 +183,22 @@ const AllProducts = () => {
             })}
           </AnimatePresence>
         </div>
+
+        {/* Bottom pagination dots for mobile */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-1.5 mt-6">
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setPage(i)}
+                className={`w-2 h-2 rounded-full transition-all ${
+                  i === page ? "bg-primary w-5" : "bg-muted-foreground/30"
+                }`}
+                aria-label={`Page ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

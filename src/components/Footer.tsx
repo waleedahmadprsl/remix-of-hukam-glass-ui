@@ -88,7 +88,7 @@ const Footer = () => {
                 </svg>
               </a>
               {/* Instagram */}
-              <a href="#" aria-label="Instagram" className="w-8 h-8 rounded-full flex items-center justify-center bg-background border border-border/30 text-muted-foreground hover:text-[#E4405F] hover:border-[#E4405F]/40 transition-all">
+              <a href="https://instagram.com/hukam.pk" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="w-8 h-8 rounded-full flex items-center justify-center bg-background border border-border/30 text-muted-foreground hover:text-[#E4405F] hover:border-[#E4405F]/40 transition-all">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
                   <rect x="2" y="2" width="20" height="20" rx="5" /><circle cx="12" cy="12" r="5" /><circle cx="17.5" cy="6.5" r="1.5" />
                 </svg>
