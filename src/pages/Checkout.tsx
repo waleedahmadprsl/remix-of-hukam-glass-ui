@@ -70,7 +70,8 @@ const Checkout: React.FC = () => {
         items: cartStr,
         promo_code: appliedPromo,
         total_amount: parsedTotal,
-        status: 'pending'
+        status: 'pending',
+        user_id: session?.user?.id || null,
       }]).select();
 
       if (error) {
