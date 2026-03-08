@@ -62,6 +62,13 @@ const ProductDetail = () => {
 
   React.useEffect(() => {
     if (!id) return;
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      setProduct(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setSelectedImage(0);
     setQty(1);
