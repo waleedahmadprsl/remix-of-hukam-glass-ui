@@ -89,13 +89,13 @@ const Footer = () => {
         <div className="border-t border-border/20 pt-5 pb-3">
           <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
             {[
-              { label: "Cash on Delivery", emoji: "💵" },
-              { label: "JazzCash", emoji: "📱" },
-              { label: "Easypaisa", emoji: "📲" },
-              { label: "Bank Transfer", emoji: "🏦" },
+              { label: "Cash on Delivery", color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" },
+              { label: "JazzCash", color: "bg-red-500/10 text-red-600 border-red-500/20" },
+              { label: "Easypaisa", color: "bg-green-500/10 text-green-600 border-green-500/20" },
+              { label: "Bank Transfer", color: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
             ].map((m) => (
-              <span key={m.label} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary/60 border border-border/30 rounded-full text-[11px] font-medium text-foreground">
-                <span>{m.emoji}</span> {m.label}
+              <span key={m.label} className={`inline-flex items-center gap-1.5 px-3 py-1.5 border rounded-full text-[11px] font-semibold ${m.color}`}>
+                {m.label}
               </span>
             ))}
           </div>
