@@ -171,7 +171,28 @@ const AdminOrders: React.FC = () => {
   return (
     <AdminLayout activeTab="orders">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-2xl sm:text-4xl font-extrabold text-foreground mb-1">Order Command Center</h1>
+        <div className="flex items-center justify-between mb-1">
+          <h1 className="text-2xl sm:text-4xl font-extrabold text-foreground">Order Command Center</h1>
+          <button
+            onClick={() => {
+              const headers = ["Order ID", "Date", "Customer", "Phone", "Email", "Address", "Status", "Total", "Shipping", "Discount", "Promo", "Tracking"];
+              const rows = filtered.map(o => [
+                o.id, new Date(o.created_at).toLocaleDateString(), o.customer_name, o.customer_phone,
+                o.customer_email || "", o.delivery_address.replace(/,/g, ";"), o.status,
+                o.total_amount, o.shipping_cost || 0, o.discount_amount || 0, o.promo_code || "", o.tracking_id || ""
+              ]);
+              const csv = [headers.join(","), ...rows.map(r => r.map(c => `"${c}"`).join(","))].join("\n");
+              const blob = new Blob([csv], { type: "text/csv" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a"); a.href = url; a.download = `hukam-orders-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+              URL.revokeObjectURL(url);
+              toast({ title: "CSV exported", description: `${filtered.length} orders exported` });
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-secondary text-foreground rounded-xl text-sm font-medium hover:bg-secondary/80 transition-colors"
+          >
+            <Download className="w-4 h-4" /> Export CSV
+          </button>
+        </div>
         <p className="text-sm text-muted-foreground mb-6">Real-time orders with vendor split</p>
 
         <div className="flex gap-2 mb-4 overflow-x-auto pb-2 -mx-2 px-2">
