@@ -1,4 +1,6 @@
 import React from "react";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/context/AuthContext";
 
 export interface WishlistItem {
   id: string;
@@ -13,27 +15,66 @@ interface WishlistContextValue {
   removeItem: (id: string) => void;
   isInWishlist: (id: string) => boolean;
   toggleItem: (item: WishlistItem) => void;
+  loading: boolean;
 }
 
 const WishlistContext = React.createContext<WishlistContextValue | undefined>(undefined);
 
 export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { session } = useAuth();
+  const userId = session?.user?.id;
   const [items, setItems] = React.useState<WishlistItem[]>(() => {
     try {
       const stored = localStorage.getItem("hukam_wishlist");
       return stored ? JSON.parse(stored) : [];
     } catch { return []; }
   });
+  const [loading, setLoading] = React.useState(false);
 
+  // Sync from DB when user logs in
   React.useEffect(() => {
-    localStorage.setItem("hukam_wishlist", JSON.stringify(items));
-  }, [items]);
+    if (!userId) return;
+    setLoading(true);
+    supabase
+      .from("user_wishlist")
+      .select("product_id, products(title, price, images)")
+      .eq("user_id", userId)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          const dbItems: WishlistItem[] = data.map((w: any) => ({
+            id: w.product_id,
+            title: w.products?.title || "",
+            price: w.products?.price || 0,
+            image: Array.isArray(w.products?.images) ? w.products.images[0] || "" : "",
+          }));
+          setItems(dbItems);
+          localStorage.setItem("hukam_wishlist", JSON.stringify(dbItems));
+        }
+        setLoading(false);
+      });
+  }, [userId]);
 
-  const addItem = (item: WishlistItem) => {
-    setItems((prev) => prev.some((i) => i.id === item.id) ? prev : [...prev, item]);
+  // Save to localStorage for guests
+  React.useEffect(() => {
+    if (!userId) {
+      localStorage.setItem("hukam_wishlist", JSON.stringify(items));
+    }
+  }, [items, userId]);
+
+  const addItem = async (item: WishlistItem) => {
+    if (items.some((i) => i.id === item.id)) return;
+    setItems((prev) => [...prev, item]);
+    if (userId) {
+      await supabase.from("user_wishlist").insert({ user_id: userId, product_id: item.id });
+    }
   };
 
-  const removeItem = (id: string) => setItems((prev) => prev.filter((i) => i.id !== id));
+  const removeItem = async (id: string) => {
+    setItems((prev) => prev.filter((i) => i.id !== id));
+    if (userId) {
+      await supabase.from("user_wishlist").delete().eq("user_id", userId).eq("product_id", id);
+    }
+  };
 
   const isInWishlist = (id: string) => items.some((i) => i.id === id);
 
@@ -42,7 +83,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   return (
-    <WishlistContext.Provider value={{ items, addItem, removeItem, isInWishlist, toggleItem }}>
+    <WishlistContext.Provider value={{ items, addItem, removeItem, isInWishlist, toggleItem, loading }}>
       {children}
     </WishlistContext.Provider>
   );
