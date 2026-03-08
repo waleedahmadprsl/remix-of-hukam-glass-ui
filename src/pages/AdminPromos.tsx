@@ -29,7 +29,7 @@ const AdminPromos: React.FC = () => {
   const [showForm, setShowForm] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [form, setForm] = React.useState({
-    code: "", discount_type: "percentage", discount_amount: 0, discount_percentage: 0, is_active: true, min_purchase: 0, usage_limit: 0,
+    code: "", discount_type: "percentage", discount_amount: 0, discount_percentage: 0, is_active: true, min_purchase: 0, usage_limit: 0, expires_at: null as Date | null,
   });
 
   React.useEffect(() => { fetchPromos(); }, []);
