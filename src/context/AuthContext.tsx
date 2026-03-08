@@ -1,29 +1,66 @@
 import React from "react";
-import { Session } from "@supabase/supabase-js";
+import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+
+interface Profile {
+  full_name: string;
+  username: string;
+  phone: string;
+  address: string;
+  city: string;
+  avatar_url: string;
+  role: string;
+}
 
 interface AuthContextType {
   session: Session | null;
+  user: User | null;
+  profile: Profile | null;
   loading: boolean;
   logout: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = React.useState<Session | null>(null);
+  const [profile, setProfile] = React.useState<Profile | null>(null);
   const [loading, setLoading] = React.useState(true);
 
-  React.useEffect(() => {
-    // Check session on mount
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-    });
+  const fetchProfile = async (userId: string) => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("full_name, username, phone, address, city, avatar_url, role")
+      .eq("id", userId)
+      .single();
+    if (data) setProfile(data as Profile);
+  };
 
-    // Listen for auth changes
+  const refreshProfile = async () => {
+    if (session?.user?.id) await fetchProfile(session.user.id);
+  };
+
+  React.useEffect(() => {
+    // Listen for auth changes FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (session?.user?.id) {
+        // Use setTimeout to avoid Supabase deadlock
+        setTimeout(() => fetchProfile(session.user.id), 0);
+      } else {
+        setProfile(null);
+      }
+    });
+
+    // Then check existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session?.user?.id) {
+        fetchProfile(session.user.id).finally(() => setLoading(false));
+      } else {
+        setLoading(false);
+      }
     });
 
     return () => subscription?.unsubscribe();
@@ -32,10 +69,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     await supabase.auth.signOut();
     setSession(null);
+    setProfile(null);
   };
 
   return (
-    <AuthContext.Provider value={{ session, loading, logout }}>
+    <AuthContext.Provider value={{ session, user: session?.user ?? null, profile, loading, logout, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

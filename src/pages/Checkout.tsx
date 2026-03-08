@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
 import { ShoppingCart, FileText, CheckCircle2, Truck, ArrowRight } from "lucide-react";
@@ -14,6 +15,7 @@ const steps = [
 
 const Checkout: React.FC = () => {
   const { items, subtotal, clearCart, updateQuantity, removeItem } = useCart();
+  const { session, profile } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = React.useState({ fullName: "", email: "", phone: "", address: "", instructions: "" });
   const [promoCode, setPromoCode] = React.useState("");
@@ -21,6 +23,21 @@ const Checkout: React.FC = () => {
   const [discountedTotal, setDiscountedTotal] = React.useState<number | null>(null);
   const [result, setResult] = React.useState("");
   const [placedOrderId, setPlacedOrderId] = React.useState<string | null>(null);
+
+  // Auto-fill from profile
+  React.useEffect(() => {
+    if (profile) {
+      setForm((f) => ({
+        ...f,
+        fullName: f.fullName || profile.full_name || "",
+        phone: f.phone || profile.phone || "",
+        address: f.address || (profile.address ? `${profile.address}${profile.city ? ", " + profile.city : ""}` : ""),
+      }));
+    }
+    if (session?.user?.email) {
+      setForm((f) => ({ ...f, email: f.email || session.user.email || "" }));
+    }
+  }, [profile, session]);
 
   const currentStep = result && result.startsWith("HUKAM Accepted") ? 2 : items.length > 0 ? 1 : 0;
 
@@ -68,7 +85,8 @@ const Checkout: React.FC = () => {
         items: cartStr,
         promo_code: appliedPromo,
         total_amount: parsedTotal,
-        status: 'pending'
+        status: 'pending',
+        user_id: session?.user?.id || null,
       }]).select();
 
       if (error) {

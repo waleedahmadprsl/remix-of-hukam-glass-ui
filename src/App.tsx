@@ -26,6 +26,11 @@ import Terms from "./pages/Terms";
 import RefundPolicy from "./pages/RefundPolicy";
 import NotFound from "./pages/NotFound";
 import TrackOrder from "./pages/TrackOrder";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import Account from "./pages/Account";
 
 // Admin Pages
 import AdminLogin from "./pages/AdminLogin";
@@ -88,6 +93,11 @@ const App = () => {
                       <Route path="/terms" element={<Terms />} />
                       <Route path="/refund-policy" element={<RefundPolicy />} />
                       <Route path="/track-order" element={<TrackOrder />} />
+                      <Route path="/login" element={<Login />} />
+                      <Route path="/signup" element={<Signup />} />
+                      <Route path="/forgot-password" element={<ForgotPassword />} />
+                      <Route path="/reset-password" element={<ResetPassword />} />
+                      <Route path="/account" element={<Account />} />
                       <Route path="*" element={<NotFound />} />
                     </Route>
                   </Routes>
