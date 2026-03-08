@@ -8,10 +8,14 @@ import {
 } from "recharts";
 import {
   TrendingUp, ShoppingCart, Package, DollarSign, Eye, Users, MousePointerClick,
-  Repeat, ArrowUpRight, ArrowDownRight, Store,
+  Repeat, ArrowUpRight, ArrowDownRight, Store, CalendarIcon,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
+import { format, subDays, isWithinInterval, startOfDay, endOfDay } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 const COLORS = ["hsl(213, 94%, 68%)", "hsl(142, 71%, 45%)", "hsl(38, 92%, 50%)", "hsl(0, 84%, 60%)", "hsl(262, 83%, 58%)", "hsl(180, 60%, 50%)"];
 
 const AdminAnalytics: React.FC = () => {
