@@ -17,6 +17,22 @@ const Login: React.FC = () => {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
+  const [resending, setResending] = useState(false);
+
+  const handleResendVerification = async () => {
+    if (!email) {
+      toast({ title: "Enter your email first", description: "Type your email above, then click resend.", variant: "destructive" });
+      return;
+    }
+    setResending(true);
+    const { error } = await supabase.auth.resend({ type: "signup", email });
+    setResending(false);
+    if (error) {
+      toast({ title: "Failed to resend", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Verification email sent!", description: "Check your inbox and spam folder." });
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,8 +77,19 @@ const Login: React.FC = () => {
           {emailNotConfirmed && (
             <Alert variant="destructive" className="border-yellow-500/50 bg-yellow-50 dark:bg-yellow-950/20 text-yellow-800 dark:text-yellow-200 [&>svg]:text-yellow-600">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <strong>Email not verified.</strong> Please check your inbox (and spam folder) for the confirmation link we sent when you signed up. You must verify your email before signing in.
+              <AlertDescription className="space-y-2">
+                <p><strong>Email not verified.</strong> Please check your inbox (and spam folder) for the confirmation link we sent when you signed up.</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="border-yellow-600/50 text-yellow-800 dark:text-yellow-200 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
+                  onClick={handleResendVerification}
+                  disabled={resending}
+                >
+                  <Mail className="w-3.5 h-3.5 mr-1.5" />
+                  {resending ? "Sending..." : "Resend verification email"}
+                </Button>
               </AlertDescription>
             </Alert>
           )}
