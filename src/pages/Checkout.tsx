@@ -284,6 +284,26 @@ const Checkout: React.FC = () => {
   const discountAmt = promoStatus === "applied" && discountedTotal !== null ? cartSubtotal - discountedTotal : 0;
   const finalTotal = (discountedTotal !== null && promoStatus === "applied" ? discountedTotal : cartSubtotal) + shippingCost;
 
+  if (isCartEmpty) {
+    return (
+      <div className="min-h-screen bg-background pt-24 pb-20 flex items-center justify-center px-4">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center glass-card p-12 rounded-3xl max-w-md w-full">
+          <ShoppingCart className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-foreground mb-2">Your Cart is Empty</h1>
+          <p className="text-muted-foreground mb-8">Looks like you haven't added anything yet. Browse our collection and find something you love!</p>
+          <motion.button
+            onClick={() => navigate("/products")}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.97 }}
+            className="bg-primary text-primary-foreground px-8 py-3.5 rounded-full font-semibold shadow-lg shadow-primary/25"
+          >
+            Browse Products
+          </motion.button>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background pt-20 sm:pt-24 pb-32 sm:pb-20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
