@@ -136,7 +136,7 @@ const AdminProducts: React.FC = () => {
   const handleEdit = (p: Product) => {
     const parsed = parseDescription(p.description || "");
     setEditingId(p.id);
-    setForm({ title: p.title, description: parsed.description, price: p.price, stock: p.stock, category_id: p.category_id || p.sub_category_id || "", video_url: p.video_url || "", key_features: parsed.key_features, specs: parsed.specs, status: p.status || (p.is_active ? "active" : "draft"), tags: p.tags || [], shop_id: p.shop_id || "", buying_cost: p.buying_cost || 0, compare_at_price: p.compare_at_price || 0 });
+    setForm({ title: p.title, description: parsed.description, price: p.price, stock: p.stock, category_id: p.category_id || p.sub_category_id || "", video_url: p.video_url || "", key_features: parsed.key_features, specs: parsed.specs, status: p.status || (p.is_active ? "active" : "draft"), tags: p.tags || [], shop_id: p.shop_id || "", buying_cost: p.buying_cost || 0, compare_at_price: p.compare_at_price || 0, weight_kg: (p as any).weight_kg || 0, dimensions_l: (p as any).dimensions_l || 0, dimensions_w: (p as any).dimensions_w || 0, dimensions_h: (p as any).dimensions_h || 0, warranty_type: (p as any).warranty_type || "", return_policy: (p as any).return_policy || "7-day return", meta_title: (p as any).meta_title || "", meta_description: (p as any).meta_description || "", search_keywords: (p as any).search_keywords || [] });
     setUploadedUrls(p.images || []); setShowForm(true); window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
