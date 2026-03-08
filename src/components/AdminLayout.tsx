@@ -35,6 +35,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, activeTab })
     { id: "promos", label: "Promos", icon: Zap, path: "/admin/promos" },
     { id: "customers", label: "Customers", icon: Users, path: "/admin/customers" },
     { id: "analytics", label: "Analytics", icon: BarChart3, path: "/admin/analytics" },
+    { id: "newsletter", label: "Newsletter", icon: Mail, path: "/admin/newsletter" },
     { id: "logs", label: "Logs", icon: Activity, path: "/admin/logs" },
   ];
 
