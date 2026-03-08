@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CheckCircle2, Zap, Shield } from "lucide-react";
 import logoVideo from "@/assets/logo-video.mp4";
