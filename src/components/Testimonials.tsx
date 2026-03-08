@@ -57,7 +57,7 @@ const Testimonials = () => {
               What customers say
             </span>
             <h2 className="text-xl sm:text-2xl font-bold text-foreground">
-              Trusted by Mirpur
+              Loved by Our Customers
             </h2>
           </div>
           <div className="flex items-center gap-2">

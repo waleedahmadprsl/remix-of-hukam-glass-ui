@@ -96,7 +96,7 @@ const About = () => {
             <div>
               <h2 className="text-3xl font-bold text-foreground mb-4">The HUKAM Promise</h2>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Every product in our vault is hand-inspected. Every customer checks the item before paying. Every delivery respects your time. We've built this on the principle of hyper-local, hyper-reliable, hyper-fast service.
+                Every product in our marketplace is verified for quality. Every customer checks the item before paying. Every delivery respects your time. We've built this on the principle of hyper-local, hyper-reliable, hyper-fast service.
               </p>
             </div>
           </motion.div>

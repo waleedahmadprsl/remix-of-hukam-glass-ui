@@ -279,7 +279,7 @@ const ProductDetail = () => {
                         activeTab === tab ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      {tab === "features" ? "Key Features" : "Tech Specs"}
+                      {tab === "features" ? "Key Features" : "Specifications"}
                     </button>
                   ))}
                 </div>

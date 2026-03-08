@@ -18,16 +18,16 @@ interface Slide {
 
 const slides: Slide[] = [
   {
-    headline: "HUKAM — Mirpur's #1\nQuick Commerce",
-    sub: "Premium tech accessories delivered to your doorstep in 60 minutes.",
+    headline: "HUKAM — Your One-Stop\nMarketplace",
+    sub: "Fashion, electronics, home essentials & more — all delivered to your doorstep.",
     cta: "Shop Now",
     ctaSecondary: "Explore All",
     href: "#all-products",
     media: { type: "video", src: heroVideo },
   },
   {
-    headline: "Top-Tier Tech,\nUnbeatable Prices",
-    sub: "Earbuds, chargers, cables & power banks — all under one roof.",
+    headline: "Millions of Products,\nOne Destination",
+    sub: "From trending fashion to smart gadgets — discover it all at unbeatable prices.",
     cta: "Browse Collection",
     href: "/products",
     media: { type: "image", src: heroProducts },
