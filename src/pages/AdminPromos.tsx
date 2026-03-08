@@ -158,9 +158,16 @@ const AdminPromos: React.FC = () => {
                     <td className="px-4 py-3 text-foreground">{p.discount_type === "free_shipping" ? "–" : p.discount_type === "percentage" ? `${p.discount_percentage}%` : `Rs.${p.discount_amount}`}</td>
                     <td className="px-4 py-3 text-muted-foreground">Rs.{p.min_purchase || 0}</td>
                     <td className="px-4 py-3 text-muted-foreground">{p.times_used || 0}{p.usage_limit ? ` / ${p.usage_limit}` : ""}</td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs">
+                      {p.expires_at ? (
+                        <span className={new Date(p.expires_at) < new Date() ? "text-destructive font-semibold" : ""}>
+                          {new Date(p.expires_at).toLocaleDateString()}{new Date(p.expires_at) < new Date() ? " (expired)" : ""}
+                        </span>
+                      ) : "—"}
+                    </td>
                     <td className="px-4 py-3"><button onClick={() => toggleActive(p.id, p.is_active)} className={`text-xs font-semibold px-2 py-1 rounded-full ${p.is_active ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>{p.is_active ? "Active" : "Off"}</button></td>
                     <td className="px-4 py-3 flex gap-1">
-                      <button onClick={() => { setEditingId(p.id); setForm({ code: p.code, discount_type: p.discount_type, discount_amount: p.discount_amount || 0, discount_percentage: p.discount_percentage || 0, is_active: p.is_active, min_purchase: p.min_purchase || 0, usage_limit: p.usage_limit || 0 }); setShowForm(true); }} className="p-1.5 text-primary hover:bg-primary/10 rounded-lg"><Edit2 className="w-4 h-4" /></button>
+                      <button onClick={() => { setEditingId(p.id); setForm({ code: p.code, discount_type: p.discount_type, discount_amount: p.discount_amount || 0, discount_percentage: p.discount_percentage || 0, is_active: p.is_active, min_purchase: p.min_purchase || 0, usage_limit: p.usage_limit || 0, expires_at: p.expires_at ? new Date(p.expires_at) : null }); setShowForm(true); }} className="p-1.5 text-primary hover:bg-primary/10 rounded-lg"><Edit2 className="w-4 h-4" /></button>
                       <button onClick={() => handleDelete(p.id, p.code)} className="p-1.5 text-destructive hover:bg-destructive/10 rounded-lg"><Trash2 className="w-4 h-4" /></button>
                     </td>
                   </tr>
