@@ -5,7 +5,7 @@ import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
-import { ShoppingCart, FileText, CheckCircle2, Truck, ArrowRight } from "lucide-react";
+import { ShoppingCart, FileText, CheckCircle2, Truck, ArrowRight, ShoppingBag } from "lucide-react";
 
 const steps = [
   { icon: ShoppingCart, label: "Cart" },
@@ -26,6 +26,7 @@ const Checkout: React.FC = () => {
   const [result, setResult] = React.useState("");
   const [placedOrderId, setPlacedOrderId] = React.useState<string | null>(null);
   const [phoneError, setPhoneError] = React.useState("");
+  const [showEmptyCart, setShowEmptyCart] = React.useState(false);
 
   // Auto-fill from profile
   React.useEffect(() => {
@@ -42,15 +43,14 @@ const Checkout: React.FC = () => {
     }
   }, [profile, session]);
 
-  // Redirect to products if cart empty (and not showing success)
+  // Show empty cart message instead of instant redirect
   React.useEffect(() => {
     if (items.length === 0 && !result) {
-      const timer = setTimeout(() => {
-        if (items.length === 0 && !result) navigate("/products");
-      }, 100);
-      return () => clearTimeout(timer);
+      setShowEmptyCart(true);
+    } else {
+      setShowEmptyCart(false);
     }
-  }, [items.length, result, navigate]);
+  }, [items.length, result]);
 
   // Calculate shipping: Rs.50 per unique shop
   const shippingCost = React.useMemo(() => {
@@ -75,7 +75,6 @@ const Checkout: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Phone validation
     const cleanPhone = form.phone.replace(/\s|-/g, "");
     if (!PK_PHONE_REGEX.test(cleanPhone)) {
       setPhoneError("Enter a valid Pakistani phone number (e.g. 03XX XXXXXXX)");
@@ -91,22 +90,8 @@ const Checkout: React.FC = () => {
     const finalTotal = (discountedTotal !== null && promoStatus === "applied" ? discountedTotal : cartSubtotal) + shippingCost;
     const appliedPromo = promoStatus === "applied" ? promoCode : null;
 
-    const ACCESS_KEY = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || "30b97afd-15a6-456e-84e0-08bedd37e77f";
-    const fd = new FormData(e.currentTarget as HTMLFormElement);
-    fd.append("name", form.fullName);
-    fd.append("email", form.email);
-    fd.append("phone", form.phone);
-    fd.append("address", form.address);
-    fd.append("instructions", form.instructions || "");
-    fd.append("message", `Order placed via HUKAM Checkout:\n\nCustomer: ${form.fullName} (${form.email}, ${form.phone})\nAddress: ${form.address}\n\nItems:\n${cartStr}\n\nSubtotal: Rs.${cartSubtotal}\nShipping: Rs.${shippingCost}\nTotal: Rs.${finalTotal}\n\nInstructions: ${form.instructions || "-"}`);
-    if (appliedPromo) {
-      fd.append("promo_code", appliedPromo);
-    }
-    fd.append("access_key", ACCESS_KEY);
-    fd.append("subject", "NEW COD ORDER - HUKAM.pk");
-    fd.append("from_name", "HUKAM Ordering System");
-
     try {
+      // 1. Insert order into DB first (source of truth)
       const { data, error } = await supabase.from('orders').insert([{
         customer_name: String(form.fullName),
         customer_email: String(form.email),
@@ -132,7 +117,7 @@ const Checkout: React.FC = () => {
       const orderId = data?.[0]?.id;
       setPlacedOrderId(orderId || null);
 
-      // Insert normalized order_items with buying_cost, shop_id, variant_id
+      // 2. Insert normalized order_items
       if (orderId) {
         const orderItemsPayload = items.map((it) => ({
           order_id: orderId,
@@ -147,71 +132,49 @@ const Checkout: React.FC = () => {
         }));
         await supabase.from("order_items").insert(orderItemsPayload);
 
-        // Stock deduction — decrease stock for each product/variant
+        // 3. Atomic stock deduction using DB function (prevents race condition)
         for (const it of items) {
-          if (it.variantId) {
-            // Deduct variant stock
-            const { data: variant } = await supabase
-              .from("product_variants")
-              .select("stock")
-              .eq("id", it.variantId)
-              .single();
-            if (variant) {
-              await supabase.from("product_variants").update({
-                stock: Math.max(0, (variant.stock || 0) - it.quantity)
-              }).eq("id", it.variantId);
-            }
-          }
-          // Always deduct from main product stock
-          const { data: product } = await supabase
-            .from("products")
-            .select("stock")
-            .eq("id", it.id)
-            .single();
-          if (product) {
-            await supabase.from("products").update({
-              stock: Math.max(0, (product.stock || 0) - it.quantity)
-            }).eq("id", it.id);
+          const { data: success } = await supabase.rpc('deduct_stock', {
+            p_product_id: it.id,
+            p_variant_id: it.variantId || null,
+            p_quantity: it.quantity,
+          });
+          if (success === false) {
+            console.warn(`Stock deduction failed for ${it.name} — may be out of stock`);
           }
         }
       }
 
-      // Send order confirmation email via edge function
+      // 4. ORDER IS CONFIRMED — show success immediately (decoupled from Web3Forms)
+      setResult("HUKAM Accepted! Your tech is being dispatched. A rider will contact you shortly.");
+      clearCart();
+
+      // 5. Fire-and-forget: Web3Forms notification (non-blocking)
+      const ACCESS_KEY = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || "30b97afd-15a6-456e-84e0-08bedd37e77f";
+      const fd = new FormData();
+      fd.append("name", form.fullName);
+      fd.append("email", form.email);
+      fd.append("phone", form.phone);
+      fd.append("address", form.address);
+      fd.append("instructions", form.instructions || "");
+      fd.append("message", `Order placed via HUKAM Checkout:\n\nCustomer: ${form.fullName} (${form.email}, ${form.phone})\nAddress: ${form.address}\n\nItems:\n${cartStr}\n\nSubtotal: Rs.${cartSubtotal}\nShipping: Rs.${shippingCost}\nTotal: Rs.${finalTotal}\n\nInstructions: ${form.instructions || "-"}`);
+      if (appliedPromo) fd.append("promo_code", appliedPromo);
+      fd.append("access_key", ACCESS_KEY);
+      fd.append("subject", "NEW COD ORDER - HUKAM.pk");
+      fd.append("from_name", "HUKAM Ordering System");
+      fetch("https://api.web3forms.com/submit", { method: "POST", body: fd }).catch(console.error);
+
+      // 6. Fire-and-forget: Email confirmation
       if (orderId && form.email) {
-        try {
-          await supabase.functions.invoke("send-order-email", {
-            body: {
-              type: "order_confirmation",
-              email: form.email,
-              customerName: form.fullName,
-              orderId,
-              totalAmount: finalTotal,
-              status: "pending",
-            },
-          });
-        } catch (emailErr) {
-          console.error("Order email failed:", emailErr);
-        }
+        supabase.functions.invoke("send-order-email", {
+          body: { type: "order_confirmation", email: form.email, customerName: form.fullName, orderId, totalAmount: finalTotal, status: "pending" },
+        }).catch(console.error);
       }
     } catch (err: any) {
       console.error("SUPABASE INSERT EXCEPTION:", err);
       toast({ title: "Order Error", description: err.message, variant: "destructive" });
       setResult("");
       return;
-    }
-
-    try {
-      const res = await fetch("https://api.web3forms.com/submit", { method: "POST", body: fd });
-      const data = await res.json();
-      if (data.success) {
-        setResult("HUKAM Accepted! Your tech is being dispatched. A rider will contact you shortly.");
-        clearCart();
-      } else {
-        setResult(data.message || "Error submitting order");
-      }
-    } catch (err) {
-      console.error("Web3Forms exception:", err);
-      setResult("Error submitting order");
     }
   };
 
@@ -249,7 +212,6 @@ const Checkout: React.FC = () => {
             </motion.div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground mb-3">HUKAM Accepted!</h1>
             <p className="text-sm sm:text-base text-muted-foreground mb-6">{result.replace("HUKAM Accepted! ", "")}</p>
-
             {placedOrderId && (
               <div className="bg-secondary/50 rounded-xl p-4 mb-6 text-left">
                 <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Your Order ID</p>
@@ -257,32 +219,33 @@ const Checkout: React.FC = () => {
                 <p className="text-xs text-muted-foreground mt-2">Save this ID to track your order anytime!</p>
               </div>
             )}
-
             <div className="space-y-3">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => navigate("/track-order")}
-                className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3 rounded-xl font-bold text-sm shadow-lg shadow-primary/25"
-              >
-                <Truck className="w-4 h-4" />
-                Track Your Order
-                <ArrowRight className="w-4 h-4" />
+              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => navigate("/track-order")} className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3 rounded-xl font-bold text-sm shadow-lg shadow-primary/25">
+                <Truck className="w-4 h-4" /> Track Your Order <ArrowRight className="w-4 h-4" />
               </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => navigate("/products")}
-                className="w-full py-3 rounded-xl font-semibold text-sm border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all"
-              >
+              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => navigate("/products")} className="w-full py-3 rounded-xl font-semibold text-sm border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all">
                 Continue Shopping
               </motion.button>
             </div>
-
             <p className="text-xs text-muted-foreground mt-6">We sent order details to the founder's email. Keep your phone available.</p>
           </motion.div>
         </div>
+      </div>
+    );
+  }
+
+  // Empty cart message instead of instant redirect
+  if (showEmptyCart) {
+    return (
+      <div className="min-h-screen bg-background pt-20 sm:pt-24 pb-20 flex items-center justify-center px-4">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center glass-card p-10 sm:p-14 rounded-3xl max-w-md">
+          <ShoppingBag className="w-16 h-16 text-muted-foreground/30 mx-auto mb-5" />
+          <h1 className="text-2xl font-bold text-foreground mb-3">Your Cart is Empty</h1>
+          <p className="text-muted-foreground mb-8">Add some products before checking out!</p>
+          <motion.button onClick={() => navigate("/products")} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }} className="bg-primary text-primary-foreground px-8 py-3 rounded-full font-semibold shadow-lg shadow-primary/25">
+            Browse Products
+          </motion.button>
+        </motion.div>
       </div>
     );
   }
@@ -301,7 +264,6 @@ const Checkout: React.FC = () => {
         </motion.h1>
 
         <div className="grid lg:grid-cols-5 gap-6 sm:gap-8 max-w-6xl mx-auto">
-          {/* Form */}
           <motion.form
             id="checkout-form"
             onSubmit={handleSubmit}
@@ -342,13 +304,7 @@ const Checkout: React.FC = () => {
             <div className="grid grid-cols-3 gap-2 sm:gap-3 items-end">
               <div className="col-span-2">
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Promo Code</label>
-                <input
-                  type="text"
-                  placeholder="Enter code"
-                  value={promoCode}
-                  onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                  className="w-full px-4 py-3 bg-background border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all text-base"
-                />
+                <input type="text" placeholder="Enter code" value={promoCode} onChange={(e) => setPromoCode(e.target.value.toUpperCase())} className="w-full px-4 py-3 bg-background border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all text-base" />
               </div>
               <motion.button
                 type="button"
@@ -392,7 +348,6 @@ const Checkout: React.FC = () => {
               💰 Payment: Cash on Delivery
             </div>
 
-            {/* Desktop place order button */}
             <motion.button
               type="submit"
               disabled={items.length === 0 || result === "Sending...." || !!phoneError}
@@ -405,11 +360,7 @@ const Checkout: React.FC = () => {
           </motion.form>
 
           {/* Order Summary */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="lg:col-span-2 glass-card p-5 sm:p-8 rounded-2xl sm:rounded-3xl h-fit lg:sticky lg:top-24"
-          >
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="lg:col-span-2 glass-card p-5 sm:p-8 rounded-2xl sm:rounded-3xl h-fit lg:sticky lg:top-24">
             <h2 className="text-lg sm:text-xl font-bold text-foreground mb-4 sm:mb-6">Order Summary</h2>
 
             {items.length === 0 ? (
@@ -419,25 +370,28 @@ const Checkout: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-3">
-                {items.map((it) => (
-                  <div key={it.variantId ? `${it.id}__${it.variantId}` : it.id} className="flex gap-3 items-start">
-                    {it.image && <img src={it.image} alt={it.name} className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-xl flex-shrink-0" />}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-foreground text-sm truncate">{it.name}</p>
-                      {it.variantName && <p className="text-xs text-muted-foreground">{it.variantName}</p>}
-                      <p className="text-xs text-muted-foreground">Rs.{it.priceNumber} each</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <div className="flex items-center border border-border rounded-lg text-sm">
-                          <button onClick={() => updateQuantity(it.id, Math.max(1, it.quantity - 1))} className="px-2 py-0.5 text-muted-foreground hover:text-foreground">−</button>
-                          <span className="px-2 py-0.5 font-semibold text-foreground">{it.quantity}</span>
-                          <button onClick={() => updateQuantity(it.id, it.quantity + 1)} className="px-2 py-0.5 text-muted-foreground hover:text-foreground">+</button>
+                {items.map((it) => {
+                  const cartKey = it.variantId ? `${it.id}__${it.variantId}` : it.id;
+                  return (
+                    <div key={cartKey} className="flex gap-3 items-start">
+                      {it.image && <img src={it.image} alt={it.name} className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-xl flex-shrink-0" />}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-foreground text-sm truncate">{it.name}</p>
+                        {it.variantName && <p className="text-xs text-muted-foreground">{it.variantName}</p>}
+                        <p className="text-xs text-muted-foreground">Rs.{it.priceNumber} each</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center border border-border rounded-lg text-sm">
+                            <button onClick={() => updateQuantity(it.id, Math.max(1, it.quantity - 1), it.variantId)} className="px-2 py-0.5 text-muted-foreground hover:text-foreground">−</button>
+                            <span className="px-2 py-0.5 font-semibold text-foreground">{it.quantity}</span>
+                            <button onClick={() => updateQuantity(it.id, it.quantity + 1, it.variantId)} className="px-2 py-0.5 text-muted-foreground hover:text-foreground">+</button>
+                          </div>
+                          <button onClick={() => removeItem(it.id, it.variantId)} className="text-xs text-destructive hover:underline ml-auto">Remove</button>
                         </div>
-                        <button onClick={() => removeItem(it.id)} className="text-xs text-destructive hover:underline ml-auto">Remove</button>
                       </div>
+                      <p className="font-bold text-foreground text-sm whitespace-nowrap">Rs.{it.priceNumber * it.quantity}</p>
                     </div>
-                    <p className="font-bold text-foreground text-sm whitespace-nowrap">Rs.{it.priceNumber * it.quantity}</p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 

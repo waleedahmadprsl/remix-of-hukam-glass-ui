@@ -1,9 +1,10 @@
 import { useParams, useNavigate } from "react-router-dom";
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Zap, Clock, Share2, ChevronLeft, ShoppingCart, Star, Shield, Truck } from "lucide-react";
+import { Check, Zap, Clock, Share2, ChevronLeft, ShoppingCart, Star, Shield, Truck, Heart, ZoomIn } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useMiniCart } from "@/context/MiniCartContext";
+import { useWishlist } from "@/context/WishlistContext";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import CustomerReviews from "@/components/CustomerReviews";
@@ -32,6 +33,8 @@ interface DBProduct {
   buying_cost: number | null;
 }
 
+interface CategoryInfo { id: string; name: string; slug: string; }
+
 function parseDescription(desc: string) {
   const parts = desc.split("|||");
   const description = parts[0] || "";
@@ -55,17 +58,19 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const { addItem } = useCart();
   const { openCart } = useMiniCart();
+  const { isInWishlist, toggleItem } = useWishlist();
   const [product, setProduct] = React.useState<DBProduct | null>(null);
+  const [category, setCategory] = React.useState<CategoryInfo | null>(null);
   const [related, setRelated] = React.useState<DBProduct[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [qty, setQty] = React.useState(1);
   const [selectedImage, setSelectedImage] = React.useState(0);
   const [activeTab, setActiveTab] = React.useState<"features" | "specs">("features");
   const [selectedVariant, setSelectedVariant] = React.useState<{ id: string; variant_name: string; price: number | null; stock: number | null; sku: string | null } | null>(null);
+  const [zoomedImage, setZoomedImage] = React.useState(false);
 
   React.useEffect(() => {
     if (!id) return;
-    // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(id)) {
       setProduct(null);
@@ -85,24 +90,23 @@ const ProductDetail = () => {
       const p = { ...data, images: Array.isArray(data.images) ? data.images as string[] : [] } as DBProduct;
       setProduct(p);
       addToRecentlyViewed(p.id);
+      // Fetch category name for breadcrumbs
+      if (p.category_id) {
+        const { data: catData } = await supabase.from("categories").select("id, name, slug").eq("id", p.category_id).single();
+        if (catData) setCategory(catData as CategoryInfo);
+      } else if (p.sub_category_id) {
+        const { data: subData } = await supabase.from("sub_categories").select("id, name, slug, category_id").eq("id", p.sub_category_id).single();
+        if (subData) setCategory({ id: subData.id, name: (subData as any).name, slug: (subData as any).slug });
+      }
       // SEO meta
       if (p.meta_title) document.title = p.meta_title;
       else document.title = `${p.title} | HUKAM`;
       const metaDesc = document.querySelector('meta[name="description"]');
       if (metaDesc) metaDesc.setAttribute("content", p.meta_description || p.description?.slice(0, 160) || "");
-      // JSON-LD Product structured data
       const jsonLd = {
-        "@context": "https://schema.org",
-        "@type": "Product",
-        "name": p.title,
-        "description": p.description?.slice(0, 300) || "",
-        "image": p.images[0] || "",
-        "offers": {
-          "@type": "Offer",
-          "price": p.price,
-          "priceCurrency": "PKR",
-          "availability": p.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-        },
+        "@context": "https://schema.org", "@type": "Product", "name": p.title,
+        "description": p.description?.slice(0, 300) || "", "image": p.images[0] || "",
+        "offers": { "@type": "Offer", "price": p.price, "priceCurrency": "PKR", "availability": p.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock" },
       };
       const existing = document.querySelector('script[data-product-jsonld]');
       if (existing) existing.remove();
@@ -111,19 +115,24 @@ const ProductDetail = () => {
       script.setAttribute("data-product-jsonld", "true");
       script.text = JSON.stringify(jsonLd);
       document.head.appendChild(script);
-      // Fetch related
-      const { data: rel } = await supabase
-        .from("products")
-        .select("*")
-        .eq("is_active", true)
-        .neq("id", pid)
-        .limit(4);
+      const { data: rel } = await supabase.from("products").select("*").eq("is_active", true).neq("id", pid).limit(4);
       setRelated((rel || []).map((r: any) => ({ ...r, images: Array.isArray(r.images) ? r.images : [] })));
     } catch (err) {
       console.error(err);
       setProduct(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    const title = product?.title || "HUKAM Product";
+    if (navigator.share) {
+      try { await navigator.share({ title, url }); } catch {}
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast({ title: "Link copied!", description: "Product link copied to clipboard" });
     }
   };
 
@@ -164,6 +173,7 @@ const ProductDetail = () => {
   const activeStock = selectedVariant?.stock ?? product.stock;
   const stockStatus = activeStock > 20 ? "In Stock" : activeStock > 5 ? "Low Stock" : activeStock > 0 ? "Only Few Left" : "Out of Stock";
   const stockColor = activeStock > 20 ? "text-primary" : activeStock > 5 ? "text-accent-foreground" : activeStock > 0 ? "text-destructive" : "text-destructive";
+  const wishlisted = isInWishlist(product.id);
 
   const handleAddToCart = () => {
     if (activeStock <= 0) {
@@ -176,36 +186,41 @@ const ProductDetail = () => {
     }
     const cartName = selectedVariant ? `${product.title} — ${selectedVariant.variant_name}` : product.title;
     addItem({
-      id: product.id,
-      name: cartName,
-      price: `₨ ${activePrice.toLocaleString()}`,
-      image: product.images[0] || "",
-      quantity: qty,
-      shopId: product.shop_id || null,
-      variantId: selectedVariant?.id || null,
-      variantName: selectedVariant?.variant_name || null,
-      buyingCost: product.buying_cost || 0,
+      id: product.id, name: cartName, price: `₨ ${activePrice.toLocaleString()}`, image: product.images[0] || "",
+      quantity: qty, shopId: product.shop_id || null, variantId: selectedVariant?.id || null,
+      variantName: selectedVariant?.variant_name || null, buyingCost: product.buying_cost || 0,
     });
     toast({ title: "Added to Cart", description: `${cartName} x${qty}` });
     openCart();
   };
 
+  const handleBuyNow = () => {
+    handleAddToCart();
+    navigate("/checkout");
+  };
+
   return (
     <div className="min-h-screen bg-background pt-24 pb-20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Breadcrumb */}
-        <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
+        {/* Breadcrumb with category */}
+        <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 text-sm text-muted-foreground mb-8 flex-wrap">
           <button onClick={() => navigate("/")} className="hover:text-foreground transition-colors">Home</button>
           <span>/</span>
           <button onClick={() => navigate("/products")} className="hover:text-foreground transition-colors">Products</button>
+          {category && (
+            <>
+              <span>/</span>
+              <button onClick={() => navigate(`/products?category=${category.id}`)} className="hover:text-foreground transition-colors">{category.name}</button>
+            </>
+          )}
           <span>/</span>
-          <span className="text-foreground font-medium">{product.title}</span>
+          <span className="text-foreground font-medium truncate max-w-[200px]">{product.title}</span>
         </motion.div>
 
         <div className="grid lg:grid-cols-2 gap-12 items-start max-w-7xl mx-auto">
-          {/* Left: Image Gallery */}
+          {/* Left: Image Gallery with zoom */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <div className="glass-card rounded-3xl overflow-hidden mb-4 relative group aspect-square">
+            <div className="glass-card rounded-3xl overflow-hidden mb-4 relative group aspect-square cursor-zoom-in" onClick={() => setZoomedImage(true)}>
               <AnimatePresence mode="wait">
                 <motion.img
                   key={selectedImage}
@@ -218,6 +233,19 @@ const ProductDetail = () => {
                   className="w-full h-full object-cover"
                 />
               </AnimatePresence>
+              <div className="absolute top-4 right-4 flex gap-2">
+                <button onClick={(e) => { e.stopPropagation(); toggleItem({ id: product.id, title: product.title, price: product.price, image: product.images[0] || "" }); }}
+                  className={`w-10 h-10 rounded-full backdrop-blur-md flex items-center justify-center transition-all ${wishlisted ? "bg-destructive/90 text-white" : "bg-foreground/40 text-white hover:bg-foreground/60"}`}>
+                  <Heart className={`w-5 h-5 ${wishlisted ? "fill-current" : ""}`} />
+                </button>
+                <button onClick={(e) => { e.stopPropagation(); handleShare(); }}
+                  className="w-10 h-10 rounded-full bg-foreground/40 backdrop-blur-md text-white flex items-center justify-center hover:bg-foreground/60 transition-all">
+                  <Share2 className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="absolute bottom-4 left-4 bg-foreground/40 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <ZoomIn className="w-3.5 h-3.5" /> Click to zoom
+              </div>
               {product.images.length > 1 && (
                 <div className="absolute bottom-4 right-4 bg-foreground/60 text-background px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
                   {selectedImage + 1} / {product.images.length}
@@ -227,14 +255,8 @@ const ProductDetail = () => {
             {product.images.length > 1 && (
               <div className="flex gap-3">
                 {product.images.map((img, i) => (
-                  <motion.button
-                    key={i}
-                    onClick={() => setSelectedImage(i)}
-                    whileHover={{ scale: 1.05 }}
-                    className={`rounded-xl overflow-hidden w-20 h-20 border-2 transition-all ${
-                      selectedImage === i ? "border-primary shadow-lg shadow-primary/20" : "border-transparent opacity-60 hover:opacity-100"
-                    }`}
-                  >
+                  <motion.button key={i} onClick={() => setSelectedImage(i)} whileHover={{ scale: 1.05 }}
+                    className={`rounded-xl overflow-hidden w-20 h-20 border-2 transition-all ${selectedImage === i ? "border-primary shadow-lg shadow-primary/20" : "border-transparent opacity-60 hover:opacity-100"}`}>
                     <img src={img} alt={`View ${i + 1}`} className="w-full h-full object-cover" />
                   </motion.button>
                 ))}
@@ -242,29 +264,38 @@ const ProductDetail = () => {
             )}
           </motion.div>
 
+          {/* Image Zoom Modal */}
+          <AnimatePresence>
+            {zoomedImage && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setZoomedImage(false)}
+                className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 cursor-zoom-out">
+                <motion.img
+                  initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.8 }}
+                  src={product.images[selectedImage] || "/placeholder.svg"} alt={product.title}
+                  className="max-w-full max-h-full object-contain rounded-2xl"
+                />
+                <button onClick={() => setZoomedImage(false)} className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20">✕</button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Right: Product Info */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }} className="space-y-6">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-tight">{product.title}</h1>
 
-            {/* Scarcity triggers */}
             {product.stock > 0 && product.stock <= 10 && (
               <div className="flex items-center gap-3 flex-wrap">
-                <span className="text-sm font-semibold text-destructive bg-destructive/10 px-3 py-1.5 rounded-full animate-pulse">
-                  🔥 Only {product.stock} left in stock!
-                </span>
+                <span className="text-sm font-semibold text-destructive bg-destructive/10 px-3 py-1.5 rounded-full animate-pulse">🔥 Only {product.stock} left in stock!</span>
               </div>
             )}
 
-            {/* Price & Stock */}
             <div className="glass-card p-6 rounded-2xl space-y-3">
               <div className="flex items-end gap-3 flex-wrap">
                 <span className="text-4xl font-extrabold text-primary">₨ {activePrice.toLocaleString()}</span>
                 {product.compare_at_price && product.compare_at_price > activePrice && (
                   <>
                     <span className="text-lg text-muted-foreground line-through mb-1">₨ {product.compare_at_price.toLocaleString()}</span>
-                    <span className="text-sm font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full mb-1">
-                      -{Math.round((1 - activePrice / product.compare_at_price) * 100)}% OFF
-                    </span>
+                    <span className="text-sm font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full mb-1">-{Math.round((1 - activePrice / product.compare_at_price) * 100)}% OFF</span>
                   </>
                 )}
                 <span className="text-sm text-muted-foreground mb-1">incl. delivery</span>
@@ -276,42 +307,25 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            {/* Variant Picker */}
-            <VariantPicker
-              productId={product.id}
-              basePrice={product.price}
-              baseStock={product.stock}
-              onVariantSelect={(v) => setSelectedVariant(v as any)}
-            />
+            <VariantPicker productId={product.id} basePrice={product.price} baseStock={product.stock} onVariantSelect={(v) => setSelectedVariant(v as any)} />
 
-            {/* Description */}
             {description && <p className="text-muted-foreground leading-relaxed">{description}</p>}
 
-            {/* Tabs: Features / Specs */}
             {(features.length > 0 || specs.length > 0) && (
               <div>
                 <div className="flex gap-1 p-1 bg-secondary/50 rounded-xl mb-4">
                   {(["features", "specs"] as const).map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                        activeTab === tab ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
+                    <button key={tab} onClick={() => setActiveTab(tab)}
+                      className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${activeTab === tab ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
                       {tab === "features" ? "Key Features" : "Specifications"}
                     </button>
                   ))}
                 </div>
-
                 <AnimatePresence mode="wait">
                   {activeTab === "features" ? (
                     <motion.ul key="features" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-2">
                       {features.map((feat, i) => (
-                        <li key={i} className="flex items-start gap-3">
-                          <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                          <span className="text-sm text-foreground">{feat}</span>
-                        </li>
+                        <li key={i} className="flex items-start gap-3"><Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" /><span className="text-sm text-foreground">{feat}</span></li>
                       ))}
                       {features.length === 0 && <li className="text-sm text-muted-foreground">No features listed yet.</li>}
                     </motion.ul>
@@ -330,7 +344,7 @@ const ProductDetail = () => {
               </div>
             )}
 
-            {/* Quantity + CTA */}
+            {/* Quantity + CTA with Buy Now */}
             <div className="space-y-4">
               <div className="flex items-center gap-4">
                 <span className="text-sm font-semibold text-foreground">Quantity</span>
@@ -341,17 +355,15 @@ const ProductDetail = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <motion.button
-                  onClick={handleAddToCart}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="flex items-center justify-center gap-2 bg-primary text-primary-foreground py-4 rounded-2xl font-bold text-base shadow-lg shadow-primary/25 transition-all hover:shadow-xl"
-                >
-                  <ShoppingCart className="w-5 h-5" />
-                  Add to Cart
+              <div className="grid grid-cols-2 gap-3">
+                <motion.button onClick={handleAddToCart} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                  className="flex items-center justify-center gap-2 bg-secondary text-foreground py-4 rounded-2xl font-bold text-base border border-border hover:border-primary/40 transition-all">
+                  <ShoppingCart className="w-5 h-5" /> Add to Cart
                 </motion.button>
-
+                <motion.button onClick={handleBuyNow} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                  className="flex items-center justify-center gap-2 bg-primary text-primary-foreground py-4 rounded-2xl font-bold text-base shadow-lg shadow-primary/25 transition-all hover:shadow-xl">
+                  <Zap className="w-5 h-5" /> Buy Now
+                </motion.button>
               </div>
             </div>
 
@@ -372,34 +384,18 @@ const ProductDetail = () => {
           </motion.div>
         </div>
 
-        {/* Frequently Bought Together */}
         <FrequentlyBoughtTogether productId={product.id} categoryId={product.category_id || product.sub_category_id} />
-
-        {/* Customer Reviews */}
         <CustomerReviews productId={product.id} />
-
-        {/* Customer Q&A */}
         <ProductQA productId={product.id} />
-
-        {/* Recently Viewed */}
         <RecentlyViewed excludeId={product.id} />
 
-        {/* Related Products */}
         {related.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mt-24">
             <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-8">You Might Also Like</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
               {related.map((prod, i) => (
-                <motion.div
-                  key={prod.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                  whileHover={{ y: -6 }}
-                  onClick={() => navigate(`/product/${prod.id}`)}
-                  className="glass-card rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg hover:border-primary/30 transition-all group"
-                >
+                <motion.div key={prod.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }} whileHover={{ y: -6 }}
+                  onClick={() => navigate(`/product/${prod.id}`)} className="glass-card rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg hover:border-primary/30 transition-all group">
                   <div className="h-36 sm:h-44 bg-secondary/30 overflow-hidden">
                     <img src={prod.images[0] || "/placeholder.svg"} alt={prod.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                   </div>
