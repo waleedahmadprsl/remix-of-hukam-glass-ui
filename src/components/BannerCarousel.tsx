@@ -10,21 +10,21 @@ const slides = [
     sub: "Verified accessories at your doorstep — Cash on Delivery.",
     cta: "Shop Now",
     href: "#all-products",
-    gradient: "from-primary/20 via-accent/30 to-secondary/40",
+    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1400&q=80",
   },
   {
     headline: "Flash Deals — Up to 40% Off",
     sub: "Limited time offers on top-selling gadgets.",
     cta: "View Deals",
     href: "#flash-deals",
-    gradient: "from-destructive/10 via-primary/20 to-accent/30",
+    image: "https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=1400&q=80",
   },
   {
     headline: "New Arrivals Every Week",
     sub: "Earbuds, chargers, power banks & more — always fresh stock.",
     cta: "Browse Collection",
     href: "/products",
-    gradient: "from-secondary/40 via-primary/10 to-accent/20",
+    image: "https://images.unsplash.com/photo-1546868871-af0de0ae72be?w=1400&q=80",
   },
 ];
 
