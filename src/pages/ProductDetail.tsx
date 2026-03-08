@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Zap, Clock, Share2, ChevronLeft, ShoppingCart, Star, Shield, Truck, Eye } from "lucide-react";
+import { Check, Zap, Clock, Share2, ChevronLeft, ShoppingCart, Star, Shield, Truck } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useMiniCart } from "@/context/MiniCartContext";
 import { toast } from "@/hooks/use-toast";

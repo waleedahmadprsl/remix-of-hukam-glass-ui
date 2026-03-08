@@ -254,7 +254,7 @@ const Checkout: React.FC = () => {
                   if (!promoCode) return;
                   setPromoStatus("checking");
                   try {
-                    const { data, error } = await supabase.from("promo_codes").select("*").eq("code", promoCode).single();
+                    const { data, error } = await supabase.from("promo_codes").select("*").eq("code", promoCode).maybeSingle();
                     if (error || !data || !data.is_active) {
                       setPromoStatus("invalid");
                       setDiscountedTotal(null);
