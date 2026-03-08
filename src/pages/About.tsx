@@ -9,7 +9,7 @@ const About = () => {
   const milestones = [
     { icon: Zap, title: "60-Minute Delivery", desc: "The fastest in Mirpur." },
     { icon: Shield, title: "100% Verified", desc: "Check before you pay at your doorstep." },
-    { icon: CheckCircle2, title: "Premium Products", desc: "A highly curated tech selection." },
+    { icon: CheckCircle2, title: "Premium Products", desc: "A curated selection across every category." },
   ];
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
