@@ -109,21 +109,27 @@
 
 @layer components {
   .glass {
-    @apply bg-white/70 backdrop-blur-md border border-white/50 shadow-lg;
+    background: hsl(var(--background) / 0.7);
+    @apply backdrop-blur-md border shadow-lg;
+    border-color: hsl(var(--background) / 0.5);
   }
 
   .glass-card {
-    @apply bg-white/80 backdrop-blur-md border border-white/50 rounded-2xl;
-    box-shadow: 0 8px 32px hsl(213 94% 68% / 0.08), 0 2px 8px hsl(0 0% 0% / 0.04);
+    background: hsl(var(--background) / 0.8);
+    @apply backdrop-blur-md border rounded-2xl;
+    border-color: hsl(var(--background) / 0.5);
+    box-shadow: 0 8px 32px hsl(var(--glass-shadow)), 0 2px 8px hsl(0 0% 0% / 0.04);
   }
 
   .glass-pill {
-    @apply bg-white/80 backdrop-blur-md border border-white/50 rounded-full px-6 py-4;
-    box-shadow: 0 4px 20px hsl(213 94% 68% / 0.08);
+    background: hsl(var(--background) / 0.8);
+    @apply backdrop-blur-md border rounded-full px-6 py-4;
+    border-color: hsl(var(--background) / 0.5);
+    box-shadow: 0 4px 20px hsl(var(--glass-shadow));
   }
 
   .brand-gradient {
-    background: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(210 20% 98%) 100%);
+    background: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted)) 100%);
   }
 
   .glow-blue {
