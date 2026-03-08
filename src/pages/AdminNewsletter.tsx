@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { AdminLayout } from "@/components/AdminLayout";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Mail, Download, Loader2, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
