@@ -89,7 +89,7 @@ const About = () => {
             <div>
               <h2 className="text-3xl font-bold text-foreground mb-4">Our Mission: 60 Minutes</h2>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Hukam decided to solve the problem directly. The goal was simple: locally source, authenticate, and deliver verified mobile accessories in just 60 minutes. No long waits. No mystery boxes. No compromises on quality. The brand HUKAM was born from a simple belief: "Mirpur deserves premium tech, delivered faster."
+                Hukam decided to solve the problem directly. The goal was simple: locally source, verify, and deliver quality products across every category in just 60 minutes. No long waits. No mystery boxes. No compromises on quality. The brand HUKAM was born from a simple belief: "Mirpur deserves a world-class marketplace, delivered faster."
               </p>
             </div>
 
