@@ -195,16 +195,14 @@ const About = () => {
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
             Order your first product today and join thousands of satisfied customers in Mirpur.
           </p>
-          <motion.a
-            href="https://wa.me/923426807645"
-            target="_blank"
-            rel="noopener noreferrer"
+          <motion.button
+            onClick={() => navigate("/products")}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.97 }}
-            className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-10 py-4 rounded-full text-lg font-semibold animate-pulse-glow transition-all"
+            className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-10 py-4 rounded-full text-lg font-semibold transition-all shadow-lg shadow-primary/25"
           >
-            HUKAM on WhatsApp ⚡
-          </motion.a>
+            Shop Now
+          </motion.button>
         </motion.div>
       </div>
     </div>
