@@ -151,9 +151,9 @@ const AdminAnalytics: React.FC = () => {
 
   const statusData = React.useMemo(() => {
     const counts: Record<string, number> = {};
-    orders.forEach(o => { counts[o.status] = (counts[o.status] || 0) + 1; });
+    filteredOrders.forEach(o => { counts[o.status] = (counts[o.status] || 0) + 1; });
     return Object.entries(counts).map(([name, value]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1), value }));
-  }, [orders]);
+  }, [filteredOrders]);
 
   // Average order value
   const avgOrderValue = orders.length > 0 ? Math.round(orders.reduce((s, o) => s + Number(o.total_amount), 0) / orders.length) : 0;
