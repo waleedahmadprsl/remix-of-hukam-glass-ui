@@ -21,10 +21,15 @@ const Login: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setEmailNotConfirmed(false);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      toast({ title: "Login failed", description: error.message, variant: "destructive" });
+      if (error.message.toLowerCase().includes("email not confirmed")) {
+        setEmailNotConfirmed(true);
+      } else {
+        toast({ title: "Login failed", description: error.message, variant: "destructive" });
+      }
     } else {
       toast({ title: "Welcome back!" });
       navigate("/account");
