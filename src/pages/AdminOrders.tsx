@@ -187,6 +187,19 @@ const AdminOrders: React.FC = () => {
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name, phone, or order ID..." className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-xl text-sm focus:outline-none focus:border-primary" />
         </div>
 
+        {/* Bulk Actions */}
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-3 mb-4 p-3 bg-primary/5 rounded-xl border border-primary/20">
+            <span className="text-sm font-semibold text-foreground">{selectedIds.size} selected</span>
+            <select value={bulkStatus} onChange={(e) => setBulkStatus(e.target.value)} className="px-3 py-1.5 bg-background border border-border rounded-lg text-sm">
+              <option value="">Change status to...</option>
+              {statuses.map((s) => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+            </select>
+            <button onClick={handleBulkStatusUpdate} disabled={!bulkStatus} className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold disabled:opacity-50">Apply</button>
+            <button onClick={() => setSelectedIds(new Set())} className="text-xs text-muted-foreground hover:text-foreground">Clear</button>
+          </div>
+        )}
+
         {loading ? <div className="text-center py-12 text-muted-foreground">Loading orders...</div> : filtered.length === 0 ? <div className="text-center py-12 text-muted-foreground">No orders found.</div> : (
           <div className="space-y-3">
             {filtered.map((order) => {
@@ -199,6 +212,7 @@ const AdminOrders: React.FC = () => {
               return (
                 <motion.div key={order.id} layout className="glass-card rounded-2xl overflow-hidden">
                   <div className="flex items-center gap-2 sm:gap-4 px-3 sm:px-5 py-3 sm:py-4 cursor-pointer hover:bg-background/40 transition-colors" onClick={() => handleExpand(order.id)}>
+                    <input type="checkbox" checked={selectedIds.has(order.id)} onClick={(e) => e.stopPropagation()} onChange={() => toggleOrderSelect(order.id)} className="rounded flex-shrink-0" />
                     <div className="flex-1 min-w-0 grid grid-cols-2 sm:grid-cols-5 gap-1 sm:gap-2 items-center">
                       <span className="font-bold text-foreground text-xs sm:text-sm">#{order.id.slice(0, 8)}</span>
                       <span className="text-xs text-muted-foreground hidden sm:block">{new Date(order.created_at).toLocaleDateString()}</span>
