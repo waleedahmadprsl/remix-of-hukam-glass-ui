@@ -16,6 +16,7 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
