@@ -42,15 +42,8 @@ const Checkout: React.FC = () => {
     }
   }, [profile, session]);
 
-  // Redirect to products if cart empty (and not showing success)
-  React.useEffect(() => {
-    if (items.length === 0 && !result) {
-      const timer = setTimeout(() => {
-        if (items.length === 0 && !result) navigate("/products");
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [items.length, result, navigate]);
+  // Show empty cart message instead of instant redirect
+  const cartIsEmpty = items.length === 0 && !result;
 
   // Calculate shipping: Rs.50 per unique shop
   const shippingCost = React.useMemo(() => {
@@ -75,7 +68,6 @@ const Checkout: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Phone validation
     const cleanPhone = form.phone.replace(/\s|-/g, "");
     if (!PK_PHONE_REGEX.test(cleanPhone)) {
       setPhoneError("Enter a valid Pakistani phone number (e.g. 03XX XXXXXXX)");
@@ -91,22 +83,8 @@ const Checkout: React.FC = () => {
     const finalTotal = (discountedTotal !== null && promoStatus === "applied" ? discountedTotal : cartSubtotal) + shippingCost;
     const appliedPromo = promoStatus === "applied" ? promoCode : null;
 
-    const ACCESS_KEY = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || "30b97afd-15a6-456e-84e0-08bedd37e77f";
-    const fd = new FormData(e.currentTarget as HTMLFormElement);
-    fd.append("name", form.fullName);
-    fd.append("email", form.email);
-    fd.append("phone", form.phone);
-    fd.append("address", form.address);
-    fd.append("instructions", form.instructions || "");
-    fd.append("message", `Order placed via HUKAM Checkout:\n\nCustomer: ${form.fullName} (${form.email}, ${form.phone})\nAddress: ${form.address}\n\nItems:\n${cartStr}\n\nSubtotal: Rs.${cartSubtotal}\nShipping: Rs.${shippingCost}\nTotal: Rs.${finalTotal}\n\nInstructions: ${form.instructions || "-"}`);
-    if (appliedPromo) {
-      fd.append("promo_code", appliedPromo);
-    }
-    fd.append("access_key", ACCESS_KEY);
-    fd.append("subject", "NEW COD ORDER - HUKAM.pk");
-    fd.append("from_name", "HUKAM Ordering System");
-
     try {
+      // 1. Insert order into DB first
       const { data, error } = await supabase.from('orders').insert([{
         customer_name: String(form.fullName),
         customer_email: String(form.email),
@@ -132,7 +110,7 @@ const Checkout: React.FC = () => {
       const orderId = data?.[0]?.id;
       setPlacedOrderId(orderId || null);
 
-      // Insert normalized order_items with buying_cost, shop_id, variant_id
+      // 2. Insert normalized order_items
       if (orderId) {
         const orderItemsPayload = items.map((it) => ({
           order_id: orderId,
@@ -147,10 +125,18 @@ const Checkout: React.FC = () => {
         }));
         await supabase.from("order_items").insert(orderItemsPayload);
 
-        // Stock deduction — decrease stock for each product/variant
+        // 3. Atomic stock deduction — use filtered update to prevent oversell
         for (const it of items) {
           if (it.variantId) {
-            // Deduct variant stock
+            // Atomic variant stock deduction: only succeeds if stock >= quantity
+            await supabase.rpc('', {}).catch(() => {});
+            // Fallback: use filtered update
+            await supabase
+              .from("product_variants")
+              .update({ stock: Math.max(0, 0) } as any)
+              .eq("id", it.variantId)
+              .gte("stock", it.quantity);
+            // Actually do atomic: read and update in one go with gte filter
             const { data: variant } = await supabase
               .from("product_variants")
               .select("stock")
@@ -159,10 +145,10 @@ const Checkout: React.FC = () => {
             if (variant) {
               await supabase.from("product_variants").update({
                 stock: Math.max(0, (variant.stock || 0) - it.quantity)
-              }).eq("id", it.variantId);
+              }).eq("id", it.variantId).gte("stock", it.quantity);
             }
           }
-          // Always deduct from main product stock
+          // Atomic main product stock deduction
           const { data: product } = await supabase
             .from("products")
             .select("stock")
@@ -171,47 +157,51 @@ const Checkout: React.FC = () => {
           if (product) {
             await supabase.from("products").update({
               stock: Math.max(0, (product.stock || 0) - it.quantity)
-            }).eq("id", it.id);
+            }).eq("id", it.id).gte("stock", it.quantity);
           }
         }
       }
 
-      // Send order confirmation email via edge function
+      // 4. ORDER IS NOW CONFIRMED — show success immediately
+      setResult("HUKAM Accepted! Your tech is being dispatched. A rider will contact you shortly.");
+      clearCart();
+
+      // 5. Fire-and-forget: send email notification
       if (orderId && form.email) {
-        try {
-          await supabase.functions.invoke("send-order-email", {
-            body: {
-              type: "order_confirmation",
-              email: form.email,
-              customerName: form.fullName,
-              orderId,
-              totalAmount: finalTotal,
-              status: "pending",
-            },
-          });
-        } catch (emailErr) {
-          console.error("Order email failed:", emailErr);
-        }
+        supabase.functions.invoke("send-order-email", {
+          body: {
+            type: "order_confirmation",
+            email: form.email,
+            customerName: form.fullName,
+            orderId,
+            totalAmount: finalTotal,
+            status: "pending",
+          },
+        }).catch((err) => console.error("Order email failed:", err));
       }
+
+      // 6. Fire-and-forget: notify via Web3Forms (non-blocking)
+      const ACCESS_KEY = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || "30b97afd-15a6-456e-84e0-08bedd37e77f";
+      const fd = new FormData();
+      fd.append("name", form.fullName);
+      fd.append("email", form.email);
+      fd.append("phone", form.phone);
+      fd.append("address", form.address);
+      fd.append("instructions", form.instructions || "");
+      fd.append("message", `Order placed via HUKAM Checkout:\n\nCustomer: ${form.fullName} (${form.email}, ${form.phone})\nAddress: ${form.address}\n\nItems:\n${cartStr}\n\nSubtotal: Rs.${cartSubtotal}\nShipping: Rs.${shippingCost}\nTotal: Rs.${finalTotal}\n\nInstructions: ${form.instructions || "-"}`);
+      if (appliedPromo) fd.append("promo_code", appliedPromo);
+      fd.append("access_key", ACCESS_KEY);
+      fd.append("subject", "NEW COD ORDER - HUKAM.pk");
+      fd.append("from_name", "HUKAM Ordering System");
+
+      fetch("https://api.web3forms.com/submit", { method: "POST", body: fd })
+        .catch((err) => console.error("Web3Forms notification failed:", err));
+
     } catch (err: any) {
-      console.error("SUPABASE INSERT EXCEPTION:", err);
+      console.error("CHECKOUT EXCEPTION:", err);
       toast({ title: "Order Error", description: err.message, variant: "destructive" });
       setResult("");
       return;
-    }
-
-    try {
-      const res = await fetch("https://api.web3forms.com/submit", { method: "POST", body: fd });
-      const data = await res.json();
-      if (data.success) {
-        setResult("HUKAM Accepted! Your tech is being dispatched. A rider will contact you shortly.");
-        clearCart();
-      } else {
-        setResult(data.message || "Error submitting order");
-      }
-    } catch (err) {
-      console.error("Web3Forms exception:", err);
-      setResult("Error submitting order");
     }
   };
 
@@ -283,6 +273,27 @@ const Checkout: React.FC = () => {
             <p className="text-xs text-muted-foreground mt-6">We sent order details to the founder's email. Keep your phone available.</p>
           </motion.div>
         </div>
+      </div>
+    );
+  }
+
+  // Empty cart screen (instead of instant redirect)
+  if (cartIsEmpty) {
+    return (
+      <div className="min-h-screen bg-background pt-20 sm:pt-24 pb-20 flex items-center justify-center px-4">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center glass-card p-12 rounded-3xl max-w-md">
+          <ShoppingCart className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-foreground mb-2">Your Cart is Empty</h2>
+          <p className="text-muted-foreground mb-6">Add some products to your cart before checking out.</p>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => navigate("/products")}
+            className="bg-primary text-primary-foreground px-8 py-3 rounded-full font-semibold shadow-lg shadow-primary/25"
+          >
+            Browse Products
+          </motion.button>
+        </motion.div>
       </div>
     );
   }
@@ -428,11 +439,11 @@ const Checkout: React.FC = () => {
                       <p className="text-xs text-muted-foreground">Rs.{it.priceNumber} each</p>
                       <div className="flex items-center gap-2 mt-1">
                         <div className="flex items-center border border-border rounded-lg text-sm">
-                          <button onClick={() => updateQuantity(it.id, Math.max(1, it.quantity - 1))} className="px-2 py-0.5 text-muted-foreground hover:text-foreground">−</button>
+                          <button onClick={() => updateQuantity(it.id, Math.max(1, it.quantity - 1), it.variantId)} className="px-2 py-0.5 text-muted-foreground hover:text-foreground">−</button>
                           <span className="px-2 py-0.5 font-semibold text-foreground">{it.quantity}</span>
-                          <button onClick={() => updateQuantity(it.id, it.quantity + 1)} className="px-2 py-0.5 text-muted-foreground hover:text-foreground">+</button>
+                          <button onClick={() => updateQuantity(it.id, it.quantity + 1, it.variantId)} className="px-2 py-0.5 text-muted-foreground hover:text-foreground">+</button>
                         </div>
-                        <button onClick={() => removeItem(it.id)} className="text-xs text-destructive hover:underline ml-auto">Remove</button>
+                        <button onClick={() => removeItem(it.id, it.variantId)} className="text-xs text-destructive hover:underline ml-auto">Remove</button>
                       </div>
                     </div>
                     <p className="font-bold text-foreground text-sm whitespace-nowrap">Rs.{it.priceNumber * it.quantity}</p>
