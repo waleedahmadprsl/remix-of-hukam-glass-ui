@@ -15,7 +15,7 @@ const Contact = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setResult("Sending....");
-    const ACCESS_KEY = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || "";
+    const ACCESS_KEY = "30b97afd-15a6-456e-84e0-08bedd37e77f";
     const formDataToSend = new FormData(e.currentTarget);
     formDataToSend.append("access_key", ACCESS_KEY);
     try {

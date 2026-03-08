@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ShoppingCart, Search, Heart } from "lucide-react";
@@ -35,11 +35,15 @@ const Header = () => {
   const cartCount = items.reduce((s, it) => s + it.quantity, 0);
   const wishlistCount = wishlistItems.length;
 
-  const handleSearch = async (q: string) => {
+  const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleSearch = (q: string) => {
     setSearchQuery(q);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     if (q.trim().length < 2) { setSearchResults([]); return; }
-    const { data } = await supabase.from("products").select("id, title, price, images").eq("is_active", true).ilike("title", `%${q}%`).limit(5);
-    setSearchResults((data || []).map((p: any) => ({ ...p, images: Array.isArray(p.images) ? p.images : [] })));
+    debounceRef.current = setTimeout(async () => {
+      const { data } = await supabase.from("products").select("id, title, price, images").eq("is_active", true).ilike("title", `%${q}%`).limit(5);
+      setSearchResults((data || []).map((p: any) => ({ ...p, images: Array.isArray(p.images) ? p.images : [] })));
+    }, 300);
   };
 
   return (
@@ -51,7 +55,7 @@ const Header = () => {
         className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/30"
       >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-          <img src={hukamName} alt="HUKAM" onClick={() => navigate('/')} role="button" aria-label="Go to home" className="h-24 sm:h-28 cursor-pointer" />
+          <img src={hukamName} alt="HUKAM" onClick={() => navigate('/')} role="button" aria-label="Go to home" className="h-10 sm:h-12 cursor-pointer" />
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-8">

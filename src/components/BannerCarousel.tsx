@@ -29,7 +29,7 @@ const slides: Slide[] = [
     sub: "Verified accessories at your doorstep — Cash on Delivery.",
     cta: "Shop Now",
     href: "#all-products",
-    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1400&q=80",
+    video: heroVideo,
     accent: "from-primary/20 to-transparent",
   },
   {
@@ -37,7 +37,7 @@ const slides: Slide[] = [
     sub: "Limited time offers on top-selling gadgets.",
     cta: "View Deals",
     href: "#flash-deals",
-    image: "https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=1400&q=80",
+    video: heroVideo,
     accent: "from-destructive/20 to-transparent",
   },
   {
@@ -45,7 +45,7 @@ const slides: Slide[] = [
     sub: "Earbuds, chargers, power banks & more — always fresh stock.",
     cta: "Browse Collection",
     href: "/products",
-    image: "https://images.unsplash.com/photo-1546868871-af0de0ae72be?w=1400&q=80",
+    video: heroVideo,
     accent: "from-accent/30 to-transparent",
   },
 ];

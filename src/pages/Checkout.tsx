@@ -93,22 +93,7 @@ const Checkout: React.FC = () => {
         await supabase.from("order_items").insert(orderItemsPayload);
       }
 
-      if (form.email && orderId) {
-        try {
-          await supabase.functions.invoke("send-order-email", {
-            body: {
-              type: "order_confirmation",
-              email: form.email,
-              customerName: form.fullName,
-              orderId,
-              totalAmount: parsedTotal,
-              items: cartStr,
-            },
-          });
-        } catch (emailErr) {
-          console.error("Order email error:", emailErr);
-        }
-      }
+      // Email notification handled via Web3Forms below
     } catch (err: any) {
       console.error("SUPABASE INSERT EXCEPTION:", err);
       alert("Database Error: " + err.message);
@@ -269,7 +254,7 @@ const Checkout: React.FC = () => {
                   if (!promoCode) return;
                   setPromoStatus("checking");
                   try {
-                    const { data, error } = await supabase.from("promo_codes").select("*").eq("code", promoCode).single();
+                    const { data, error } = await supabase.from("promo_codes").select("*").eq("code", promoCode).maybeSingle();
                     if (error || !data || !data.is_active) {
                       setPromoStatus("invalid");
                       setDiscountedTotal(null);

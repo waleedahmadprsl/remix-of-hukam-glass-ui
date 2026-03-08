@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Zap, Clock, Share2, ChevronLeft, ShoppingCart, Star, Shield, Truck, Eye } from "lucide-react";
+import { Check, Zap, Clock, Share2, ChevronLeft, ShoppingCart, Star, Shield, Truck } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useMiniCart } from "@/context/MiniCartContext";
 import { toast } from "@/hooks/use-toast";
@@ -58,7 +58,7 @@ const ProductDetail = () => {
   const [qty, setQty] = React.useState(1);
   const [selectedImage, setSelectedImage] = React.useState(0);
   const [activeTab, setActiveTab] = React.useState<"features" | "specs">("features");
-  const [viewingCount] = React.useState(() => Math.floor(Math.random() * 20) + 5);
+  
 
   React.useEffect(() => {
     if (!id) return;
@@ -98,8 +98,18 @@ const ProductDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background pt-24 pb-20 flex items-center justify-center">
-        <div className="text-muted-foreground">Loading product...</div>
+      <div className="min-h-screen bg-background pt-24 pb-20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-start max-w-7xl mx-auto">
+            <div className="animate-pulse bg-muted rounded-3xl aspect-square" />
+            <div className="space-y-4">
+              <div className="h-8 bg-muted rounded-xl w-3/4 animate-pulse" />
+              <div className="h-6 bg-muted rounded-xl w-1/2 animate-pulse" />
+              <div className="h-24 bg-muted rounded-2xl animate-pulse" />
+              <div className="h-12 bg-muted rounded-2xl w-full animate-pulse" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -185,17 +195,13 @@ const ProductDetail = () => {
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-tight">{product.title}</h1>
 
             {/* Scarcity triggers */}
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex items-center gap-1.5 text-sm text-muted-foreground bg-secondary/50 px-3 py-1.5 rounded-full">
-                <Eye className="w-4 h-4" />
-                <span>{viewingCount} people viewing</span>
-              </div>
-              {product.stock > 0 && product.stock <= 10 && (
+            {product.stock > 0 && product.stock <= 10 && (
+              <div className="flex items-center gap-3 flex-wrap">
                 <span className="text-sm font-semibold text-orange-600 bg-orange-50 px-3 py-1.5 rounded-full animate-pulse">
                   🔥 Only {product.stock} left in stock!
                 </span>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Price & Stock */}
             <div className="glass-card p-6 rounded-2xl space-y-3">
