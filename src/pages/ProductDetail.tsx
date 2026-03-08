@@ -272,16 +272,6 @@ const ProductDetail = () => {
                   HUKAM Kijiye (Add to Cart)
                 </motion.button>
 
-                <motion.a
-                  href={`https://wa.me/923426807645?text=${encodeURIComponent(`Hi HUKAM, I want to order: ${product.title} - ₨ ${product.price.toLocaleString()}`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="flex items-center justify-center gap-2 bg-foreground/10 text-foreground border border-border py-4 rounded-2xl font-bold text-base transition-all hover:bg-foreground/20"
-                >
-                  Order via WhatsApp
-                </motion.a>
               </div>
             </div>
 

@@ -3,7 +3,7 @@ import { Smartphone, ShoppingCart, Bike, ArrowRight } from "lucide-react";
 
 const steps = [
   { icon: Smartphone, title: "Browse Collection", desc: "Explore our premium tech accessories catalog with real images and prices.", color: "from-primary/10 to-primary/5" },
-  { icon: MessageCircle, title: "Add to Cart", desc: "Pick your products and add them to your cart — fast, simple checkout.", color: "from-primary/15 to-primary/5" },
+  { icon: ShoppingCart, title: "Add to Cart", desc: "Pick your products and add them to your cart — fast, simple checkout.", color: "from-primary/15 to-primary/5" },
   { icon: Bike, title: "Rider at Your Doorstep", desc: "Delivered to your door in under 60 minutes. Pay after checking.", color: "from-primary/10 to-primary/5" },
 ];
 
