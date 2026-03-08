@@ -13,6 +13,8 @@ const steps = [
   { icon: CheckCircle2, label: "Confirmed" },
 ];
 
+const PK_PHONE_REGEX = /^(\+92|0)?\s*3\d{2}[\s-]?\d{7}$/;
+
 const Checkout: React.FC = () => {
   const { items, subtotal, clearCart, updateQuantity, removeItem } = useCart();
   const { session, profile } = useAuth();
@@ -23,6 +25,7 @@ const Checkout: React.FC = () => {
   const [discountedTotal, setDiscountedTotal] = React.useState<number | null>(null);
   const [result, setResult] = React.useState("");
   const [placedOrderId, setPlacedOrderId] = React.useState<string | null>(null);
+  const [phoneError, setPhoneError] = React.useState("");
 
   // Auto-fill from profile
   React.useEffect(() => {
@@ -39,24 +42,53 @@ const Checkout: React.FC = () => {
     }
   }, [profile, session]);
 
+  // Redirect to products if cart empty (and not showing success)
+  React.useEffect(() => {
+    if (items.length === 0 && !result) {
+      const timer = setTimeout(() => {
+        if (items.length === 0 && !result) navigate("/products");
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [items.length, result, navigate]);
+
+  // Calculate shipping: Rs.50 per unique shop
+  const shippingCost = React.useMemo(() => {
+    const uniqueShops = new Set(items.map((it) => it.shopId || "own"));
+    return uniqueShops.size * 50;
+  }, [items]);
+
   const currentStep = result && result.startsWith("HUKAM Accepted") ? 2 : items.length > 0 ? 1 : 0;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
+    if (name === "phone") {
+      setPhoneError(value && !PK_PHONE_REGEX.test(value.replace(/\s|-/g, "")) ? "Enter a valid Pakistani phone number (e.g. 03XX XXXXXXX)" : "");
+    }
   };
 
   const formatCart = () => {
-    return items.map((it, idx) => `Item ${idx + 1}: ${it.name} (Qty: ${it.quantity}) - Rs.${it.priceNumber}`).join("\n");
+    return items.map((it, idx) => `Item ${idx + 1}: ${it.name}${it.variantName ? ` (${it.variantName})` : ""} (Qty: ${it.quantity}) - Rs.${it.priceNumber}`).join("\n");
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    // Phone validation
+    const cleanPhone = form.phone.replace(/\s|-/g, "");
+    if (!PK_PHONE_REGEX.test(cleanPhone)) {
+      setPhoneError("Enter a valid Pakistani phone number (e.g. 03XX XXXXXXX)");
+      toast({ title: "Invalid phone number", description: "Please enter a valid Pakistani phone number", variant: "destructive" });
+      return;
+    }
+
     setResult("Sending....");
 
     const cartStr = formatCart();
-    const cartTotal = discountedTotal !== null ? discountedTotal : subtotal();
-    const parsedTotal = Number(cartTotal);
+    const cartSubtotal = subtotal();
+    const discountAmt = promoStatus === "applied" && discountedTotal !== null ? cartSubtotal - discountedTotal : 0;
+    const finalTotal = (discountedTotal !== null && promoStatus === "applied" ? discountedTotal : cartSubtotal) + shippingCost;
     const appliedPromo = promoStatus === "applied" ? promoCode : null;
 
     const ACCESS_KEY = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || "30b97afd-15a6-456e-84e0-08bedd37e77f";
@@ -66,10 +98,9 @@ const Checkout: React.FC = () => {
     fd.append("phone", form.phone);
     fd.append("address", form.address);
     fd.append("instructions", form.instructions || "");
-    fd.append("message", `Order placed via HUKAM Checkout:\n\nCustomer: ${form.fullName} (${form.email}, ${form.phone})\nAddress: ${form.address}\n\nItems:\n${cartStr}\n\nSubtotal: Rs.${subtotal()}\n\nInstructions: ${form.instructions || "-"}`);
+    fd.append("message", `Order placed via HUKAM Checkout:\n\nCustomer: ${form.fullName} (${form.email}, ${form.phone})\nAddress: ${form.address}\n\nItems:\n${cartStr}\n\nSubtotal: Rs.${cartSubtotal}\nShipping: Rs.${shippingCost}\nTotal: Rs.${finalTotal}\n\nInstructions: ${form.instructions || "-"}`);
     if (appliedPromo) {
       fd.append("promo_code", appliedPromo);
-      fd.append("discounted_total", String(parsedTotal));
     }
     fd.append("access_key", ACCESS_KEY);
     fd.append("subject", "NEW COD ORDER - HUKAM.pk");
@@ -84,14 +115,16 @@ const Checkout: React.FC = () => {
         instructions: String(form.instructions) || '',
         items: cartStr,
         promo_code: appliedPromo,
-        total_amount: parsedTotal,
+        total_amount: finalTotal,
+        shipping_cost: shippingCost,
+        discount_amount: discountAmt,
         status: 'pending',
         user_id: session?.user?.id || null,
       }]).select();
 
       if (error) {
         console.error("SUPABASE INSERT ERROR:", error.message);
-        alert("Database Error: " + error.message);
+        toast({ title: "Order Error", description: error.message, variant: "destructive" });
         setResult("");
         return;
       }
@@ -99,7 +132,7 @@ const Checkout: React.FC = () => {
       const orderId = data?.[0]?.id;
       setPlacedOrderId(orderId || null);
 
-      // Insert normalized order_items for multi-vendor tracking
+      // Insert normalized order_items with buying_cost, shop_id, variant_id
       if (orderId) {
         const orderItemsPayload = items.map((it) => ({
           order_id: orderId,
@@ -107,8 +140,40 @@ const Checkout: React.FC = () => {
           product_title: it.name,
           quantity: it.quantity,
           unit_price: it.priceNumber,
+          buying_cost: it.buyingCost || 0,
+          shop_id: it.shopId || null,
+          variant_id: it.variantId || null,
+          variant_name: it.variantName || null,
         }));
         await supabase.from("order_items").insert(orderItemsPayload);
+
+        // Stock deduction — decrease stock for each product/variant
+        for (const it of items) {
+          if (it.variantId) {
+            // Deduct variant stock
+            const { data: variant } = await supabase
+              .from("product_variants")
+              .select("stock")
+              .eq("id", it.variantId)
+              .single();
+            if (variant) {
+              await supabase.from("product_variants").update({
+                stock: Math.max(0, (variant.stock || 0) - it.quantity)
+              }).eq("id", it.variantId);
+            }
+          }
+          // Always deduct from main product stock
+          const { data: product } = await supabase
+            .from("products")
+            .select("stock")
+            .eq("id", it.id)
+            .single();
+          if (product) {
+            await supabase.from("products").update({
+              stock: Math.max(0, (product.stock || 0) - it.quantity)
+            }).eq("id", it.id);
+          }
+        }
       }
 
       // Send order confirmation email via edge function
@@ -120,7 +185,7 @@ const Checkout: React.FC = () => {
               email: form.email,
               customerName: form.fullName,
               orderId,
-              totalAmount: parsedTotal,
+              totalAmount: finalTotal,
               status: "pending",
             },
           });
@@ -130,7 +195,7 @@ const Checkout: React.FC = () => {
       }
     } catch (err: any) {
       console.error("SUPABASE INSERT EXCEPTION:", err);
-      alert("Database Error: " + err.message);
+      toast({ title: "Order Error", description: err.message, variant: "destructive" });
       setResult("");
       return;
     }
@@ -172,7 +237,7 @@ const Checkout: React.FC = () => {
     </div>
   );
 
-  // Thank You / Success screen with post-purchase hook
+  // Thank You / Success screen
   if (result && result.startsWith("HUKAM Accepted")) {
     return (
       <div className="min-h-screen bg-background pt-20 sm:pt-24 pb-20 flex items-center justify-center px-4">
@@ -222,7 +287,9 @@ const Checkout: React.FC = () => {
     );
   }
 
-  const finalTotal = promoStatus === "applied" && discountedTotal !== null ? discountedTotal : subtotal();
+  const cartSubtotal = subtotal();
+  const discountAmt = promoStatus === "applied" && discountedTotal !== null ? cartSubtotal - discountedTotal : 0;
+  const finalTotal = (discountedTotal !== null && promoStatus === "applied" ? discountedTotal : cartSubtotal) + shippingCost;
 
   return (
     <div className="min-h-screen bg-background pt-20 sm:pt-24 pb-32 sm:pb-20">
@@ -258,7 +325,8 @@ const Checkout: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Phone (WhatsApp) *</label>
-              <input name="phone" value={form.phone} onChange={handleChange} required placeholder="+92 342 680 7645" className="w-full px-4 py-3 bg-background border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all text-base" />
+              <input name="phone" value={form.phone} onChange={handleChange} required placeholder="03XX XXXXXXX" className={`w-full px-4 py-3 bg-background border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all text-base ${phoneError ? "border-destructive focus:border-destructive focus:ring-destructive/10" : "border-border focus:border-primary focus:ring-primary/10"}`} />
+              {phoneError && <p className="text-xs text-destructive mt-1">{phoneError}</p>}
             </div>
 
             <div>
@@ -327,7 +395,7 @@ const Checkout: React.FC = () => {
             {/* Desktop place order button */}
             <motion.button
               type="submit"
-              disabled={items.length === 0 || result === "Sending...."}
+              disabled={items.length === 0 || result === "Sending...." || !!phoneError}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="hidden sm:block w-full bg-primary text-primary-foreground py-4 rounded-2xl font-bold text-lg shadow-lg shadow-primary/25 transition-all hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
@@ -352,10 +420,11 @@ const Checkout: React.FC = () => {
             ) : (
               <div className="space-y-3">
                 {items.map((it) => (
-                  <div key={it.id} className="flex gap-3 items-start">
+                  <div key={it.variantId ? `${it.id}__${it.variantId}` : it.id} className="flex gap-3 items-start">
                     {it.image && <img src={it.image} alt={it.name} className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-xl flex-shrink-0" />}
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-foreground text-sm truncate">{it.name}</p>
+                      {it.variantName && <p className="text-xs text-muted-foreground">{it.variantName}</p>}
                       <p className="text-xs text-muted-foreground">Rs.{it.priceNumber} each</p>
                       <div className="flex items-center gap-2 mt-1">
                         <div className="flex items-center border border-border rounded-lg text-sm">
@@ -376,21 +445,21 @@ const Checkout: React.FC = () => {
               <div className="border-t border-border mt-5 pt-4 space-y-2">
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <span>Subtotal</span>
-                  <span>Rs.{subtotal()}</span>
+                  <span>Rs.{cartSubtotal.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <span>Delivery</span>
-                  <span className="text-primary font-medium">Free</span>
+                  <span className="text-foreground font-medium">Rs.{shippingCost}</span>
                 </div>
-                {promoStatus === "applied" && discountedTotal !== null && (
+                {discountAmt > 0 && (
                   <div className="flex justify-between text-sm text-primary font-medium">
                     <span>Promo Discount</span>
-                    <span>-Rs.{(subtotal() - discountedTotal).toFixed(0)}</span>
+                    <span>-Rs.{discountAmt.toFixed(0)}</span>
                   </div>
                 )}
                 <div className="border-t border-border pt-3 flex justify-between text-base sm:text-lg font-extrabold text-foreground">
                   <span>Total</span>
-                  <span>Rs.{finalTotal}</span>
+                  <span>Rs.{finalTotal.toLocaleString()}</span>
                 </div>
               </div>
             )}
@@ -403,12 +472,12 @@ const Checkout: React.FC = () => {
         <div className="fixed bottom-0 left-0 right-0 sm:hidden bg-background/95 backdrop-blur-xl border-t border-border/40 p-4 z-50">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-semibold text-muted-foreground">Total</span>
-            <span className="text-lg font-extrabold text-foreground">Rs.{finalTotal}</span>
+            <span className="text-lg font-extrabold text-foreground">Rs.{finalTotal.toLocaleString()}</span>
           </div>
           <motion.button
             type="submit"
             form="checkout-form"
-            disabled={result === "Sending...."}
+            disabled={result === "Sending...." || !!phoneError}
             whileTap={{ scale: 0.98 }}
             className="w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-bold text-base shadow-lg shadow-primary/25 disabled:opacity-50"
           >

@@ -7,6 +7,10 @@ export interface CartItem {
   priceNumber: number;
   quantity: number;
   image?: string;
+  shopId?: string | null;
+  variantId?: string | null;
+  variantName?: string | null;
+  buyingCost?: number;
 }
 
 interface CartContextValue {
@@ -25,14 +29,33 @@ function parsePrice(price: string) {
   return Number(digits) || 0;
 }
 
+const STORAGE_KEY = "hukam_cart";
+
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [items, setItems] = React.useState<CartItem[]>([]);
+  const [items, setItems] = React.useState<CartItem[]>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  });
+
+  // Persist to localStorage on every change
+  React.useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  }, [items]);
 
   const addItem = (item: any) => {
     setItems((prev) => {
-      const found = prev.find((p) => p.id === item.id);
+      const itemKey = item.variantId ? `${item.id}__${item.variantId}` : item.id;
+      const found = prev.find((p) => {
+        const pKey = p.variantId ? `${p.id}__${p.variantId}` : p.id;
+        return pKey === itemKey;
+      });
       if (found) {
-        return prev.map((p) => (p.id === item.id ? { ...p, quantity: p.quantity + (item.quantity || 1) } : p));
+        return prev.map((p) => {
+          const pKey = p.variantId ? `${p.id}__${p.variantId}` : p.id;
+          return pKey === itemKey ? { ...p, quantity: p.quantity + (item.quantity || 1) } : p;
+        });
       }
       const priceNumber = parsePrice(item.price || item.priceString || "0");
       const newItem: CartItem = {
@@ -42,6 +65,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         priceNumber,
         quantity: item.quantity || 1,
         image: item.image,
+        shopId: item.shopId || null,
+        variantId: item.variantId || null,
+        variantName: item.variantName || null,
+        buyingCost: item.buyingCost || 0,
       };
       return [newItem, ...prev];
     });
