@@ -34,6 +34,9 @@ const statusIcons: Record<string, React.ReactNode> = {
   dispatched: <Truck className="w-5 h-5" />,
   delivered: <Package className="w-5 h-5" />,
   canceled: <XCircle className="w-5 h-5" />,
+  return_requested: <RotateCcw className="w-5 h-5" />,
+  return_approved: <CheckCircle2 className="w-5 h-5" />,
+  returned: <RotateCcw className="w-5 h-5" />,
 };
 
 interface Order {
