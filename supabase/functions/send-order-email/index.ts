@@ -104,9 +104,35 @@ Fast Delivery | 100% Genuine | Secure Checkout`;
               if (shopId === "own") continue;
               const { data: shop } = await supabase.from("shops").select("name, email").eq("id", shopId).single();
               if (shop?.email) {
-                const itemsList = shopItems.map((i: any) => `${i.product_title} (Qty: ${i.quantity}) - Rs.${i.unit_price * i.quantity}`).join("\n");
-                const shopSubject = `New HUKAM Order for ${shop.name} — #${orderId.slice(0, 8)}`;
-                const shopMessage = `New order received!\n\nOrder ID: #${orderId.slice(0, 8)}\nCustomer: ${customerName}\n\nYour Items:\n${itemsList}\n\nPlease prepare the items for dispatch.\n\nHUKAM.PK Marketplace`;
+                const itemsList = shopItems.map((i: any) => `• ${i.product_title} (Qty: ${i.quantity}) - Rs.${i.unit_price * i.quantity}`).join("\n");
+                const shopSubject = `📦 New Order for ${shop.name} - HUKAM #${orderId.slice(0, 8)}`;
+                const shopMessage = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🛍️  HUKAM VENDOR NOTIFICATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+New Order Received for ${shop.name}! 
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 ORDER DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Order ID: #${orderId.slice(0, 8)}
+Customer: ${customerName}
+
+Your Items:
+${itemsList}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚡ ACTION REQUIRED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Please prepare these items for dispatch ASAP.
+Our rider will collect within 60 minutes.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+HUKAM.PK Marketplace
+WhatsApp: +92 342 680 7645`;
                 await sendEmail(shop.email, shopSubject, shopMessage);
               }
             }
