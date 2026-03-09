@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { AdminLayout } from "@/components/AdminLayout";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Calendar, DollarSign, TrendingUp, Download, Filter, Building2, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
