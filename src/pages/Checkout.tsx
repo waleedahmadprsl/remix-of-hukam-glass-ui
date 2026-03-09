@@ -164,16 +164,32 @@ const Checkout: React.FC = () => {
         // Send order confirmation email
         if (form.email) {
           try {
-            await supabase.functions.invoke("send-order-email", {
-              body: {
-                type: "order_confirmation",
-                email: form.email,
-                customerName: form.fullName,
-                orderId,
-                totalAmount: finalTotal,
-                status: "pending",
-              },
-            });
+          await supabase.functions.invoke("send-order-email", {
+            body: {
+              type: "order_confirmation",
+              email: form.email,
+              customerName: form.fullName,
+              orderId,
+              totalAmount: finalTotal,
+              status: "pending",
+            },
+          });
+
+          // Send external notifications (Discord/Telegram)
+          await supabase.functions.invoke("order-notifications", {
+            body: {
+              order: {
+                id: orderId,
+                customer_name: form.fullName,
+                customer_phone: form.phone,
+                customer_email: form.email,
+                delivery_address: form.address,
+                total_amount: finalTotal,
+                items: cartStr,
+                status: "pending"
+              }
+            }
+          });
           } catch (emailErr) {
             console.error("Order email failed:", emailErr);
           }
