@@ -40,7 +40,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Resolve which supabase client to use for wishlist
   const getDb = React.useCallback(async () => {
-    if (wishlistClient) return wishlistClient;
+    if (cloudClient) return cloudClient;
     // App uses Cloud already — use integrations client
     const { supabase } = await import("@/integrations/supabase/client");
     return supabase;
