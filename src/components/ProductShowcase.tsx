@@ -113,7 +113,7 @@ const Card = ({ product, i, onAdd }: { product: DBProduct; i: number; onAdd: (e:
       className="glass-card group overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:border-primary/40"
     >
       <div className="relative h-48 overflow-hidden bg-secondary/30">
-        <img src={product.images[0] || "/placeholder.svg"} alt={product.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+        <img src={product.images[0] || "/placeholder.svg"} alt={product.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
         {hasDiscount && (
           <span className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">
             -{discountPercent}%

@@ -340,7 +340,7 @@ const ProductDetail = () => {
                       selectedImage === i ? "border-primary shadow-lg shadow-primary/20" : "border-transparent opacity-60 hover:opacity-100"
                     }`}
                   >
-                    <img src={img} alt={`View ${i + 1}`} className="w-full h-full object-cover" />
+                    <img src={img} alt={`View ${i + 1}`} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
                   </motion.button>
                 ))}
               </div>
