@@ -518,19 +518,6 @@ const Checkout: React.FC = () => {
         </div>
       )}
 
-      {/* OTP Verification Modal */}
-      {pendingOrderData && (
-        <OTPVerificationModal
-          isOpen={showOTPModal}
-          onClose={() => {
-            setShowOTPModal(false);
-            setPendingOrderData(null);
-          }}
-          onVerified={handleOTPVerified}
-          orderId="pending" // Temporary - we'll generate this in the modal
-          phoneNumber={form.phone}
-        />
-      )}
     </div>
   );
 };
