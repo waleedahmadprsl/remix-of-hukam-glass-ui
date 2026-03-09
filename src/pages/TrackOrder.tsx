@@ -12,6 +12,9 @@ const statusLabels: Record<string, string> = {
   dispatched: "Out for Delivery",
   delivered: "Delivered",
   canceled: "Canceled",
+  return_requested: "Return Requested",
+  return_approved: "Return Approved",
+  returned: "Returned",
 };
 
 const statusDescriptions: Record<string, string> = {
