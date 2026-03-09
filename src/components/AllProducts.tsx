@@ -7,6 +7,7 @@ import { useCart } from "@/context/CartContext";
 import { useMiniCart } from "@/context/MiniCartContext";
 import { toast } from "@/hooks/use-toast";
 import { useProductRatings, StarRating } from "@/hooks/useProductRatings";
+import BlurImage from "@/components/BlurImage";
 
 interface DBProduct {
   id: string;
@@ -129,8 +130,8 @@ const AllProducts = () => {
                     return (
                       <motion.div key={product.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.3, delay: i * 0.03 }} onClick={() => navigate(`/product/${product.id}`)} className="bg-card border border-border/40 rounded-2xl group overflow-hidden cursor-pointer hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
                         <div className="relative h-32 sm:h-40 overflow-hidden bg-muted/20">
-                          <img src={product.images[0] || "/placeholder.svg"} alt={product.title} loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
-                          {hasDiscount && <span className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-md">-{discountPercent}%</span>}
+                          <BlurImage src={product.images[0]} alt={product.title} className="h-full w-full transition-transform duration-500 group-hover:scale-105" />
+                          {hasDiscount && <span className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-md z-10">-{discountPercent}%</span>}
                         </div>
                         <div className="p-3 relative">
                           <h3 className="font-medium text-foreground text-sm truncate">{product.title}</h3>

@@ -7,6 +7,7 @@ import { useCart } from "@/context/CartContext";
 import { useMiniCart } from "@/context/MiniCartContext";
 import { toast } from "@/hooks/use-toast";
 import { useProductRatings, StarRating } from "@/hooks/useProductRatings";
+import BlurImage from "@/components/BlurImage";
 
 interface Product {
   id: string;
@@ -114,12 +115,8 @@ const TrendingProducts = () => {
                 return (
                   <motion.div key={p.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05, duration: 0.4 }} whileHover={{ y: -3 }} onClick={() => navigate(`/product/${p.id}`)} className="min-w-[160px] sm:min-w-[200px] snap-start bg-card border border-border/40 rounded-2xl overflow-hidden cursor-pointer group flex-shrink-0 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
                     <div className="relative h-36 sm:h-44 overflow-hidden bg-muted/30">
-                      {p.images[0] ? (
-                        <img src={p.images[0]} alt={p.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">No Image</div>
-                      )}
-                      {hasDiscount && <span className="absolute top-2 left-2 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-md">SALE</span>}
+                      <BlurImage src={p.images[0]} alt={p.title} className="h-full w-full group-hover:scale-105 transition-transform duration-500" />
+                      {hasDiscount && <span className="absolute top-2 left-2 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-md z-10">SALE</span>}
                     </div>
                     <div className="p-3">
                       <h3 className="font-medium text-foreground text-sm truncate">{p.title}</h3>

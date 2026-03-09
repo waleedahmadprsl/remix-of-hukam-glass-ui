@@ -9,6 +9,7 @@ import { useWishlist } from "@/context/WishlistContext";
 import { toast } from "@/hooks/use-toast";
 import ProductFilterSidebar, { type FilterState } from "@/components/ProductFilterSidebar";
 import { useProductRatings, StarRating } from "@/hooks/useProductRatings";
+import BlurImage from "@/components/BlurImage";
 
 interface DBProduct {
   id: string;
@@ -195,7 +196,7 @@ const Products = () => {
                     <motion.div key={product.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.3, delay: i * 0.03 }} whileHover={{ y: -6 }} onClick={() => navigate(`/product/${product.id}`)} className="glass-card group overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:border-primary/30">
                       <div className="relative h-48 sm:h-56 overflow-hidden bg-secondary/30">
                         {product.images[0] ? (
-                          <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                          <BlurImage src={product.images[0]} alt={product.title} className="h-full w-full transition-transform duration-500 group-hover:scale-110" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-muted-foreground">No Image</div>
                         )}

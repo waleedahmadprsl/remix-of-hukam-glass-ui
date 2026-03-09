@@ -1,14 +1,9 @@
 import { motion } from "framer-motion";
 
 const FloatingWhatsAppButton = () => {
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  const whatsappUrl = isMobile
-    ? "https://api.whatsapp.com/send?phone=923426807645&text=Hi%20HUKAM!"
-    : "https://web.whatsapp.com/send?phone=923426807645&text=Hi%20HUKAM!";
-
   return (
     <motion.a
-      href={whatsappUrl}
+      href="https://wa.me/923426807645?text=Hi%20HUKAM!"
       target="_blank"
       rel="noopener noreferrer"
       initial={{ scale: 0, opacity: 0 }}
