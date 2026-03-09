@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 
 const FloatingWhatsAppButton = () => {
-  const whatsappUrl = "https://wa.me/923426807645";
+  const whatsappUrl = "https://web.whatsapp.com/send?phone=923426807645&text=Hi%20HUKAM!";
 
   return (
     <motion.a

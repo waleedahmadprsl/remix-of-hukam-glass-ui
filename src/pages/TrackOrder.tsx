@@ -79,7 +79,7 @@ const TrackOrder: React.FC = () => {
 
       let query = supabase
         .from("orders")
-        .select("id, customer_name, customer_phone, customer_email, items, total_amount, status, created_at, delivery_address, tracking_id, shipping_cost")
+        .select("id, customer_name, customer_phone, customer_email, items, total_amount, status, created_at, delivery_address, tracking_id, shipping_cost, instructions")
         .or(`customer_phone.ilike.%${cleanPhone}%,customer_phone.ilike.%${cleanPhone.replace(/^\+/, '')}%`)
         .order("created_at", { ascending: false })
         .limit(20);
