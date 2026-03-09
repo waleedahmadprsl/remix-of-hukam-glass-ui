@@ -18,7 +18,7 @@ const Index = () => {
       "logo": "https://hukam.pk/favicon.png",
       "description": "Your one-stop marketplace for fashion, electronics, home & more — delivered fast to your doorstep.",
       "address": { "@type": "PostalAddress", "addressLocality": "Mirpur", "addressCountry": "PK" },
-      "contactPoint": { "@type": "ContactPoint", "telephone": "+92-327-778-6498", "contactType": "customer service" }
+      "contactPoint": { "@type": "ContactPoint", "telephone": "+92-342-680-7645", "contactType": "customer service" }
     };
     const script = document.createElement("script");
     script.type = "application/ld+json";
