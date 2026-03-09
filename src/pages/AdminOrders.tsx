@@ -385,7 +385,7 @@ const AdminOrders: React.FC = () => {
                               <div className="flex justify-between text-xs text-muted-foreground"><span>Subtotal</span><span>Rs.{(order.total_amount + discountAmt - shippingCost).toLocaleString()}</span></div>
                               {shippingCost > 0 && <div className="flex justify-between text-xs text-muted-foreground"><span>Shipping</span><span>Rs.{shippingCost}</span></div>}
                               {discountAmt > 0 && <div className="flex justify-between text-xs text-primary"><span>Discount</span><span>-Rs.{discountAmt}</span></div>}
-                              {items.length > 0 && (() => { const cogs = items.reduce((s, i) => s + i.buying_cost * i.quantity, 0); const profit = order.total_amount - cogs; return <div className="flex justify-between text-xs text-green-600"><span>Profit</span><span>Rs.{profit.toLocaleString()}</span></div>; })()}
+                              {items.length > 0 && (() => { const cogs = items.reduce((s, i) => s + i.buying_cost * i.quantity, 0); const profit = order.total_amount - cogs; return <div className="flex justify-between text-xs text-primary"><span>Profit</span><span>Rs.{profit.toLocaleString()}</span></div>; })()}
                               <div className="flex justify-between font-extrabold text-foreground border-t border-border/40 pt-1 mt-1"><span>Total</span><span className="text-primary">Rs.{order.total_amount}</span></div>
                               <p className="text-[10px] text-muted-foreground">{new Date(order.created_at).toLocaleString()}</p>
                             </div>
