@@ -21,17 +21,7 @@ const ProductShowcase = () => {
   const { openCart } = useMiniCart();
   const [products, setProducts] = useState<DBProduct[]>([]);
 
-  useEffect(() => {
-    supabase
-      .from("products")
-      .select("id, title, price, compare_at_price, images")
-      .eq("is_active", true)
-      .order("created_at", { ascending: false })
-      .limit(4)
-      .then(({ data }) => {
-        setProducts((data || []).map((p: any) => ({ ...p, images: Array.isArray(p.images) ? p.images : [] })));
-      });
-  }, []);
+  // Loading managed below in the skeleton section
 
   const handleAdd = (e: React.MouseEvent, p: DBProduct) => {
     e.stopPropagation();
