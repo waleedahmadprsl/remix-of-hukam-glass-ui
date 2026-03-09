@@ -276,6 +276,81 @@ const TrackOrder: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* Return Request Section */}
+          {returnableStatuses.includes(order.status) && !order.status.includes("return") && (
+            <div className="border-t border-border/40 pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Return Item</p>
+                {showReturnForm !== order.id ? (
+                  <button
+                    onClick={() => setShowReturnForm(order.id)}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-destructive/10 text-destructive rounded-lg text-xs font-medium hover:bg-destructive/20 transition-colors"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    Request Return
+                  </button>
+                ) : null}
+              </div>
+
+              {showReturnForm === order.id && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="space-y-3 bg-secondary/20 rounded-xl p-4"
+                >
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                      Reason for Return *
+                    </label>
+                    <textarea
+                      value={returnReason}
+                      onChange={(e) => setReturnReason(e.target.value)}
+                      placeholder="e.g., Item damaged, wrong size, not as described..."
+                      rows={3}
+                      className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 resize-none"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleReturnRequest(order.id)}
+                      disabled={!returnReason.trim()}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-destructive text-destructive-foreground rounded-lg text-xs font-medium hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <Send className="w-3 h-3" />
+                      Submit Request
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowReturnForm(null);
+                        setReturnReason("");
+                      }}
+                      className="px-3 py-1.5 border border-border rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          )}
+
+          {/* Return Status Display */}
+          {order.status.includes("return") && (
+            <div className="border-t border-border/40 pt-4">
+              <div className="flex items-center gap-2 p-3 bg-destructive/5 rounded-xl">
+                <RotateCcw className="w-4 h-4 text-destructive" />
+                <div>
+                  <p className="text-sm font-medium text-destructive">
+                    {statusLabels[order.status] || "Return in Progress"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {statusDescriptions[order.status] || "Return is being processed"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </motion.div>
     );
