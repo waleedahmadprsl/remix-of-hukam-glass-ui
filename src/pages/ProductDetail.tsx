@@ -302,7 +302,7 @@ const ProductDetail = () => {
               onTouchEnd={handleTouchEnd}
             >
               <AnimatePresence mode="wait">
-                <motion.img
+                  <motion.img
                   key={selectedImage}
                   src={product.images[selectedImage] || "/placeholder.svg"}
                   alt={product.title}
@@ -312,6 +312,7 @@ const ProductDetail = () => {
                   transition={{ duration: 0.3 }}
                   className="w-full h-full object-cover transition-transform duration-150"
                   style={isZooming ? zoomStyle : {}}
+                  onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
                 />
               </AnimatePresence>
               {product.images.length > 1 && !isZooming && (
