@@ -71,6 +71,13 @@ const Products = () => {
     setSearchParams(params, { replace: true });
   }, [search, filters.categories]);
 
+  // Show back-to-top when scrolled down
+  useEffect(() => {
+    const handleScroll = () => setShowBackToTop(window.scrollY > 400);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   // Reset page when filters/search/sort change
   useEffect(() => { setPage(0); }, [search, filters, sort]);
 
