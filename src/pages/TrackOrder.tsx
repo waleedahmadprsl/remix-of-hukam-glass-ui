@@ -107,6 +107,48 @@ const TrackOrder: React.FC = () => {
     }
   };
 
+  const handleReturnRequest = async (orderId: string) => {
+    if (!returnReason.trim()) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ 
+          status: "return_requested",
+          instructions: `RETURN REQUEST: ${returnReason}\n\n${orders.find(o => o.id === orderId)?.instructions || ""}`
+        })
+        .eq("id", orderId);
+
+      if (error) throw error;
+
+      // Update local state
+      setOrders(prev => prev.map(order => 
+        order.id === orderId 
+          ? { ...order, status: "return_requested" }
+          : order
+      ));
+
+      setShowReturnForm(null);
+      setReturnReason("");
+      
+      // You could also trigger a notification to admins here
+      toast({ 
+        title: "Return Requested", 
+        description: "Your return request has been submitted. We'll review it shortly." 
+      });
+
+    } catch (err: any) {
+      console.error("Return request error:", err);
+      toast({ 
+        title: "Error", 
+        description: "Failed to submit return request", 
+        variant: "destructive" 
+      });
+    }
+  };
+
   const renderOrderDetail = (order: Order) => {
     const currentStepIndex = order.status === "canceled" ? -1 : statusSteps.indexOf(order.status);
 
