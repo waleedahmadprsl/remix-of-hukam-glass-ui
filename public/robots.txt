@@ -1,16 +1,4 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
 User-agent: *
 Allow: /
 
-Sitemap: https://hukam.pk/functions/v1/sitemap
+Sitemap: https://hukam.pk/sitemap.xml
