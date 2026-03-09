@@ -27,6 +27,8 @@ const Checkout: React.FC = () => {
   const [result, setResult] = React.useState("");
   const [placedOrderId, setPlacedOrderId] = React.useState<string | null>(null);
   const [phoneError, setPhoneError] = React.useState("");
+  const [showOTPModal, setShowOTPModal] = React.useState(false);
+  const [pendingOrderData, setPendingOrderData] = React.useState<any>(null);
 
   // Auto-fill from profile
   React.useEffect(() => {
