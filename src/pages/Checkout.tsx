@@ -103,8 +103,15 @@ const Checkout: React.FC = () => {
       }]).select();
 
       if (error) {
-        console.error("SUPABASE INSERT ERROR:", error.message);
-        toast({ title: "Order Error", description: error.message, variant: "destructive" });
+        console.error("SUPABASE INSERT ERROR:", error.message, error.details, error.hint);
+        const friendlyMsg = error.message?.includes("schema cache")
+          ? "Our system is temporarily updating. Please try again in a moment."
+          : error.message?.includes("violates")
+          ? "There was a data conflict. Please refresh and try again."
+          : error.message?.includes("network")
+          ? "Network issue — please check your connection and retry."
+          : `Order failed: ${error.message || "Unknown error"}. Please try again or contact us on WhatsApp.`;
+        toast({ title: "❌ Order Failed", description: friendlyMsg, variant: "destructive" });
         setResult("");
         return;
       }
