@@ -48,7 +48,7 @@ const Contact = () => {
 
   const contactInfo = [
     { icon: Mail, label: "Email", value: "contact@hukam.pk", link: "mailto:contact@hukam.pk" },
-    { icon: Phone, label: "WhatsApp", value: "+92 3426 807 645", link: "https://wa.me/923426807645" },
+    { icon: Phone, label: "WhatsApp", value: "+92 3426 807 645", link: "https://web.whatsapp.com/send?phone=923426807645" },
     { icon: MapPin, label: "Location", value: "Mirpur, Azad Kashmir", link: "#" },
     { icon: Clock, label: "Hours", value: "Mon-Sun, 9 AM – 10 PM", link: "#" },
   ];
