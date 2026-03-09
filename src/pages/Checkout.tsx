@@ -47,11 +47,13 @@ const Checkout: React.FC = () => {
   // Empty cart — show UI instead of redirecting
   const isCartEmpty = items.length === 0 && !result;
 
-  // Calculate shipping: Rs.50 per unique shop
+  const { settings } = useStoreSettings();
+
+  // Calculate shipping dynamically from settings
   const shippingCost = React.useMemo(() => {
     const uniqueShops = new Set(items.map((it) => it.shopId || "own"));
-    return uniqueShops.size * 50;
-  }, [items]);
+    return uniqueShops.size * (settings.shippingRatePerShop || 50);
+  }, [items, settings.shippingRatePerShop]);
 
   const currentStep = result && result.startsWith("HUKAM Accepted") ? 2 : items.length > 0 ? 1 : 0;
 
