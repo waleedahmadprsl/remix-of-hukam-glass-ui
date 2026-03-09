@@ -66,6 +66,8 @@ const ProductDetail = () => {
   const [zoomStyle, setZoomStyle] = React.useState<React.CSSProperties>({});
   const [isZooming, setIsZooming] = React.useState(false);
   const imageContainerRef = React.useRef<HTMLDivElement>(null);
+  const [touchStart, setTouchStart] = React.useState<{ x: number; y: number } | null>(null);
+  const [touchEnd, setTouchEnd] = React.useState<{ x: number; y: number } | null>(null);
 
   React.useEffect(() => {
     if (!id) return;
