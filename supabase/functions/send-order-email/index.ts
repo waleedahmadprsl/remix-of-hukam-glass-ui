@@ -170,7 +170,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { type, email, customerName, orderId, status, totalAmount, items } = await req.json();
+    const { type, email, customerName, orderId, status, totalAmount, items, trackingId } = await req.json();
     console.log(`Email request: type=${type}, to=${email}, orderId=${orderId}, status=${status}`);
 
     if (!email) {
