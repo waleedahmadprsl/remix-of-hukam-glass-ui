@@ -418,6 +418,14 @@ const AdminOrders: React.FC = () => {
                 </motion.div>
               );
             })}
+            {/* Pagination */}
+            {filtered.length > ORDERS_PER_PAGE && (
+              <div className="flex items-center justify-center gap-2 pt-4">
+                <button onClick={() => setCurrentPage(Math.max(0, currentPage - 1))} disabled={currentPage === 0} className="px-3 py-1.5 bg-secondary text-foreground rounded-lg text-sm font-semibold disabled:opacity-40">← Prev</button>
+                <span className="text-sm text-muted-foreground">Page {currentPage + 1} of {Math.ceil(filtered.length / ORDERS_PER_PAGE)}</span>
+                <button onClick={() => setCurrentPage(Math.min(Math.ceil(filtered.length / ORDERS_PER_PAGE) - 1, currentPage + 1))} disabled={currentPage >= Math.ceil(filtered.length / ORDERS_PER_PAGE) - 1} className="px-3 py-1.5 bg-secondary text-foreground rounded-lg text-sm font-semibold disabled:opacity-40">Next →</button>
+              </div>
+            )}
           </div>
         )}
       </motion.div>
