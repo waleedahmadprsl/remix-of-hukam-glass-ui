@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
 import { ShoppingCart, FileText, CheckCircle2, Truck, ArrowRight } from "lucide-react";
+import { OTPVerificationModal } from "@/components/OTPVerificationModal";
 
 const steps = [
   { icon: ShoppingCart, label: "Cart" },
