@@ -124,7 +124,7 @@ const AdminOrders: React.FC = () => {
         await fetch(`https://${projectId}.supabase.co/functions/v1/send-order-email`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "apikey": anonKey, "Authorization": `Bearer ${anonKey}` },
-          body: JSON.stringify({ type: "status_update", email: order.customer_email, customerName: order.customer_name, orderId, status: newStatus, totalAmount: order.total_amount }),
+          body: JSON.stringify({ type: "status_update", email: order.customer_email, customerName: order.customer_name, orderId, status: newStatus, totalAmount: order.total_amount, trackingId: order.tracking_id || trackingInputs[orderId] || null }),
         });
       } catch (e) { console.error(e); }
     }
