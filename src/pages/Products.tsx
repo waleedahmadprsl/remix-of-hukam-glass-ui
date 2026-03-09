@@ -52,6 +52,7 @@ const Products = () => {
   const [sort, setSort] = useState<SortOption>("newest");
   const [page, setPage] = useState(0);
   const gridRef = useRef<HTMLDivElement>(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const ratings = useProductRatings();
   const [filters, setFilters] = useState<FilterState>({
     minPrice: 0,
