@@ -118,7 +118,15 @@ const AdminOrders: React.FC = () => {
     }
 
     if (order?.customer_email) {
-      try { await cloudSupabase.functions.invoke("send-order-email", { body: { type: "status_update", email: order.customer_email, customerName: order.customer_name, orderId, status: newStatus, totalAmount: order.total_amount } }); } catch (e) { console.error(e); }
+      try {
+        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || "jjnkwysssrexpvjyyavs";
+        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impqbmt3eXNzc3JleHB2anl5YXZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzMTA2MDIsImV4cCI6MjA4Nzg4NjYwMn0.eVW3XIB1Ai_SiHleSUhjiJ3YLARxy9du2Im8BJ9D7Ho";
+        await fetch(`https://${projectId}.supabase.co/functions/v1/send-order-email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "apikey": anonKey, "Authorization": `Bearer ${anonKey}` },
+          body: JSON.stringify({ type: "status_update", email: order.customer_email, customerName: order.customer_name, orderId, status: newStatus, totalAmount: order.total_amount }),
+        });
+      } catch (e) { console.error(e); }
     }
     await logActivity("ORDER_STATUS", `Order ${orderId.slice(0, 8)} → ${newStatus}`);
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
