@@ -4,6 +4,7 @@ import { Search, Package, Clock, CheckCircle2, Truck, XCircle, MapPin, Hash, Mes
 import { supabase } from "@/integrations/supabase/client";
 
 const statusSteps = ["pending", "confirmed", "dispatched", "delivered"];
+const returnableStatuses = ["delivered"];
 
 const statusLabels: Record<string, string> = {
   pending: "Order Placed",
