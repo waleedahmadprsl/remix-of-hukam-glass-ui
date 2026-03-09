@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Search, SlidersHorizontal, Heart, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
+import { ShoppingBag, Search, SlidersHorizontal, Heart, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useCart } from "@/context/CartContext";
 import { useMiniCart } from "@/context/MiniCartContext";
