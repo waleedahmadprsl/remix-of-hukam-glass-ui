@@ -67,6 +67,7 @@ const App = () => {
             <MiniCartProvider>
               <WishlistProvider>
                 <BrowserRouter>
+                  <RouteSEO />
                   <MiniCartWrapper />
                   <Routes>
                     {/* Admin Routes */}
