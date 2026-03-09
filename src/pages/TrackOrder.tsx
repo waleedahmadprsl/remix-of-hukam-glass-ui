@@ -23,6 +23,9 @@ const statusDescriptions: Record<string, string> = {
   dispatched: "Your order is on its way to you!",
   delivered: "Your order has been delivered successfully.",
   canceled: "This order has been canceled.",
+  return_requested: "Return request submitted. Our team will review it.",
+  return_approved: "Return approved. Please send the item back.",
+  returned: "Item returned and refund processed.",
 };
 
 const statusIcons: Record<string, React.ReactNode> = {
