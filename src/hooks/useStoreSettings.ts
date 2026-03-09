@@ -55,7 +55,7 @@ export function useStoreSettings() {
       .from("store_settings")
       .select("settings")
       .limit(1)
-      .single()
+      .maybeSingle()
       .then(({ data, error }) => {
         if (!error && data?.settings) {
           const merged = { ...defaultSettings, ...(data.settings as Record<string, unknown>) } as StoreSettings;

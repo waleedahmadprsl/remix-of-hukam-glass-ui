@@ -78,7 +78,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const removeItem = async (id: string) => {
     setItems((prev) => prev.filter((i) => i.id !== id));
     if (userId) {
-      await supabase.from("user_wishlist").delete().eq("user_id", userId).eq("product_id", id);
+      await supabase.from("user_wishlist").delete().eq("user_id", userId).eq("product_id", id).catch(() => {});
     }
   };
 

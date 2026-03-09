@@ -75,8 +75,8 @@ const Checkout: React.FC = () => {
     // Phone validation
     const cleanPhone = form.phone.replace(/\s|-/g, "");
     if (!PK_PHONE_REGEX.test(cleanPhone)) {
-      setPhoneError("Enter a valid Pakistani phone number (e.g. 03XX XXXXXXX)");
-      toast({ title: "Invalid phone number", description: "Please enter a valid Pakistani phone number", variant: "destructive" });
+      setPhoneError("Enter a valid Pakistani phone number (e.g. 03123456789)");
+      toast({ title: "Invalid phone number", description: "Please enter a valid Pakistani phone number (e.g. 03123456789)", variant: "destructive" });
       return;
     }
 
