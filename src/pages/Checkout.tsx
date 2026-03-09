@@ -148,9 +148,9 @@ const Checkout: React.FC = () => {
           });
         }
 
-        // Send order confirmation email
+        // Send order confirmation email via Lovable Cloud edge function
         if (form.email) {
-          supabase.functions.invoke("send-order-email", {
+          cloudSupabase.functions.invoke("send-order-email", {
             body: {
               type: "order_confirmation",
               email: form.email,
@@ -160,6 +160,9 @@ const Checkout: React.FC = () => {
               status: "pending",
               items: cartStr,
             },
+          }).then((res) => {
+            if (res.error) console.error("Order email error:", res.error);
+            else console.log("Order email sent successfully");
           }).catch((err) => console.error("Order email failed:", err));
         }
 
