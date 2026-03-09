@@ -188,7 +188,7 @@ const Checkout: React.FC = () => {
       console.error("SUPABASE INSERT EXCEPTION:", err);
       toast({
         title: "❌ Something went wrong",
-        description: "We couldn't place your order. Please try again or reach us on WhatsApp for help.",
+        description: "We couldn't place your order. Please try again or contact support for help.",
         variant: "destructive",
       });
       setResult("");
