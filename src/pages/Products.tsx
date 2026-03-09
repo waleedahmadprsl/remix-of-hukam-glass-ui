@@ -9,6 +9,7 @@ import { useWishlist } from "@/context/WishlistContext";
 import { toast } from "@/hooks/use-toast";
 import ProductFilterSidebar, { type FilterState } from "@/components/ProductFilterSidebar";
 import { useProductRatings, StarRating } from "@/hooks/useProductRatings";
+import BlurImage from "@/components/BlurImage";
 
 interface DBProduct {
   id: string;
