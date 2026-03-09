@@ -128,13 +128,18 @@ const Card = ({ product, i, onAdd }: { product: DBProduct; i: number; onAdd: (e:
             <p className="text-muted-foreground text-sm line-through">₨ {product.compare_at_price!.toLocaleString()}</p>
           )}
         </div>
+        {/* Desktop: slide-up on hover */}
         <motion.div
           onClick={(e) => onAdd(e, product)}
-          className="absolute bottom-0 left-0 right-0 bg-primary text-primary-foreground flex items-center justify-center gap-2 py-3 font-medium text-sm translate-y-full group-hover:translate-y-0 transition-transform duration-300 cursor-pointer"
+          className="hidden sm:flex absolute bottom-0 left-0 right-0 bg-primary text-primary-foreground items-center justify-center gap-2 py-3 font-medium text-sm translate-y-full group-hover:translate-y-0 transition-transform duration-300 cursor-pointer"
         >
           <ShoppingBag className="w-4 h-4" />
           Add to Cart
         </motion.div>
+        {/* Mobile: always visible */}
+        <button onClick={(e) => onAdd(e, product)} className="sm:hidden mt-2 w-full flex items-center justify-center gap-1.5 bg-foreground/5 text-foreground text-[11px] font-medium py-2 rounded-lg active:bg-primary active:text-primary-foreground transition-all">
+          <ShoppingBag className="w-3 h-3" /> Add to Cart
+        </button>
       </div>
     </motion.div>
   );

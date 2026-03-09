@@ -22,14 +22,7 @@ const CategoryBubbles = () => {
   const navigate = useNavigate();
   const [categories, setCategories] = useState<Cat[]>([]);
 
-  useEffect(() => {
-    supabase
-      .from("categories")
-      .select("id, name")
-      .is("parent_id", null)
-      .order("name")
-      .then(({ data }) => setCategories(data || []));
-  }, []);
+  // fetch moved below state declarations
 
   const [loading, setLoading] = useState(true);
 

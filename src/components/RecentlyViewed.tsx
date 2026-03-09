@@ -85,6 +85,7 @@ const RecentlyViewed: React.FC<RecentlyViewedProps> = ({ excludeId }) => {
                 src={product.images[0] || "/placeholder.svg"}
                 alt={product.title}
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
               />
             </div>
             <div className="p-3">

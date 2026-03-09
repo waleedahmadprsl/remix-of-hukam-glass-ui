@@ -270,7 +270,9 @@ const Products = () => {
 
             {!loading && sorted.length === 0 && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20">
-                <p className="text-xl text-muted-foreground">No products found. Try adjusting your filters.</p>
+                <Search className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
+                <p className="text-xl font-semibold text-foreground mb-2">No products found</p>
+                <p className="text-sm text-muted-foreground">Try a different search or adjust your filters to discover more.</p>
               </motion.div>
             )}
           </div>
