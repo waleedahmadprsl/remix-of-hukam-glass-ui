@@ -34,8 +34,47 @@ Deno.serve(async (req) => {
     }
 
     if (type === "order_confirmation") {
-      const subject = `HUKAM Order Confirmed! #${orderId?.slice(0, 8) || ""}`;
-      const message = `Assalam-o-Alaikum ${customerName}!\n\nYour HUKAM order has been placed successfully! 🎉\n\nOrder ID: #${orderId?.slice(0, 8) || ""}\nTotal: Rs.${totalAmount}\n\n${items ? `Items:\n${items}\n\n` : ""}Our rider will contact you within 60 minutes.\n\nPayment: Cash on Delivery (Check & Pay)\n\nThank you for choosing HUKAM!\nHUKAM.PK - Mirpur's #1 Quick Commerce`;
+      const subject = `✅ Order Confirmed - HUKAM #${orderId?.slice(0, 8) || ""}`;
+      const message = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🛍️  HUKAM ORDER CONFIRMATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Assalam-o-Alaikum ${customerName}! 
+
+Thank you for choosing HUKAM.PK! 🎉
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📦 ORDER DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Order ID: #${orderId?.slice(0, 8) || ""}
+Total Amount: Rs. ${totalAmount}
+Payment Method: Cash on Delivery (COD)
+
+${items ? `Your Items:\n${items}\n` : ""}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚡ WHAT'S NEXT?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✓ Our rider will contact you within 60 minutes
+✓ Please keep your phone accessible
+✓ Prepare exact cash amount for smooth delivery
+✓ Inspect products before payment (Check & Pay)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📞 NEED HELP?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+WhatsApp: +92 342 680 7645
+Email: contact@hukam.pk
+Web: hukam.pk
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Order Nahi, HUKAM Kijiye! 💙
+
+HUKAM.PK - Mirpur's #1 Quick Commerce
+Fast Delivery | 100% Genuine | Secure Checkout`;
       
       // Send customer email
       const result = await sendEmail(email, subject, message);
