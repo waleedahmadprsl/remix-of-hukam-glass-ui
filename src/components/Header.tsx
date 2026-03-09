@@ -125,7 +125,7 @@ const Header = () => {
 
             {/* User Menu */}
             {session ? (
-              <div className="relative">
+              <div className="relative" ref={userMenuRef}>
                 <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-1 p-1.5 rounded-full hover:bg-secondary/50 transition-colors">
                   <Avatar className="w-8 h-8">
                     <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">{initials}</AvatarFallback>
