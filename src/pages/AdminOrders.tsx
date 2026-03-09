@@ -24,12 +24,12 @@ interface OrderItem {
 interface Shop { id: string; name: string; commission_percent: number; }
 
 const statusColors: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  confirmed: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  dispatched: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-  delivered: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  canceled: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-  returned: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
+  pending: "bg-primary/10 text-primary",
+  confirmed: "bg-accent/20 text-accent-foreground",
+  dispatched: "bg-secondary text-secondary-foreground",
+  delivered: "bg-primary/20 text-primary",
+  canceled: "bg-destructive/10 text-destructive",
+  returned: "bg-muted text-muted-foreground",
 };
 const statuses = ["pending", "confirmed", "dispatched", "delivered", "returned", "canceled"];
 
