@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { AdminLayout } from "@/components/AdminLayout";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { logActivity } from "@/lib/activityLogger";
 import { Trash2, Plus, Edit2, X, Search } from "lucide-react";
 import AdminImageOrderer from "@/components/AdminImageOrderer";

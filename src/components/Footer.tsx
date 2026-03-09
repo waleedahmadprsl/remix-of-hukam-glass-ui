@@ -111,7 +111,7 @@ const Footer = () => {
             ))}
           </div>
           <p className="text-center text-[11px] text-muted-foreground">
-            © {new Date().getFullYear()} HUK<span className="text-primary">A</span>M · All rights reserved
+            © 2026 HUK<span className="text-primary">A</span>M · All rights reserved
           </p>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AdminLayout } from "@/components/AdminLayout";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { logActivity } from "@/lib/activityLogger";
 import { playBeep } from "@/lib/audio";
 import { toast } from "@/hooks/use-toast";

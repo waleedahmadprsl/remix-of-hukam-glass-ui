@@ -1,5 +1,5 @@
 import React from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Plus, Trash2, Edit2, X, Save } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
