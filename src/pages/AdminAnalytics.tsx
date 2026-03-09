@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { AdminLayout } from "@/components/AdminLayout";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, AreaChart, Area,
