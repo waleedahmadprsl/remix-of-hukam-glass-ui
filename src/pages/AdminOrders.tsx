@@ -322,7 +322,7 @@ const AdminOrders: React.FC = () => {
 
         {loading ? <div className="text-center py-12 text-muted-foreground">Loading orders...</div> : filtered.length === 0 ? <div className="text-center py-12 text-muted-foreground">No orders found.</div> : (
           <div className="space-y-3">
-            {filtered.map((order) => {
+            {filtered.slice(currentPage * ORDERS_PER_PAGE, (currentPage + 1) * ORDERS_PER_PAGE).map((order) => {
               const isExpanded = expandedId === order.id;
               const shippingCost = Number(order.shipping_cost || 0);
               const discountAmt = Number(order.discount_amount || 0);
