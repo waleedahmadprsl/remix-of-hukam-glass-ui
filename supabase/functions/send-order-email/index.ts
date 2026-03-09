@@ -234,7 +234,7 @@ Deno.serve(async (req) => {
 
     } else if (type === "status_update") {
       const subject = `${status === "delivered" ? "✅" : status === "dispatched" ? "🏍️" : status === "confirmed" ? "📦" : "📢"} Order ${(status || "").charAt(0).toUpperCase() + (status || "").slice(1)} - HUKAM #${orderId?.slice(0, 8) || ""}`;
-      const html = statusUpdateHTML(customerName, orderId || "", status, totalAmount);
+      const html = statusUpdateHTML(customerName, orderId || "", status, totalAmount, trackingId);
       
       const result = await sendEmail(email, subject, html);
 
