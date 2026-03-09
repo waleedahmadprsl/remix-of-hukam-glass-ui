@@ -95,7 +95,7 @@ const Contact = () => {
 
             {/* WhatsApp CTA */}
             <motion.a
-              href="https://wa.me/923426807645?text=Hi%20HUKAM!%20I%20have%20a%20question"
+              href="https://web.whatsapp.com/send?phone=923426807645&text=Hi%20HUKAM!%20I%20have%20a%20question"
               target="_blank"
               rel="noopener noreferrer"
               whileHover={{ scale: 1.02 }}
