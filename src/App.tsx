@@ -46,6 +46,7 @@ import AdminCustomers from "./pages/AdminCustomers";
 import AdminShops from "./pages/AdminShops";
 import AdminNewsletter from "./pages/AdminNewsletter";
 import AdminSettings from "./pages/AdminSettings";
+import AdminVendorSettlement from "./pages/AdminVendorSettlement";
 
 const queryClient = new QueryClient();
 
