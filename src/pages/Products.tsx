@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Search, SlidersHorizontal, Heart, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
+import { ShoppingBag, Search, SlidersHorizontal, Heart, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useCart } from "@/context/CartContext";
 import { useMiniCart } from "@/context/MiniCartContext";
@@ -52,6 +52,7 @@ const Products = () => {
   const [sort, setSort] = useState<SortOption>("newest");
   const [page, setPage] = useState(0);
   const gridRef = useRef<HTMLDivElement>(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const ratings = useProductRatings();
   const [filters, setFilters] = useState<FilterState>({
     minPrice: 0,
@@ -69,6 +70,13 @@ const Products = () => {
     if (filters.categories.length === 1) params.category = filters.categories[0];
     setSearchParams(params, { replace: true });
   }, [search, filters.categories]);
+
+  // Show back-to-top when scrolled down
+  useEffect(() => {
+    const handleScroll = () => setShowBackToTop(window.scrollY > 400);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Reset page when filters/search/sort change
   useEffect(() => { setPage(0); }, [search, filters, sort]);
@@ -298,6 +306,24 @@ const Products = () => {
           </motion.button>
         </motion.div>
       </div>
+
+      {/* Return to Top Button */}
+      <AnimatePresence>
+        {showBackToTop && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="fixed bottom-6 right-6 z-40 w-12 h-12 bg-primary text-primary-foreground rounded-full shadow-lg shadow-primary/25 flex items-center justify-center hover:scale-110 transition-transform"
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.95 }}
+            aria-label="Back to top"
+          >
+            <ArrowUp className="w-5 h-5" />
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
