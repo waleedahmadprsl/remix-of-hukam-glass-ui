@@ -114,7 +114,7 @@ const Checkout: React.FC = () => {
           ? "There was a data conflict. Please refresh and try again."
           : error.message?.includes("network")
           ? "Network issue — please check your connection and retry."
-          : `Order failed: ${error.message || "Unknown error"}. Please try again or contact us on WhatsApp.`;
+          : `Order failed: ${error.message || "Unknown error"}. Please try again or contact support.`;
         toast({ title: "❌ Order Failed", description: friendlyMsg, variant: "destructive" });
         setResult("");
         return;
