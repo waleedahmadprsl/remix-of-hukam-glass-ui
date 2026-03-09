@@ -118,7 +118,7 @@ const AdminOrders: React.FC = () => {
     }
 
     if (order?.customer_email) {
-      try { await supabase.functions.invoke("send-order-email", { body: { type: "status_update", email: order.customer_email, customerName: order.customer_name, orderId, status: newStatus, totalAmount: order.total_amount } }); } catch (e) { console.error(e); }
+      try { await cloudSupabase.functions.invoke("send-order-email", { body: { type: "status_update", email: order.customer_email, customerName: order.customer_name, orderId, status: newStatus, totalAmount: order.total_amount } }); } catch (e) { console.error(e); }
     }
     await logActivity("ORDER_STATUS", `Order ${orderId.slice(0, 8)} → ${newStatus}`);
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
