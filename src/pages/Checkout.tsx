@@ -61,7 +61,7 @@ const Checkout: React.FC = () => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
     if (name === "phone") {
-      setPhoneError(value && !PK_PHONE_REGEX.test(value.replace(/\s|-/g, "")) ? "Enter a valid Pakistani phone number (e.g. 03XX XXXXXXX)" : "");
+      setPhoneError(value && !PK_PHONE_REGEX.test(value.replace(/\s|-/g, "")) ? "Enter a valid Pakistani phone number (e.g. 03123456789)" : "");
     }
   };
 
