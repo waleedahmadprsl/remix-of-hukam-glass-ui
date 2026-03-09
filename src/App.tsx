@@ -13,7 +13,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import MiniCart from "@/components/MiniCart";
 import { useMiniCart } from "@/context/MiniCartContext";
-
+import RouteSEO from "@/components/RouteSEO";
 // Public Pages
 import Checkout from "@/pages/Checkout";
 import Index from "./pages/Index";
@@ -67,6 +67,7 @@ const App = () => {
             <MiniCartProvider>
               <WishlistProvider>
                 <BrowserRouter>
+                  <RouteSEO />
                   <MiniCartWrapper />
                   <Routes>
                     {/* Admin Routes */}

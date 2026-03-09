@@ -1,0 +1,6 @@
+# Netlify-style redirects for HUKAM.PK
+# Redirect /sitemap.xml to the dynamic Edge Function sitemap
+/sitemap.xml https://jjnkwysssrexpvjyyavs.supabase.co/functions/v1/sitemap 200
+
+# SPA fallback — must be last
+/*  /index.html  200

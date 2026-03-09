@@ -34,8 +34,47 @@ Deno.serve(async (req) => {
     }
 
     if (type === "order_confirmation") {
-      const subject = `HUKAM Order Confirmed! #${orderId?.slice(0, 8) || ""}`;
-      const message = `Assalam-o-Alaikum ${customerName}!\n\nYour HUKAM order has been placed successfully! 🎉\n\nOrder ID: #${orderId?.slice(0, 8) || ""}\nTotal: Rs.${totalAmount}\n\n${items ? `Items:\n${items}\n\n` : ""}Our rider will contact you within 60 minutes.\n\nPayment: Cash on Delivery (Check & Pay)\n\nThank you for choosing HUKAM!\nHUKAM.PK - Mirpur's #1 Quick Commerce`;
+      const subject = `✅ Order Confirmed - HUKAM #${orderId?.slice(0, 8) || ""}`;
+      const message = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🛍️  HUKAM ORDER CONFIRMATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Assalam-o-Alaikum ${customerName}! 
+
+Thank you for choosing HUKAM.PK! 🎉
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📦 ORDER DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Order ID: #${orderId?.slice(0, 8) || ""}
+Total Amount: Rs. ${totalAmount}
+Payment Method: Cash on Delivery (COD)
+
+${items ? `Your Items:\n${items}\n` : ""}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚡ WHAT'S NEXT?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✓ Our rider will contact you within 60 minutes
+✓ Please keep your phone accessible
+✓ Prepare exact cash amount for smooth delivery
+✓ Inspect products before payment (Check & Pay)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📞 NEED HELP?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+WhatsApp: +92 342 680 7645
+Email: contact@hukam.pk
+Web: hukam.pk
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Order Nahi, HUKAM Kijiye! 💙
+
+HUKAM.PK - Mirpur's #1 Quick Commerce
+Fast Delivery | 100% Genuine | Secure Checkout`;
       
       // Send customer email
       const result = await sendEmail(email, subject, message);
@@ -65,9 +104,35 @@ Deno.serve(async (req) => {
               if (shopId === "own") continue;
               const { data: shop } = await supabase.from("shops").select("name, email").eq("id", shopId).single();
               if (shop?.email) {
-                const itemsList = shopItems.map((i: any) => `${i.product_title} (Qty: ${i.quantity}) - Rs.${i.unit_price * i.quantity}`).join("\n");
-                const shopSubject = `New HUKAM Order for ${shop.name} — #${orderId.slice(0, 8)}`;
-                const shopMessage = `New order received!\n\nOrder ID: #${orderId.slice(0, 8)}\nCustomer: ${customerName}\n\nYour Items:\n${itemsList}\n\nPlease prepare the items for dispatch.\n\nHUKAM.PK Marketplace`;
+                const itemsList = shopItems.map((i: any) => `• ${i.product_title} (Qty: ${i.quantity}) - Rs.${i.unit_price * i.quantity}`).join("\n");
+                const shopSubject = `📦 New Order for ${shop.name} - HUKAM #${orderId.slice(0, 8)}`;
+                const shopMessage = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🛍️  HUKAM VENDOR NOTIFICATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+New Order Received for ${shop.name}! 
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 ORDER DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Order ID: #${orderId.slice(0, 8)}
+Customer: ${customerName}
+
+Your Items:
+${itemsList}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚡ ACTION REQUIRED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Please prepare these items for dispatch ASAP.
+Our rider will collect within 60 minutes.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+HUKAM.PK Marketplace
+WhatsApp: +92 342 680 7645`;
                 await sendEmail(shop.email, shopSubject, shopMessage);
               }
             }
@@ -83,13 +148,44 @@ Deno.serve(async (req) => {
 
     } else if (type === "status_update") {
       const statusMessages: Record<string, string> = {
-        confirmed: "Your order has been confirmed! Our team is preparing it now. 📦",
-        dispatched: "Your order is on the way! Our rider is heading to your location. 🏍️",
-        delivered: "Your order has been delivered! Thank you for shopping with HUKAM! ✅",
-        canceled: "Your order has been canceled. If you have questions, please contact us on WhatsApp. ❌",
+        confirmed: "✓ Order confirmed! Our team is preparing your items now. 📦",
+        dispatched: "🏍️ Out for delivery! Our rider is heading to your location.",
+        delivered: "✅ Delivered successfully! Thank you for shopping with HUKAM!",
+        canceled: "❌ Order canceled. Questions? Contact us on WhatsApp.",
       };
-      const subject = `HUKAM Order Update - ${(status || "").charAt(0).toUpperCase() + (status || "").slice(1)} #${orderId?.slice(0, 8) || ""}`;
-      const message = `Assalam-o-Alaikum ${customerName}!\n\n${statusMessages[status] || `Your order status has been updated to: ${status}`}\n\nOrder ID: #${orderId?.slice(0, 8) || ""}\nTotal: Rs.${totalAmount}\n\nFor any questions, message us on WhatsApp: +92 342 680 7645\n\nHUKAM.PK - Mirpur's #1 Quick Commerce`;
+      const statusIcons: Record<string, string> = {
+        confirmed: "📦",
+        dispatched: "🏍️",
+        delivered: "✅",
+        canceled: "❌",
+      };
+      const subject = `${statusIcons[status] || "📢"} Order ${(status || "").charAt(0).toUpperCase() + (status || "").slice(1)} - HUKAM #${orderId?.slice(0, 8) || ""}`;
+      const message = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${statusIcons[status] || "📢"}  ORDER STATUS UPDATE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Assalam-o-Alaikum ${customerName}!
+
+${statusMessages[status] || `Your order status: ${status}`}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 ORDER SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Order ID: #${orderId?.slice(0, 8) || ""}
+Total: Rs. ${totalAmount}
+Status: ${(status || "").toUpperCase()}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📞 NEED HELP?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+WhatsApp: +92 342 680 7645
+Email: contact@hukam.pk
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+HUKAM.PK - Mirpur's #1 Quick Commerce`;
       const result = await sendEmail(email, subject, message);
       return new Response(JSON.stringify({ success: result.success, message: result.message }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
