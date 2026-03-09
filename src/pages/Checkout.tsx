@@ -148,14 +148,10 @@ const Checkout: React.FC = () => {
           });
         }
 
-        // Send order confirmation email via Lovable Cloud edge function
+        // Send order confirmation email via edge function
         if (form.email) {
-          const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || "jjnkwysssrexpvjyyavs";
-          const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impqbmt3eXNzc3JleHB2anl5YXZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzMTA2MDIsImV4cCI6MjA4Nzg4NjYwMn0.eVW3XIB1Ai_SiHleSUhjiJ3YLARxy9du2Im8BJ9D7Ho";
-          fetch(`https://${projectId}.supabase.co/functions/v1/send-order-email`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "apikey": anonKey, "Authorization": `Bearer ${anonKey}` },
-            body: JSON.stringify({
+          supabase.functions.invoke("send-order-email", {
+            body: {
               type: "order_confirmation",
               email: form.email,
               customerName: form.fullName,
@@ -163,9 +159,11 @@ const Checkout: React.FC = () => {
               totalAmount: finalTotal,
               status: "pending",
               items: cartStr,
-            }),
-          }).then(r => r.ok ? console.log("Order email sent") : r.text().then(t => console.error("Order email error:", t)))
-            .catch(err => console.error("Order email failed:", err));
+            },
+          }).then(({ error }) => {
+            if (error) console.error("Order email error:", error);
+            else console.log("Order email sent");
+          }).catch(err => console.error("Order email failed:", err));
         }
 
         // Web3Forms admin notification — fire-and-forget
