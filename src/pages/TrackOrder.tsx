@@ -1,7 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Package, Clock, CheckCircle2, Truck, XCircle, MapPin, Hash, MessageCircle, ChevronDown, RotateCcw, Send } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
 
 const statusSteps = ["pending", "confirmed", "dispatched", "delivered"];
