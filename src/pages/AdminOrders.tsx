@@ -24,12 +24,12 @@ interface OrderItem {
 interface Shop { id: string; name: string; commission_percent: number; }
 
 const statusColors: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  confirmed: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  dispatched: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-  delivered: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  canceled: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-  returned: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
+  pending: "bg-primary/10 text-primary",
+  confirmed: "bg-accent/20 text-accent-foreground",
+  dispatched: "bg-secondary text-secondary-foreground",
+  delivered: "bg-primary/20 text-primary",
+  canceled: "bg-destructive/10 text-destructive",
+  returned: "bg-muted text-muted-foreground",
 };
 const statuses = ["pending", "confirmed", "dispatched", "delivered", "returned", "canceled"];
 
@@ -57,6 +57,9 @@ const AdminOrders: React.FC = () => {
       }).subscribe();
     return () => { supabase.removeChannel(channel); };
   }, []);
+
+  const [currentPage, setCurrentPage] = React.useState(0);
+  const ORDERS_PER_PAGE = 25;
 
   const fetchOrders = async () => {
     const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
@@ -124,7 +127,7 @@ const AdminOrders: React.FC = () => {
         await fetch(`https://${projectId}.supabase.co/functions/v1/send-order-email`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "apikey": anonKey, "Authorization": `Bearer ${anonKey}` },
-          body: JSON.stringify({ type: "status_update", email: order.customer_email, customerName: order.customer_name, orderId, status: newStatus, totalAmount: order.total_amount, trackingId: order.tracking_id || trackingInputs[orderId] || null }),
+          body: JSON.stringify({ type: "status_update", email: order.customer_email, customerName: order.customer_name, orderId, status: newStatus, totalAmount: order.total_amount, trackingId: trackingInputs[orderId] || order.tracking_id || null }),
         });
       } catch (e) { console.error(e); }
     }
@@ -319,7 +322,7 @@ const AdminOrders: React.FC = () => {
 
         {loading ? <div className="text-center py-12 text-muted-foreground">Loading orders...</div> : filtered.length === 0 ? <div className="text-center py-12 text-muted-foreground">No orders found.</div> : (
           <div className="space-y-3">
-            {filtered.map((order) => {
+            {filtered.slice(currentPage * ORDERS_PER_PAGE, (currentPage + 1) * ORDERS_PER_PAGE).map((order) => {
               const isExpanded = expandedId === order.id;
               const shippingCost = Number(order.shipping_cost || 0);
               const discountAmt = Number(order.discount_amount || 0);
@@ -382,7 +385,7 @@ const AdminOrders: React.FC = () => {
                               <div className="flex justify-between text-xs text-muted-foreground"><span>Subtotal</span><span>Rs.{(order.total_amount + discountAmt - shippingCost).toLocaleString()}</span></div>
                               {shippingCost > 0 && <div className="flex justify-between text-xs text-muted-foreground"><span>Shipping</span><span>Rs.{shippingCost}</span></div>}
                               {discountAmt > 0 && <div className="flex justify-between text-xs text-primary"><span>Discount</span><span>-Rs.{discountAmt}</span></div>}
-                              {items.length > 0 && (() => { const cogs = items.reduce((s, i) => s + i.buying_cost * i.quantity, 0); const profit = order.total_amount - cogs; return <div className="flex justify-between text-xs text-green-600"><span>Profit</span><span>Rs.{profit.toLocaleString()}</span></div>; })()}
+                              {items.length > 0 && (() => { const cogs = items.reduce((s, i) => s + i.buying_cost * i.quantity, 0); const profit = order.total_amount - cogs; return <div className="flex justify-between text-xs text-primary"><span>Profit</span><span>Rs.{profit.toLocaleString()}</span></div>; })()}
                               <div className="flex justify-between font-extrabold text-foreground border-t border-border/40 pt-1 mt-1"><span>Total</span><span className="text-primary">Rs.{order.total_amount}</span></div>
                               <p className="text-[10px] text-muted-foreground">{new Date(order.created_at).toLocaleString()}</p>
                             </div>
@@ -415,6 +418,14 @@ const AdminOrders: React.FC = () => {
                 </motion.div>
               );
             })}
+            {/* Pagination */}
+            {filtered.length > ORDERS_PER_PAGE && (
+              <div className="flex items-center justify-center gap-2 pt-4">
+                <button onClick={() => setCurrentPage(Math.max(0, currentPage - 1))} disabled={currentPage === 0} className="px-3 py-1.5 bg-secondary text-foreground rounded-lg text-sm font-semibold disabled:opacity-40">← Prev</button>
+                <span className="text-sm text-muted-foreground">Page {currentPage + 1} of {Math.ceil(filtered.length / ORDERS_PER_PAGE)}</span>
+                <button onClick={() => setCurrentPage(Math.min(Math.ceil(filtered.length / ORDERS_PER_PAGE) - 1, currentPage + 1))} disabled={currentPage >= Math.ceil(filtered.length / ORDERS_PER_PAGE) - 1} className="px-3 py-1.5 bg-secondary text-foreground rounded-lg text-sm font-semibold disabled:opacity-40">Next →</button>
+              </div>
+            )}
           </div>
         )}
       </motion.div>

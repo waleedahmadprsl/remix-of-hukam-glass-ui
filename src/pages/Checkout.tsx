@@ -260,7 +260,7 @@ const Checkout: React.FC = () => {
               </motion.button>
             </div>
 
-            <p className="text-xs text-muted-foreground mt-6">A confirmation has been sent to your email. Our rider will contact you shortly.</p>
+            <p className="text-xs text-muted-foreground mt-6">Our rider will contact you shortly. If you provided an email, a confirmation will be sent.</p>
           </motion.div>
         </div>
       </div>
@@ -324,7 +324,7 @@ const Checkout: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Phone (WhatsApp) *</label>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Phone Number *</label>
               <input name="phone" value={form.phone} onChange={handleChange} required placeholder="03123456789" className={`w-full px-4 py-3 bg-background border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all text-base ${phoneError ? "border-destructive focus:border-destructive focus:ring-destructive/10" : "border-border focus:border-primary focus:ring-primary/10"}`} />
               {phoneError && <p className="text-xs text-destructive mt-1">{phoneError}</p>}
             </div>
@@ -347,6 +347,7 @@ const Checkout: React.FC = () => {
                   placeholder="Enter code"
                   value={promoCode}
                   onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                  disabled={promoStatus === "applied"}
                   className="w-full px-4 py-3 bg-background border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all text-base"
                 />
               </div>
@@ -421,7 +422,7 @@ const Checkout: React.FC = () => {
               <div className="space-y-3">
                 {items.map((it) => (
                   <div key={it.variantId ? `${it.id}__${it.variantId}` : it.id} className="flex gap-3 items-start">
-                    {it.image && <img src={it.image} alt={it.name} className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-xl flex-shrink-0" />}
+                    <img src={it.image || "/placeholder.svg"} alt={it.name} className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-xl flex-shrink-0" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-foreground text-sm truncate">{it.name}</p>
                       {it.variantName && <p className="text-xs text-muted-foreground">{it.variantName}</p>}

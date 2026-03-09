@@ -21,10 +21,10 @@ const Footer = () => {
   ];
 
   const paymentMethods = [
-    settings.codEnabled && { label: "Cash on Delivery", color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" },
-    settings.jazzcashEnabled && { label: "JazzCash", color: "bg-red-500/10 text-red-600 border-red-500/20" },
-    settings.easypaisaEnabled && { label: "Easypaisa", color: "bg-green-500/10 text-green-600 border-green-500/20" },
-    settings.bankTransferEnabled && { label: "Bank Transfer", color: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
+    settings.codEnabled && { label: "Cash on Delivery", color: "bg-primary/10 text-primary border-primary/20" },
+    settings.jazzcashEnabled && { label: "JazzCash", color: "bg-accent/10 text-accent-foreground border-accent/20" },
+    settings.easypaisaEnabled && { label: "Easypaisa", color: "bg-secondary text-secondary-foreground border-border" },
+    settings.bankTransferEnabled && { label: "Bank Transfer", color: "bg-muted text-muted-foreground border-border" },
   ].filter(Boolean) as { label: string; color: string }[];
 
   return (

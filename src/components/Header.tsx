@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ShoppingCart, Search, Heart, User, LogOut, ChevronDown } from "lucide-react";
@@ -40,7 +40,23 @@ const Header = () => {
   const cartCount = items.reduce((s, it) => s + it.quantity, 0);
   const wishlistCount = wishlistItems.length;
 
+  const searchRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchOpen && searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+      }
+      if (userMenuOpen && userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [searchOpen, userMenuOpen]);
   const handleSearch = (q: string) => {
     setSearchQuery(q);
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -85,9 +101,11 @@ const Header = () => {
             <ThemeToggle />
 
             {/* Search */}
-            <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
-              <Search className="w-5 h-5" />
-            </button>
+            <div ref={searchRef} className="relative">
+              <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
+                <Search className="w-5 h-5" />
+              </button>
+            </div>
 
             {/* Wishlist */}
             <button onClick={() => setWishlistOpen(true)} className="relative p-2 text-muted-foreground hover:text-foreground transition-colors">
@@ -107,7 +125,7 @@ const Header = () => {
 
             {/* User Menu */}
             {session ? (
-              <div className="relative">
+              <div className="relative" ref={userMenuRef}>
                 <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-1 p-1.5 rounded-full hover:bg-secondary/50 transition-colors">
                   <Avatar className="w-8 h-8">
                     <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">{initials}</AvatarFallback>
