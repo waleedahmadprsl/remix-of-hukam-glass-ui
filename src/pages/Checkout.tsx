@@ -479,7 +479,10 @@ const Checkout: React.FC = () => {
                   <span>Rs.{cartSubtotal.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Delivery</span>
+                  <div className="flex flex-col">
+                    <span>Delivery</span>
+                    <span className="text-xs text-primary">Est. 2-3 Business Days</span>
+                  </div>
                   <span className="text-foreground font-medium">Rs.{shippingCost}</span>
                 </div>
                 {discountAmt > 0 && (

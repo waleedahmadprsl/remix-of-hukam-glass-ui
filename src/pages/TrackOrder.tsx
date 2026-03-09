@@ -410,6 +410,7 @@ const TrackOrder: React.FC = () => {
                     <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
                       order.status === "delivered" ? "bg-primary/10 text-primary" :
                       order.status === "canceled" ? "bg-destructive/10 text-destructive" :
+                      order.status.includes("return") ? "bg-destructive/10 text-destructive" :
                       order.status === "dispatched" ? "bg-accent text-accent-foreground" :
                       "bg-secondary text-secondary-foreground"
                     }`}>
