@@ -170,21 +170,26 @@ const Header = () => {
                   autoFocus
                   className="w-full px-4 py-3 bg-secondary/50 border border-border/40 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
                 />
-                {searchResults.length > 0 && (
+                {searchQuery.trim().length >= 2 && (
                   <div className="mt-3 space-y-2">
-                    {searchResults.map((p) => (
+                    {searchResults.length > 0 ? searchResults.map((p) => (
                       <button
                         key={p.id}
                         onClick={() => { navigate(`/product/${p.id}`); setSearchOpen(false); setSearchQuery(""); setSearchResults([]); }}
                         className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/50 transition-colors text-left"
                       >
-                        {p.images[0] && <img src={p.images[0]} alt={p.title} className="w-10 h-10 rounded-lg object-cover" />}
+                        {p.images[0] && <img src={p.images[0]} alt={p.title} className="w-10 h-10 rounded-lg object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} loading="lazy" />}
                         <div>
                           <p className="text-sm font-medium text-foreground">{p.title}</p>
                           <p className="text-xs text-primary font-bold">₨ {p.price.toLocaleString()}</p>
                         </div>
                       </button>
-                    ))}
+                    )) : (
+                      <div className="py-6 text-center">
+                        <Search className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">No products found for "{searchQuery}"</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

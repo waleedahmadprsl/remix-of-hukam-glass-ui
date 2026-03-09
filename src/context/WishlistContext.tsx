@@ -31,7 +31,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   });
   const [loading, setLoading] = React.useState(false);
 
-  // Sync from DB when user logs in
+  // Sync from DB when user logs in (gracefully handle missing table)
   React.useEffect(() => {
     if (!userId) return;
     setLoading(true);
@@ -39,7 +39,13 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       .from("user_wishlist")
       .select("product_id, products(title, price, images)")
       .eq("user_id", userId)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) {
+          // Table may not exist on personal DB — silently fall back to localStorage
+          console.warn("Wishlist sync skipped:", error.message);
+          setLoading(false);
+          return;
+        }
         if (data && data.length > 0) {
           const dbItems: WishlistItem[] = data.map((w: any) => ({
             id: w.product_id,
@@ -65,14 +71,14 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (items.some((i) => i.id === item.id)) return;
     setItems((prev) => [...prev, item]);
     if (userId) {
-      await supabase.from("user_wishlist").insert({ user_id: userId, product_id: item.id });
+      try { await supabase.from("user_wishlist").insert({ user_id: userId, product_id: item.id }); } catch {}
     }
   };
 
   const removeItem = async (id: string) => {
     setItems((prev) => prev.filter((i) => i.id !== id));
     if (userId) {
-      await supabase.from("user_wishlist").delete().eq("user_id", userId).eq("product_id", id);
+      try { await supabase.from("user_wishlist").delete().eq("user_id", userId).eq("product_id", id); } catch {}
     }
   };
 

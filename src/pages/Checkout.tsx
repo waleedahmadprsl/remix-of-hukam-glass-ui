@@ -47,11 +47,13 @@ const Checkout: React.FC = () => {
   // Empty cart — show UI instead of redirecting
   const isCartEmpty = items.length === 0 && !result;
 
-  // Calculate shipping: Rs.50 per unique shop
+  const { settings } = useStoreSettings();
+
+  // Calculate shipping dynamically from settings
   const shippingCost = React.useMemo(() => {
     const uniqueShops = new Set(items.map((it) => it.shopId || "own"));
-    return uniqueShops.size * 50;
-  }, [items]);
+    return uniqueShops.size * (settings.shippingRatePerShop || 50);
+  }, [items, settings.shippingRatePerShop]);
 
   const currentStep = result && result.startsWith("HUKAM Accepted") ? 2 : items.length > 0 ? 1 : 0;
 
@@ -59,7 +61,7 @@ const Checkout: React.FC = () => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
     if (name === "phone") {
-      setPhoneError(value && !PK_PHONE_REGEX.test(value.replace(/\s|-/g, "")) ? "Enter a valid Pakistani phone number (e.g. 03XX XXXXXXX)" : "");
+      setPhoneError(value && !PK_PHONE_REGEX.test(value.replace(/\s|-/g, "")) ? "Enter a valid Pakistani phone number (e.g. 03123456789)" : "");
     }
   };
 
@@ -73,8 +75,8 @@ const Checkout: React.FC = () => {
     // Phone validation
     const cleanPhone = form.phone.replace(/\s|-/g, "");
     if (!PK_PHONE_REGEX.test(cleanPhone)) {
-      setPhoneError("Enter a valid Pakistani phone number (e.g. 03XX XXXXXXX)");
-      toast({ title: "Invalid phone number", description: "Please enter a valid Pakistani phone number", variant: "destructive" });
+      setPhoneError("Enter a valid Pakistani phone number (e.g. 03123456789)");
+      toast({ title: "Invalid phone number", description: "Please enter a valid Pakistani phone number (e.g. 03123456789)", variant: "destructive" });
       return;
     }
 
