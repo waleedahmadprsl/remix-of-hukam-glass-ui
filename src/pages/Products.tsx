@@ -227,10 +227,15 @@ const Products = () => {
                             <p className="text-xs text-muted-foreground line-through">₨ {product.compare_at_price.toLocaleString()}</p>
                           )}
                         </div>
-                        <motion.div onClick={(e) => handleAddToCart(e, product)} className="absolute bottom-0 left-0 right-0 bg-primary text-primary-foreground flex items-center justify-center gap-2 py-3 font-medium text-sm translate-y-full group-hover:translate-y-0 transition-transform duration-300 cursor-pointer">
+                        {/* Desktop: slide-up on hover */}
+                        <motion.div onClick={(e) => handleAddToCart(e, product)} className="hidden sm:flex absolute bottom-0 left-0 right-0 bg-primary text-primary-foreground items-center justify-center gap-2 py-3 font-medium text-sm translate-y-full group-hover:translate-y-0 transition-transform duration-300 cursor-pointer">
                           <ShoppingBag className="w-4 h-4" />
                           Add to Cart
                         </motion.div>
+                        {/* Mobile: always visible */}
+                        <button onClick={(e) => handleAddToCart(e, product)} className="sm:hidden mt-2.5 w-full flex items-center justify-center gap-1.5 bg-foreground/5 text-foreground text-[11px] font-medium py-2 rounded-lg active:bg-primary active:text-primary-foreground transition-all">
+                          <ShoppingBag className="w-3 h-3" /> Add to Cart
+                        </button>
                       </div>
                     </motion.div>
                   );
@@ -265,7 +270,9 @@ const Products = () => {
 
             {!loading && sorted.length === 0 && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20">
-                <p className="text-xl text-muted-foreground">No products found. Try adjusting your filters.</p>
+                <Search className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
+                <p className="text-xl font-semibold text-foreground mb-2">No products found</p>
+                <p className="text-sm text-muted-foreground">Try a different search or adjust your filters to discover more.</p>
               </motion.div>
             )}
           </div>

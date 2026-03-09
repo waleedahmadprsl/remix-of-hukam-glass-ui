@@ -48,7 +48,7 @@ const WishlistDrawer: React.FC<Props> = ({ open, onClose }) => {
                 <div className="space-y-3">
                   {items.map((item) => (
                     <motion.div key={item.id} layout className="flex gap-3 p-3 rounded-xl bg-secondary/30 border border-border/20">
-                      <img src={item.image} alt={item.title} onClick={() => { navigate(`/product/${item.id}`); onClose(); }} className="w-16 h-16 rounded-lg object-cover cursor-pointer" />
+                      <img src={item.image} alt={item.title} onClick={() => { navigate(`/product/${item.id}`); onClose(); }} className="w-16 h-16 rounded-lg object-cover cursor-pointer" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-foreground text-sm truncate cursor-pointer" onClick={() => { navigate(`/product/${item.id}`); onClose(); }}>{item.title}</p>
                         <p className="text-primary font-bold text-sm mt-1">Rs.{item.price.toLocaleString()}</p>

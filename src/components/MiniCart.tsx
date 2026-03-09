@@ -69,7 +69,7 @@ const MiniCart: React.FC<MiniCartProps> = ({ open, onClose }) => {
                         className="flex gap-4 p-3 rounded-xl bg-secondary/30 border border-border/20"
                       >
                         {item.image && (
-                          <img src={item.image} alt={item.name} className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
+                          <img src={item.image} alt={item.name} className="w-16 h-16 rounded-lg object-cover flex-shrink-0" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
                         )}
                         <div className="flex-1 min-w-0">
                           <h4 className="font-semibold text-foreground text-sm truncate">{item.name}</h4>

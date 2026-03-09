@@ -201,7 +201,21 @@ const CustomerReviews: React.FC<CustomerReviewsProps> = ({ productId }) => {
 
       {/* Reviews list */}
       {loading ? (
-        <div className="text-center py-8 text-muted-foreground">Loading reviews...</div>
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="glass-card p-5 rounded-2xl">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-muted animate-pulse flex-shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-muted rounded w-1/3 animate-pulse" />
+                  <div className="h-3 bg-muted rounded w-1/4 animate-pulse" />
+                  <div className="h-3 bg-muted rounded w-full animate-pulse" />
+                  <div className="h-3 bg-muted rounded w-2/3 animate-pulse" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       ) : reviews.length === 0 ? (
         <div className="glass-card p-10 rounded-2xl text-center">
           <div className="flex justify-center mb-4">

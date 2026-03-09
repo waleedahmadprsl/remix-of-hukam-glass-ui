@@ -258,7 +258,7 @@ const Checkout: React.FC = () => {
               </motion.button>
             </div>
 
-            <p className="text-xs text-muted-foreground mt-6">We sent order details to the founder's email. Keep your phone available.</p>
+            <p className="text-xs text-muted-foreground mt-6">A confirmation has been sent to your email. Our rider will contact you shortly.</p>
           </motion.div>
         </div>
       </div>

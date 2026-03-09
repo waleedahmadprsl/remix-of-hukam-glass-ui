@@ -22,16 +22,37 @@ const CategoryBubbles = () => {
   const navigate = useNavigate();
   const [categories, setCategories] = useState<Cat[]>([]);
 
+  // fetch moved below state declarations
+
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     supabase
       .from("categories")
       .select("id, name")
       .is("parent_id", null)
       .order("name")
-      .then(({ data }) => setCategories(data || []));
+      .then(({ data }) => { setCategories(data || []); setLoading(false); });
   }, []);
 
-  if (!categories.length) return null;
+  if (!loading && !categories.length) return null;
+
+  if (loading) {
+    return (
+      <section className="py-5 sm:py-6">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center gap-3 sm:gap-5 overflow-x-auto pb-2 scrollbar-hide justify-start sm:justify-center">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="flex flex-col items-center gap-2 min-w-[68px]">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-muted animate-pulse" />
+                <div className="h-3 w-12 bg-muted rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-5 sm:py-6">
