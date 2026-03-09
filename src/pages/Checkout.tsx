@@ -103,8 +103,15 @@ const Checkout: React.FC = () => {
       }]).select();
 
       if (error) {
-        console.error("SUPABASE INSERT ERROR:", error.message);
-        toast({ title: "Order Error", description: error.message, variant: "destructive" });
+        console.error("SUPABASE INSERT ERROR:", error.message, error.details, error.hint);
+        const friendlyMsg = error.message?.includes("schema cache")
+          ? "Our system is temporarily updating. Please try again in a moment."
+          : error.message?.includes("violates")
+          ? "There was a data conflict. Please refresh and try again."
+          : error.message?.includes("network")
+          ? "Network issue — please check your connection and retry."
+          : `Order failed: ${error.message || "Unknown error"}. Please try again or contact us on WhatsApp.`;
+        toast({ title: "❌ Order Failed", description: friendlyMsg, variant: "destructive" });
         setResult("");
         return;
       }
@@ -170,7 +177,11 @@ const Checkout: React.FC = () => {
 
     } catch (err: any) {
       console.error("SUPABASE INSERT EXCEPTION:", err);
-      toast({ title: "Order Error", description: err.message, variant: "destructive" });
+      toast({
+        title: "❌ Something went wrong",
+        description: "We couldn't place your order. Please try again or reach us on WhatsApp for help.",
+        variant: "destructive",
+      });
       setResult("");
     }
   };
@@ -305,7 +316,7 @@ const Checkout: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Phone (WhatsApp) *</label>
-              <input name="phone" value={form.phone} onChange={handleChange} required placeholder="03XX XXXXXXX" className={`w-full px-4 py-3 bg-background border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all text-base ${phoneError ? "border-destructive focus:border-destructive focus:ring-destructive/10" : "border-border focus:border-primary focus:ring-primary/10"}`} />
+              <input name="phone" value={form.phone} onChange={handleChange} required placeholder="03123456789" className={`w-full px-4 py-3 bg-background border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all text-base ${phoneError ? "border-destructive focus:border-destructive focus:ring-destructive/10" : "border-border focus:border-primary focus:ring-primary/10"}`} />
               {phoneError && <p className="text-xs text-destructive mt-1">{phoneError}</p>}
             </div>
 

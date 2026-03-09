@@ -68,7 +68,32 @@ const AllProducts = () => {
 
   const tabs = [{ id: "All", name: "All" }, ...categories.map((c) => ({ id: c.id, name: c.name }))];
 
-  if (products.length === 0) return null;
+  if (products.length === 0) {
+    return (
+      <section className="py-10 sm:py-14">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-2.5 mb-6">
+            <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
+              <Grid3X3 className="w-4 h-4 text-primary" />
+            </div>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">All Products</h2>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 max-w-5xl mx-auto">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="bg-card border border-border/40 rounded-2xl overflow-hidden">
+                <div className="h-32 sm:h-40 bg-muted animate-pulse" />
+                <div className="p-3 space-y-2">
+                  <div className="h-3.5 bg-muted rounded-lg w-3/4 animate-pulse" />
+                  <div className="h-3.5 bg-muted rounded-lg w-1/2 animate-pulse" />
+                  <div className="h-8 bg-muted rounded-lg animate-pulse mt-2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="all-products" className="py-10 sm:py-14">

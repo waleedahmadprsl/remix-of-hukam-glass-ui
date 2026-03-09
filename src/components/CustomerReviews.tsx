@@ -203,8 +203,22 @@ const CustomerReviews: React.FC<CustomerReviewsProps> = ({ productId }) => {
       {loading ? (
         <div className="text-center py-8 text-muted-foreground">Loading reviews...</div>
       ) : reviews.length === 0 ? (
-        <div className="glass-card p-8 rounded-2xl text-center">
-          <p className="text-muted-foreground">No reviews yet. Be the first to review this product!</p>
+        <div className="glass-card p-10 rounded-2xl text-center">
+          <div className="flex justify-center mb-4">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <Star key={s} className="w-6 h-6 text-muted/60" />
+            ))}
+          </div>
+          <h3 className="text-lg font-bold text-foreground mb-2">No Reviews Yet</h3>
+          <p className="text-sm text-muted-foreground mb-5">Be the first to share your experience with this product!</p>
+          <motion.button
+            onClick={() => setShowForm(true)}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-semibold text-sm shadow-lg shadow-primary/20"
+          >
+            ✍️ Write the First Review
+          </motion.button>
         </div>
       ) : (
         <div className="space-y-4">
