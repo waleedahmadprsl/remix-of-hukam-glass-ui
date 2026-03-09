@@ -26,6 +26,7 @@ const AllProducts = () => {
   const { openCart } = useMiniCart();
   const [products, setProducts] = useState<DBProduct[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
   const [active, setActive] = useState("All");
   const [page, setPage] = useState(0);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -40,6 +41,7 @@ const AllProducts = () => {
     ]).then(([pRes, cRes]) => {
       setProducts((pRes.data || []).map((p: any) => ({ ...p, images: Array.isArray(p.images) ? p.images : [] })));
       setCategories(cRes.data || []);
+      setLoading(false);
     });
   }, []);
 
@@ -68,32 +70,7 @@ const AllProducts = () => {
 
   const tabs = [{ id: "All", name: "All" }, ...categories.map((c) => ({ id: c.id, name: c.name }))];
 
-  if (products.length === 0) {
-    return (
-      <section className="py-10 sm:py-14">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2.5 mb-6">
-            <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
-              <Grid3X3 className="w-4 h-4 text-primary" />
-            </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground">All Products</h2>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 max-w-5xl mx-auto">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="bg-card border border-border/40 rounded-2xl overflow-hidden">
-                <div className="h-32 sm:h-40 bg-muted animate-pulse" />
-                <div className="p-3 space-y-2">
-                  <div className="h-3.5 bg-muted rounded-lg w-3/4 animate-pulse" />
-                  <div className="h-3.5 bg-muted rounded-lg w-1/2 animate-pulse" />
-                  <div className="h-8 bg-muted rounded-lg animate-pulse mt-2" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
+  if (!loading && products.length === 0) return null;
 
   return (
     <section id="all-products" className="py-10 sm:py-14">
@@ -121,46 +98,59 @@ const AllProducts = () => {
           Everything you need, all in one place.
         </motion.p>
 
-        <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide mb-6">
-          {tabs.map((cat) => (
-            <button key={cat.id} onClick={() => setActive(cat.id)} className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap ${active === cat.id ? "bg-foreground text-background shadow-sm" : "bg-muted/60 text-muted-foreground hover:bg-muted"}`}>
-              {cat.name}
-            </button>
-          ))}
-        </div>
+        {!loading && (
+          <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide mb-6">
+            {tabs.map((cat) => (
+              <button key={cat.id} onClick={() => setActive(cat.id)} className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap ${active === cat.id ? "bg-foreground text-background shadow-sm" : "bg-muted/60 text-muted-foreground hover:bg-muted"}`}>
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div ref={gridRef} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 max-w-5xl mx-auto">
-          <AnimatePresence mode="popLayout">
-            {paged.map((product, i) => {
-              const hasDiscount = product.compare_at_price && product.compare_at_price > product.price;
-              const discountPercent = hasDiscount ? Math.round((1 - product.price / product.compare_at_price!) * 100) : 0;
-              const r = ratings[product.id];
-              return (
-                <motion.div key={product.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.3, delay: i * 0.03 }} onClick={() => navigate(`/product/${product.id}`)} className="bg-card border border-border/40 rounded-2xl group overflow-hidden cursor-pointer hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
-                  <div className="relative h-32 sm:h-40 overflow-hidden bg-muted/20">
-                    <img src={product.images[0] || "/placeholder.svg"} alt={product.title} loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
-                    {hasDiscount && (
-                      <span className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-md">-{discountPercent}%</span>
-                    )}
+          {loading
+            ? [...Array(8)].map((_, i) => (
+                <div key={i} className="bg-card border border-border/40 rounded-2xl overflow-hidden">
+                  <div className="h-32 sm:h-40 bg-muted animate-pulse" />
+                  <div className="p-3 space-y-2">
+                    <div className="h-3.5 bg-muted rounded-lg w-3/4 animate-pulse" />
+                    <div className="h-3.5 bg-muted rounded-lg w-1/2 animate-pulse" />
+                    <div className="h-8 bg-muted rounded-lg animate-pulse mt-2" />
                   </div>
-                  <div className="p-3 relative">
-                    <h3 className="font-medium text-foreground text-sm truncate">{product.title}</h3>
-                    {r && <StarRating avg={r.avg} count={r.count} size="xs" />}
-                    <div className="flex items-center gap-2 mt-1">
-                      <p className="text-primary font-bold text-sm">₨ {product.price.toLocaleString()}</p>
-                      {hasDiscount && <p className="text-muted-foreground text-[11px] line-through">₨ {product.compare_at_price!.toLocaleString()}</p>}
-                    </div>
-                    <button onClick={(e) => handleAdd(e, product)} className="mt-2.5 w-full flex items-center justify-center gap-1.5 bg-foreground/5 text-foreground text-[11px] font-medium py-2 rounded-lg hover:bg-primary hover:text-primary-foreground transition-all duration-200">
-                      <ShoppingBag className="w-3 h-3" /> Add to Cart
-                    </button>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
+                </div>
+              ))
+            : (
+                <AnimatePresence mode="popLayout">
+                  {paged.map((product, i) => {
+                    const hasDiscount = product.compare_at_price && product.compare_at_price > product.price;
+                    const discountPercent = hasDiscount ? Math.round((1 - product.price / product.compare_at_price!) * 100) : 0;
+                    const r = ratings[product.id];
+                    return (
+                      <motion.div key={product.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.3, delay: i * 0.03 }} onClick={() => navigate(`/product/${product.id}`)} className="bg-card border border-border/40 rounded-2xl group overflow-hidden cursor-pointer hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
+                        <div className="relative h-32 sm:h-40 overflow-hidden bg-muted/20">
+                          <img src={product.images[0] || "/placeholder.svg"} alt={product.title} loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
+                          {hasDiscount && <span className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-md">-{discountPercent}%</span>}
+                        </div>
+                        <div className="p-3 relative">
+                          <h3 className="font-medium text-foreground text-sm truncate">{product.title}</h3>
+                          {r && <StarRating avg={r.avg} count={r.count} size="xs" />}
+                          <div className="flex items-center gap-2 mt-1">
+                            <p className="text-primary font-bold text-sm">₨ {product.price.toLocaleString()}</p>
+                            {hasDiscount && <p className="text-muted-foreground text-[11px] line-through">₨ {product.compare_at_price!.toLocaleString()}</p>}
+                          </div>
+                          <button onClick={(e) => handleAdd(e, product)} className="mt-2.5 w-full flex items-center justify-center gap-1.5 bg-foreground/5 text-foreground text-[11px] font-medium py-2 rounded-lg hover:bg-primary hover:text-primary-foreground transition-all duration-200">
+                            <ShoppingBag className="w-3 h-3" /> Add to Cart
+                          </button>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              )}
         </div>
 
-        {totalPages > 1 && (
+        {!loading && totalPages > 1 && (
           <div className="flex items-center justify-center gap-1.5 mt-6">
             {Array.from({ length: totalPages }).map((_, i) => (
               <button key={i} onClick={() => setPage(i)} className={`w-2 h-2 rounded-full transition-all ${i === page ? "bg-primary w-5" : "bg-muted-foreground/30"}`} aria-label={`Page ${i + 1}`} />

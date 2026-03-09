@@ -1,68 +1,61 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { AdminLayout } from "@/components/AdminLayout";
-import { Save, Store, Truck, Phone, Mail, MapPin } from "lucide-react";
+import { Save, Store, Truck, Phone, MapPin, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-
-const STORAGE_KEY = "hukam_store_settings";
-
-interface StoreSettings {
-  storeName: string;
-  tagline: string;
-  contactEmail: string;
-  contactPhone: string;
-  whatsappNumber: string;
-  address: string;
-  city: string;
-  shippingRatePerShop: number;
-  freeShippingThreshold: number;
-  currency: string;
-  codEnabled: boolean;
-  jazzcashEnabled: boolean;
-  easypaisaEnabled: boolean;
-  bankTransferEnabled: boolean;
-}
-
-const defaults: StoreSettings = {
-  storeName: "HUKAM",
-  tagline: "Order Nahi, HUKAM Kijiye.",
-  contactEmail: "contact@hukam.pk",
-  contactPhone: "+92 327 7786498",
-  whatsappNumber: "923277786498",
-  address: "Mirpur, AJK",
-  city: "Mirpur",
-  shippingRatePerShop: 50,
-  freeShippingThreshold: 0,
-  currency: "PKR",
-  codEnabled: true,
-  jazzcashEnabled: false,
-  easypaisaEnabled: false,
-  bankTransferEnabled: false,
-};
+import { type StoreSettings, defaultSettings, saveStoreSettings } from "@/hooks/useStoreSettings";
+import { supabase } from "@/lib/supabase";
 
 const AdminSettings: React.FC = () => {
-  const [settings, setSettings] = React.useState<StoreSettings>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? { ...defaults, ...JSON.parse(stored) } : defaults;
-    } catch {
-      return defaults;
-    }
-  });
+  const [settings, setSettings] = React.useState<StoreSettings>(defaultSettings);
+  const [loading, setLoading] = React.useState(true);
+  const [saving, setSaving] = React.useState(false);
 
-  const update = (key: keyof StoreSettings, value: any) =>
+  React.useEffect(() => {
+    supabase
+      .from("store_settings")
+      .select("settings")
+      .limit(1)
+      .single()
+      .then(({ data, error }) => {
+        if (!error && data?.settings) {
+          setSettings({ ...defaultSettings, ...(data.settings as Record<string, unknown>) } as StoreSettings);
+        }
+        setLoading(false);
+      });
+  }, []);
+
+  const update = (key: keyof StoreSettings, value: unknown) =>
     setSettings((prev) => ({ ...prev, [key]: value }));
 
-  const handleSave = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-    toast({ title: "Settings saved!", description: "Store settings have been updated." });
+  const handleSave = async () => {
+    setSaving(true);
+    const ok = await saveStoreSettings(settings);
+    setSaving(false);
+    if (ok) {
+      toast({ title: "✅ Settings saved!", description: "Changes are now live on the storefront." });
+    } else {
+      toast({ title: "❌ Save failed", description: "Could not save settings. Please try again.", variant: "destructive" });
+    }
   };
 
-  const handleReset = () => {
-    setSettings(defaults);
-    localStorage.removeItem(STORAGE_KEY);
+  const handleReset = async () => {
+    setSettings(defaultSettings);
+    setSaving(true);
+    await saveStoreSettings(defaultSettings);
+    setSaving(false);
     toast({ title: "Reset to defaults" });
   };
+
+  if (loading) {
+    return (
+      <AdminLayout activeTab="settings">
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout activeTab="settings">
@@ -73,11 +66,12 @@ const AdminSettings: React.FC = () => {
             <p className="text-sm text-muted-foreground">Configure your store details, shipping, and payment methods</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={handleReset} className="px-4 py-2.5 bg-secondary text-foreground rounded-xl text-sm font-semibold hover:bg-secondary/80 transition-colors">
+            <button onClick={handleReset} disabled={saving} className="px-4 py-2.5 bg-secondary text-foreground rounded-xl text-sm font-semibold hover:bg-secondary/80 transition-colors disabled:opacity-50">
               Reset Defaults
             </button>
-            <button onClick={handleSave} className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-xl font-semibold text-sm">
-              <Save className="w-4 h-4" /> Save Settings
+            <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-xl font-semibold text-sm disabled:opacity-50">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {saving ? "Saving..." : "Save Settings"}
             </button>
           </div>
         </div>
