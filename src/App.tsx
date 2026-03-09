@@ -46,6 +46,7 @@ import AdminCustomers from "./pages/AdminCustomers";
 import AdminShops from "./pages/AdminShops";
 import AdminNewsletter from "./pages/AdminNewsletter";
 import AdminSettings from "./pages/AdminSettings";
+import AdminVendorSettlement from "./pages/AdminVendorSettlement";
 
 const queryClient = new QueryClient();
 
@@ -76,6 +77,7 @@ const App = () => {
                     <Route path="/admin/orders" element={<ProtectedRoute><AdminOrders /></ProtectedRoute>} />
                     <Route path="/admin/categories" element={<ProtectedRoute><AdminCategories /></ProtectedRoute>} />
                     <Route path="/admin/shops" element={<ProtectedRoute><AdminShops /></ProtectedRoute>} />
+                    <Route path="/admin/settlements" element={<ProtectedRoute><AdminVendorSettlement /></ProtectedRoute>} />
                     <Route path="/admin/promos" element={<ProtectedRoute><AdminPromos /></ProtectedRoute>} />
                     <Route path="/admin/customers" element={<ProtectedRoute><AdminCustomers /></ProtectedRoute>} />
                     <Route path="/admin/analytics" element={<ProtectedRoute><AdminAnalytics /></ProtectedRoute>} />

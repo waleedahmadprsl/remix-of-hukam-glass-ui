@@ -27,6 +27,8 @@ const Checkout: React.FC = () => {
   const [result, setResult] = React.useState("");
   const [placedOrderId, setPlacedOrderId] = React.useState<string | null>(null);
   const [phoneError, setPhoneError] = React.useState("");
+  const [showOTPModal, setShowOTPModal] = React.useState(false);
+  const [pendingOrderData, setPendingOrderData] = React.useState<any>(null);
 
   // Auto-fill from profile
   React.useEffect(() => {
@@ -77,44 +79,50 @@ const Checkout: React.FC = () => {
       return;
     }
 
-    setResult("Sending....");
-
+    // Prepare order data but don't save yet - COD requires OTP verification first
     const cartStr = formatCart();
     const cartSubtotal = subtotal();
     const discountAmt = promoStatus === "applied" && discountedTotal !== null ? cartSubtotal - discountedTotal : 0;
     const finalTotal = (discountedTotal !== null && promoStatus === "applied" ? discountedTotal : cartSubtotal) + shippingCost;
     const appliedPromo = promoStatus === "applied" ? promoCode : null;
 
-    const ACCESS_KEY = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || "30b97afd-15a6-456e-84e0-08bedd37e77f";
-    const fd = new FormData(e.currentTarget as HTMLFormElement);
-    fd.append("name", form.fullName);
-    fd.append("email", form.email);
-    fd.append("phone", form.phone);
-    fd.append("address", form.address);
-    fd.append("instructions", form.instructions || "");
-    fd.append("message", `Order placed via HUKAM Checkout:\n\nCustomer: ${form.fullName} (${form.email}, ${form.phone})\nAddress: ${form.address}\n\nItems:\n${cartStr}\n\nSubtotal: Rs.${cartSubtotal}\nShipping: Rs.${shippingCost}\nTotal: Rs.${finalTotal}\n\nInstructions: ${form.instructions || "-"}`);
-    if (appliedPromo) {
-      fd.append("promo_code", appliedPromo);
-    }
-    fd.append("access_key", ACCESS_KEY);
-    fd.append("subject", "NEW COD ORDER - HUKAM.pk");
-    fd.append("from_name", "HUKAM Ordering System");
+    const orderData = {
+      customer_name: String(form.fullName),
+      customer_email: String(form.email),
+      customer_phone: String(form.phone),
+      delivery_address: String(form.address),
+      instructions: String(form.instructions) || '',
+      items: cartStr,
+      promo_code: appliedPromo,
+      total_amount: finalTotal,
+      shipping_cost: shippingCost,
+      discount_amount: discountAmt,
+      status: 'pending',
+      user_id: session?.user?.id || null,
+    };
+
+    // Store order data and show OTP modal for verification
+    setPendingOrderData({
+      orderData,
+      cartItems: items,
+      finalTotal,
+      cartStr,
+      appliedPromo,
+      discountAmt
+    });
+    
+    setShowOTPModal(true);
+  };
+
+  const handleOTPVerified = async () => {
+    if (!pendingOrderData) return;
+
+    setResult("Sending....");
+    const { orderData, cartItems, finalTotal, cartStr } = pendingOrderData;
 
     try {
-      const { data, error } = await supabase.from('orders').insert([{
-        customer_name: String(form.fullName),
-        customer_email: String(form.email),
-        customer_phone: String(form.phone),
-        delivery_address: String(form.address),
-        instructions: String(form.instructions) || '',
-        items: cartStr,
-        promo_code: appliedPromo,
-        total_amount: finalTotal,
-        shipping_cost: shippingCost,
-        discount_amount: discountAmt,
-        status: 'pending',
-        user_id: session?.user?.id || null,
-      }]).select();
+      // Now create the verified order
+      const { data, error } = await supabase.from('orders').insert([orderData]).select();
 
       if (error) {
         console.error("SUPABASE INSERT ERROR:", error.message);
@@ -126,9 +134,9 @@ const Checkout: React.FC = () => {
       const orderId = data?.[0]?.id;
       setPlacedOrderId(orderId || null);
 
-      // Insert normalized order_items with buying_cost, shop_id, variant_id
+      // Insert normalized order_items
       if (orderId) {
-        const orderItemsPayload = items.map((it) => ({
+        const orderItemsPayload = cartItems.map((it) => ({
           order_id: orderId,
           product_id: it.id,
           product_title: it.name,
@@ -141,22 +149,21 @@ const Checkout: React.FC = () => {
         }));
         await supabase.from("order_items").insert(orderItemsPayload);
 
-        // Atomic stock deduction using database function (prevents race conditions)
-        for (const it of items) {
+        // Stock deduction
+        for (const it of cartItems) {
           const { data: success } = await supabase.rpc("deduct_stock", {
             p_product_id: it.id,
             p_variant_id: it.variantId || null,
             p_quantity: it.quantity,
           });
           if (success === false) {
-            console.warn(`Stock deduction failed for ${it.name} — may be out of stock`);
+            console.warn(`Stock deduction failed for ${it.name}`);
           }
         }
-      }
 
-      // Send order confirmation email via edge function
-      if (orderId && form.email) {
-        try {
+        // Send order confirmation email
+        if (form.email) {
+          try {
           await supabase.functions.invoke("send-order-email", {
             body: {
               type: "order_confirmation",
@@ -167,26 +174,55 @@ const Checkout: React.FC = () => {
               status: "pending",
             },
           });
-        } catch (emailErr) {
-          console.error("Order email failed:", emailErr);
+
+          // Send external notifications (Discord/Telegram)
+          await supabase.functions.invoke("order-notifications", {
+            body: {
+              order: {
+                id: orderId,
+                customer_name: form.fullName,
+                customer_phone: form.phone,
+                customer_email: form.email,
+                delivery_address: form.address,
+                total_amount: finalTotal,
+                items: cartStr,
+                status: "pending"
+              }
+            }
+          });
+          } catch (emailErr) {
+            console.error("Order email failed:", emailErr);
+          }
         }
       }
+
+      // Success
+      setResult("HUKAM Accepted! Your tech is being dispatched. A rider will contact you shortly.");
+      clearCart();
+      setPendingOrderData(null);
+
+      // Web3Forms notification — fire-and-forget
+      const ACCESS_KEY = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || "30b97afd-15a6-456e-84e0-08bedd37e77f";
+      const fd = new FormData();
+      fd.append("access_key", ACCESS_KEY);
+      fd.append("subject", "NEW VERIFIED COD ORDER - HUKAM.pk");
+      fd.append("from_name", "HUKAM Ordering System");
+      fd.append("name", form.fullName);
+      fd.append("email", form.email);
+      fd.append("phone", form.phone);
+      fd.append("address", form.address);
+      fd.append("message", `Verified COD Order:\n\nCustomer: ${form.fullName}\nPhone: ${form.phone} (✓ Verified)\nEmail: ${form.email}\nAddress: ${form.address}\n\nItems:\n${cartStr}\n\nTotal: Rs.${finalTotal}\n\nOrder ID: ${orderId}`);
+      
+      try {
+        await fetch("https://api.web3forms.com/submit", { method: "POST", body: fd });
+      } catch (err) {
+        console.error("Web3Forms notification failed (order is still placed):", err);
+      }
+
     } catch (err: any) {
       console.error("SUPABASE INSERT EXCEPTION:", err);
       toast({ title: "Order Error", description: err.message, variant: "destructive" });
       setResult("");
-      return;
-    }
-
-    // Order saved to DB — show success immediately
-    setResult("HUKAM Accepted! Your tech is being dispatched. A rider will contact you shortly.");
-    clearCart();
-
-    // Web3Forms email notification — fire-and-forget
-    try {
-      await fetch("https://api.web3forms.com/submit", { method: "POST", body: fd });
-    } catch (err) {
-      console.error("Web3Forms notification failed (order is still placed):", err);
     }
   };
 
@@ -443,7 +479,10 @@ const Checkout: React.FC = () => {
                   <span>Rs.{cartSubtotal.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Delivery</span>
+                  <div className="flex flex-col">
+                    <span>Delivery</span>
+                    <span className="text-xs text-primary">Est. 2-3 Business Days</span>
+                  </div>
                   <span className="text-foreground font-medium">Rs.{shippingCost}</span>
                 </div>
                 {discountAmt > 0 && (
@@ -479,6 +518,20 @@ const Checkout: React.FC = () => {
             {result === "Sending...." ? "Processing..." : "Place Order ⚡"}
           </motion.button>
         </div>
+      )}
+
+      {/* OTP Verification Modal */}
+      {pendingOrderData && (
+        <OTPVerificationModal
+          isOpen={showOTPModal}
+          onClose={() => {
+            setShowOTPModal(false);
+            setPendingOrderData(null);
+          }}
+          onVerified={handleOTPVerified}
+          orderId="pending" // Temporary - we'll generate this in the modal
+          phoneNumber={form.phone}
+        />
       )}
     </div>
   );

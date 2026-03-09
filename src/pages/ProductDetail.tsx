@@ -66,6 +66,8 @@ const ProductDetail = () => {
   const [zoomStyle, setZoomStyle] = React.useState<React.CSSProperties>({});
   const [isZooming, setIsZooming] = React.useState(false);
   const imageContainerRef = React.useRef<HTMLDivElement>(null);
+  const [touchStart, setTouchStart] = React.useState<{ x: number; y: number } | null>(null);
+  const [touchEnd, setTouchEnd] = React.useState<{ x: number; y: number } | null>(null);
 
   React.useEffect(() => {
     if (!id) return;
@@ -156,13 +158,38 @@ const ProductDetail = () => {
     setIsZooming(false);
   };
 
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    const touch = e.touches[0];
+    setTouchStart({ x: touch.clientX, y: touch.clientY });
+    setTouchEnd(null);
+  };
+
   const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (!imageContainerRef.current || !e.touches[0]) return;
-    const rect = imageContainerRef.current.getBoundingClientRect();
-    const x = ((e.touches[0].clientX - rect.left) / rect.width) * 100;
-    const y = ((e.touches[0].clientY - rect.top) / rect.height) * 100;
-    setZoomStyle({ transformOrigin: `${x}% ${y}%`, transform: "scale(2)" });
-    setIsZooming(true);
+    if (!touchStart) return;
+    const touch = e.touches[0];
+    setTouchEnd({ x: touch.clientX, y: touch.clientY });
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const deltaX = touchStart.x - touchEnd.x;
+    const deltaY = Math.abs(touchStart.y - touchEnd.y);
+    const minSwipeDistance = 50;
+    
+    // Only trigger swipe if horizontal movement is greater than vertical (to avoid conflicts with scrolling)
+    if (Math.abs(deltaX) > minSwipeDistance && Math.abs(deltaX) > deltaY) {
+      if (deltaX > 0) {
+        // Swiped left - next image
+        setSelectedImage((prev) => (prev + 1) % product!.images.length);
+      } else {
+        // Swiped right - previous image  
+        setSelectedImage((prev) => (prev - 1 + product!.images.length) % product!.images.length);
+      }
+    }
+    
+    setTouchStart(null);
+    setTouchEnd(null);
   };
 
   // Share handler
@@ -267,11 +294,12 @@ const ProductDetail = () => {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <div
               ref={imageContainerRef}
-              className="glass-card rounded-3xl overflow-hidden mb-4 relative group aspect-square cursor-zoom-in"
+              className="glass-card rounded-3xl overflow-hidden mb-4 relative group aspect-square cursor-zoom-in touch-pan-y"
               onMouseMove={handleMouseMove}
               onMouseLeave={handleMouseLeave}
+              onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
-              onTouchEnd={handleMouseLeave}
+              onTouchEnd={handleTouchEnd}
             >
               <AnimatePresence mode="wait">
                 <motion.img

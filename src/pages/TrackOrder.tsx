@@ -1,9 +1,11 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Package, Clock, CheckCircle2, Truck, XCircle, MapPin, Hash, MessageCircle, ChevronDown } from "lucide-react";
+import { Search, Package, Clock, CheckCircle2, Truck, XCircle, MapPin, Hash, MessageCircle, ChevronDown, RotateCcw, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const statusSteps = ["pending", "confirmed", "dispatched", "delivered"];
+const returnableStatuses = ["delivered"];
 
 const statusLabels: Record<string, string> = {
   pending: "Order Placed",
@@ -11,6 +13,9 @@ const statusLabels: Record<string, string> = {
   dispatched: "Out for Delivery",
   delivered: "Delivered",
   canceled: "Canceled",
+  return_requested: "Return Requested",
+  return_approved: "Return Approved",
+  returned: "Returned",
 };
 
 const statusDescriptions: Record<string, string> = {
@@ -19,6 +24,9 @@ const statusDescriptions: Record<string, string> = {
   dispatched: "Your order is on its way to you!",
   delivered: "Your order has been delivered successfully.",
   canceled: "This order has been canceled.",
+  return_requested: "Return request submitted. Our team will review it.",
+  return_approved: "Return approved. Please send the item back.",
+  returned: "Item returned and refund processed.",
 };
 
 const statusIcons: Record<string, React.ReactNode> = {
@@ -27,6 +35,9 @@ const statusIcons: Record<string, React.ReactNode> = {
   dispatched: <Truck className="w-5 h-5" />,
   delivered: <Package className="w-5 h-5" />,
   canceled: <XCircle className="w-5 h-5" />,
+  return_requested: <RotateCcw className="w-5 h-5" />,
+  return_approved: <CheckCircle2 className="w-5 h-5" />,
+  returned: <RotateCcw className="w-5 h-5" />,
 };
 
 interface Order {
@@ -41,6 +52,7 @@ interface Order {
   delivery_address: string;
   tracking_id: string | null;
   shipping_cost: number | null;
+  instructions: string | null;
 }
 
 const TrackOrder: React.FC = () => {
@@ -51,6 +63,8 @@ const TrackOrder: React.FC = () => {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
   const [searched, setSearched] = React.useState(false);
+  const [showReturnForm, setShowReturnForm] = React.useState<string | null>(null);
+  const [returnReason, setReturnReason] = React.useState("");
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,6 +106,48 @@ const TrackOrder: React.FC = () => {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleReturnRequest = async (orderId: string) => {
+    if (!returnReason.trim()) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ 
+          status: "return_requested",
+          instructions: `RETURN REQUEST: ${returnReason}\n\n${orders.find(o => o.id === orderId)?.instructions || ""}`
+        })
+        .eq("id", orderId);
+
+      if (error) throw error;
+
+      // Update local state
+      setOrders(prev => prev.map(order => 
+        order.id === orderId 
+          ? { ...order, status: "return_requested" }
+          : order
+      ));
+
+      setShowReturnForm(null);
+      setReturnReason("");
+      
+      // You could also trigger a notification to admins here
+      toast({ 
+        title: "Return Requested", 
+        description: "Your return request has been submitted. We'll review it shortly." 
+      });
+
+    } catch (err: any) {
+      console.error("Return request error:", err);
+      toast({ 
+        title: "Error", 
+        description: "Failed to submit return request", 
+        variant: "destructive" 
+      });
     }
   };
 
@@ -222,6 +278,81 @@ const TrackOrder: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* Return Request Section */}
+          {returnableStatuses.includes(order.status) && !order.status.includes("return") && (
+            <div className="border-t border-border/40 pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Return Item</p>
+                {showReturnForm !== order.id ? (
+                  <button
+                    onClick={() => setShowReturnForm(order.id)}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-destructive/10 text-destructive rounded-lg text-xs font-medium hover:bg-destructive/20 transition-colors"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    Request Return
+                  </button>
+                ) : null}
+              </div>
+
+              {showReturnForm === order.id && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="space-y-3 bg-secondary/20 rounded-xl p-4"
+                >
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                      Reason for Return *
+                    </label>
+                    <textarea
+                      value={returnReason}
+                      onChange={(e) => setReturnReason(e.target.value)}
+                      placeholder="e.g., Item damaged, wrong size, not as described..."
+                      rows={3}
+                      className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 resize-none"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleReturnRequest(order.id)}
+                      disabled={!returnReason.trim()}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-destructive text-destructive-foreground rounded-lg text-xs font-medium hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <Send className="w-3 h-3" />
+                      Submit Request
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowReturnForm(null);
+                        setReturnReason("");
+                      }}
+                      className="px-3 py-1.5 border border-border rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          )}
+
+          {/* Return Status Display */}
+          {order.status.includes("return") && (
+            <div className="border-t border-border/40 pt-4">
+              <div className="flex items-center gap-2 p-3 bg-destructive/5 rounded-xl">
+                <RotateCcw className="w-4 h-4 text-destructive" />
+                <div>
+                  <p className="text-sm font-medium text-destructive">
+                    {statusLabels[order.status] || "Return in Progress"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {statusDescriptions[order.status] || "Return is being processed"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </motion.div>
     );
@@ -281,6 +412,7 @@ const TrackOrder: React.FC = () => {
                     <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
                       order.status === "delivered" ? "bg-primary/10 text-primary" :
                       order.status === "canceled" ? "bg-destructive/10 text-destructive" :
+                      order.status.includes("return") ? "bg-destructive/10 text-destructive" :
                       order.status === "dispatched" ? "bg-accent text-accent-foreground" :
                       "bg-secondary text-secondary-foreground"
                     }`}>
