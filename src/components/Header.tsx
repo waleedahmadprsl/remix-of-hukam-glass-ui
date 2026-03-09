@@ -101,9 +101,11 @@ const Header = () => {
             <ThemeToggle />
 
             {/* Search */}
-            <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
-              <Search className="w-5 h-5" />
-            </button>
+            <div ref={searchRef} className="relative">
+              <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
+                <Search className="w-5 h-5" />
+              </button>
+            </div>
 
             {/* Wishlist */}
             <button onClick={() => setWishlistOpen(true)} className="relative p-2 text-muted-foreground hover:text-foreground transition-colors">
