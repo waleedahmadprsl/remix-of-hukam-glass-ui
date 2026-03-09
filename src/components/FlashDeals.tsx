@@ -7,6 +7,7 @@ import { useCart } from "@/context/CartContext";
 import { useMiniCart } from "@/context/MiniCartContext";
 import { toast } from "@/hooks/use-toast";
 import { useProductRatings, StarRating } from "@/hooks/useProductRatings";
+import BlurImage from "@/components/BlurImage";
 
 interface Product {
   id: string;
