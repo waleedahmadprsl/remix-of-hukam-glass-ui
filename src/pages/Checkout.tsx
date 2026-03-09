@@ -421,7 +421,7 @@ const Checkout: React.FC = () => {
               <div className="space-y-3">
                 {items.map((it) => (
                   <div key={it.variantId ? `${it.id}__${it.variantId}` : it.id} className="flex gap-3 items-start">
-                    {it.image && <img src={it.image} alt={it.name} className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-xl flex-shrink-0" />}
+                    <img src={it.image || "/placeholder.svg"} alt={it.name} className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-xl flex-shrink-0" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-foreground text-sm truncate">{it.name}</p>
                       {it.variantName && <p className="text-xs text-muted-foreground">{it.variantName}</p>}
