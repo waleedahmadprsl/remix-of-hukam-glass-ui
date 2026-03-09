@@ -148,13 +148,44 @@ WhatsApp: +92 342 680 7645`;
 
     } else if (type === "status_update") {
       const statusMessages: Record<string, string> = {
-        confirmed: "Your order has been confirmed! Our team is preparing it now. 📦",
-        dispatched: "Your order is on the way! Our rider is heading to your location. 🏍️",
-        delivered: "Your order has been delivered! Thank you for shopping with HUKAM! ✅",
-        canceled: "Your order has been canceled. If you have questions, please contact us on WhatsApp. ❌",
+        confirmed: "✓ Order confirmed! Our team is preparing your items now. 📦",
+        dispatched: "🏍️ Out for delivery! Our rider is heading to your location.",
+        delivered: "✅ Delivered successfully! Thank you for shopping with HUKAM!",
+        canceled: "❌ Order canceled. Questions? Contact us on WhatsApp.",
       };
-      const subject = `HUKAM Order Update - ${(status || "").charAt(0).toUpperCase() + (status || "").slice(1)} #${orderId?.slice(0, 8) || ""}`;
-      const message = `Assalam-o-Alaikum ${customerName}!\n\n${statusMessages[status] || `Your order status has been updated to: ${status}`}\n\nOrder ID: #${orderId?.slice(0, 8) || ""}\nTotal: Rs.${totalAmount}\n\nFor any questions, message us on WhatsApp: +92 342 680 7645\n\nHUKAM.PK - Mirpur's #1 Quick Commerce`;
+      const statusIcons: Record<string, string> = {
+        confirmed: "📦",
+        dispatched: "🏍️",
+        delivered: "✅",
+        canceled: "❌",
+      };
+      const subject = `${statusIcons[status] || "📢"} Order ${(status || "").charAt(0).toUpperCase() + (status || "").slice(1)} - HUKAM #${orderId?.slice(0, 8) || ""}`;
+      const message = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${statusIcons[status] || "📢"}  ORDER STATUS UPDATE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Assalam-o-Alaikum ${customerName}!
+
+${statusMessages[status] || `Your order status: ${status}`}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 ORDER SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Order ID: #${orderId?.slice(0, 8) || ""}
+Total: Rs. ${totalAmount}
+Status: ${(status || "").toUpperCase()}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📞 NEED HELP?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+WhatsApp: +92 342 680 7645
+Email: contact@hukam.pk
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+HUKAM.PK - Mirpur's #1 Quick Commerce`;
       const result = await sendEmail(email, subject, message);
       return new Response(JSON.stringify({ success: result.success, message: result.message }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
