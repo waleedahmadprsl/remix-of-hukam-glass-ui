@@ -155,7 +155,7 @@ const Checkout: React.FC = () => {
           const CLOUD_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impqbmt3eXNzc3JleHB2anl5YXZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzMTA2MDIsImV4cCI6MjA4Nzg4NjYwMn0.eVW3XIB1Ai_SiHleSUhjiJ3YLARxy9du2Im8BJ9D7Ho";
           fetch(`https://${CLOUD_PROJECT}.supabase.co/functions/v1/send-order-email`, {
             method: "POST",
-            headers: { "Content-Type": "application/json", "apikey": anonKey, "Authorization": `Bearer ${anonKey}` },
+            headers: { "Content-Type": "application/json", "apikey": CLOUD_ANON, "Authorization": `Bearer ${CLOUD_ANON}` },
             body: JSON.stringify({
               type: "order_confirmation",
               email: form.email,
