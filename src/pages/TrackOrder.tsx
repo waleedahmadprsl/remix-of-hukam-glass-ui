@@ -51,6 +51,8 @@ const TrackOrder: React.FC = () => {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
   const [searched, setSearched] = React.useState(false);
+  const [showReturnForm, setShowReturnForm] = React.useState<string | null>(null);
+  const [returnReason, setReturnReason] = React.useState("");
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
