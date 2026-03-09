@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useCart, getCartKey } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
+import { supabase as cloudSupabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { ShoppingCart, FileText, CheckCircle2, Truck, ArrowRight } from "lucide-react";
@@ -147,9 +148,9 @@ const Checkout: React.FC = () => {
           });
         }
 
-        // Send order confirmation email
+        // Send order confirmation email via Lovable Cloud edge function
         if (form.email) {
-          supabase.functions.invoke("send-order-email", {
+          cloudSupabase.functions.invoke("send-order-email", {
             body: {
               type: "order_confirmation",
               email: form.email,
@@ -159,6 +160,9 @@ const Checkout: React.FC = () => {
               status: "pending",
               items: cartStr,
             },
+          }).then((res) => {
+            if (res.error) console.error("Order email error:", res.error);
+            else console.log("Order email sent successfully");
           }).catch((err) => console.error("Order email failed:", err));
         }
 
