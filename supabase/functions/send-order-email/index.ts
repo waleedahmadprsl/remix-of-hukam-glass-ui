@@ -16,7 +16,7 @@ function getTransporter() {
     host: "smtp.gmail.com",
     port: 465,
     secure: true,
-    auth: { user: "waleedahmadprsl@gmail.com", pass },
+    auth: { user, pass },
   });
 }
 
