@@ -67,7 +67,32 @@ const TrendingProducts = () => {
     scrollRef.current.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
   };
 
-  if (!products.length) return null;
+  if (!products.length) {
+    return (
+      <section className="py-6 sm:py-8">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center gap-2.5 mb-5">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 text-primary" />
+            </div>
+            <h2 className="text-lg sm:text-xl font-bold text-foreground">Trending Now</h2>
+          </div>
+          <div className="flex gap-3 overflow-hidden">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="min-w-[160px] sm:min-w-[200px] bg-card border border-border/40 rounded-2xl overflow-hidden flex-shrink-0">
+                <div className="h-36 sm:h-44 bg-muted animate-pulse" />
+                <div className="p-3 space-y-2">
+                  <div className="h-3.5 bg-muted rounded-lg w-3/4 animate-pulse" />
+                  <div className="h-3.5 bg-muted rounded-lg w-1/2 animate-pulse" />
+                  <div className="h-8 bg-muted rounded-lg animate-pulse mt-2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-6 sm:py-8">
