@@ -71,7 +71,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (items.some((i) => i.id === item.id)) return;
     setItems((prev) => [...prev, item]);
     if (userId) {
-      await supabase.from("user_wishlist").insert({ user_id: userId, product_id: item.id });
+      await supabase.from("user_wishlist").insert({ user_id: userId, product_id: item.id }).catch(() => {});
     }
   };
 
