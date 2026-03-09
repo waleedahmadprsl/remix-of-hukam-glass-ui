@@ -66,18 +66,26 @@ const ProductShowcase = () => {
           Trending in Mirpur
         </motion.h2>
 
-        <div className="flex md:hidden gap-4 overflow-x-auto pb-4 snap-x snap-mandatory -mx-4 px-4">
-          {products.map((p, i) => (
-            <div key={p.id} className="min-w-[75vw] snap-center">
-              <Card product={p} i={i} onAdd={handleAdd} />
+        {loading ? (
+          <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
+            {[...Array(4)].map((_, i) => <SkeletonCard key={i} />)}
+          </div>
+        ) : (
+          <>
+            <div className="flex md:hidden gap-4 overflow-x-auto pb-4 snap-x snap-mandatory -mx-4 px-4">
+              {products.map((p, i) => (
+                <div key={p.id} className="min-w-[75vw] snap-center">
+                  <Card product={p} i={i} onAdd={handleAdd} />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
-          {products.map((p, i) => (
-            <Card key={p.id} product={p} i={i} onAdd={handleAdd} />
-          ))}
-        </div>
+            <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
+              {products.map((p, i) => (
+                <Card key={p.id} product={p} i={i} onAdd={handleAdd} />
+              ))}
+            </div>
+          </>
+        )}
 
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 }} className="flex justify-center mt-14">
           <motion.button onClick={() => navigate("/products")} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }} className="glass-pill font-semibold text-foreground border border-primary/30 px-8 py-3 hover:border-primary/60 hover:bg-primary/5 transition-all flex items-center gap-2">
