@@ -516,7 +516,7 @@ const ProductDetail = () => {
                   className="glass-card rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg hover:border-primary/30 transition-all group"
                 >
                   <div className="h-36 sm:h-44 bg-secondary/30 overflow-hidden">
-                    <img src={prod.images[0] || "/placeholder.svg"} alt={prod.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    <img src={prod.images[0] || "/placeholder.svg"} alt={prod.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
                   </div>
                   <div className="p-4">
                     <h3 className="font-semibold text-foreground text-sm mb-1">{prod.title}</h3>
