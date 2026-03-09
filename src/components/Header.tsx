@@ -9,7 +9,7 @@ import { useWishlist } from "@/context/WishlistContext";
 import { useAuth } from "@/context/AuthContext";
 import WishlistDrawer from "@/components/WishlistDrawer";
 import hukamName from "@/assets/hukam-name.png";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface NavLink {

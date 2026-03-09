@@ -1,6 +1,6 @@
 import React from "react";
 import { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface Profile {
   full_name: string;

@@ -5,7 +5,7 @@ import { Check, Zap, Clock, Share2, ChevronLeft, ShoppingCart, Star, Shield, Tru
 import { useCart } from "@/context/CartContext";
 import { useMiniCart } from "@/context/MiniCartContext";
 import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import CustomerReviews from "@/components/CustomerReviews";
 import FrequentlyBoughtTogether from "@/components/FrequentlyBoughtTogether";
 import ProductQA from "@/components/ProductQA";

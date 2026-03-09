@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { AdminLayout } from "@/components/AdminLayout";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { Package, ShoppingCart, TrendingUp, AlertTriangle, Clock, DollarSign, Warehouse, Store } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
