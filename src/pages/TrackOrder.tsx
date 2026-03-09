@@ -435,7 +435,7 @@ const TrackOrder: React.FC = () => {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mt-8 text-center">
             <p className="text-xs text-muted-foreground mb-3">Need help with your order?</p>
             <a
-              href="https://wa.me/923426807645?text=Hi%20HUKAM%2C%20I%20need%20help%20with%20my%20order"
+              href="https://web.whatsapp.com/send?phone=923426807645&text=Hi%20HUKAM%2C%20I%20need%20help%20with%20my%20order"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/20 font-semibold text-sm hover:bg-[#25D366]/20 transition-colors"
