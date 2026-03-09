@@ -294,11 +294,12 @@ const ProductDetail = () => {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <div
               ref={imageContainerRef}
-              className="glass-card rounded-3xl overflow-hidden mb-4 relative group aspect-square cursor-zoom-in"
+              className="glass-card rounded-3xl overflow-hidden mb-4 relative group aspect-square cursor-zoom-in touch-pan-y"
               onMouseMove={handleMouseMove}
               onMouseLeave={handleMouseLeave}
+              onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
-              onTouchEnd={handleMouseLeave}
+              onTouchEnd={handleTouchEnd}
             >
               <AnimatePresence mode="wait">
                 <motion.img
