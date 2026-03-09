@@ -31,7 +31,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   });
   const [loading, setLoading] = React.useState(false);
 
-  // Sync from DB when user logs in
+  // Sync from DB when user logs in (gracefully handle missing table)
   React.useEffect(() => {
     if (!userId) return;
     setLoading(true);
@@ -39,7 +39,13 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       .from("user_wishlist")
       .select("product_id, products(title, price, images)")
       .eq("user_id", userId)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) {
+          // Table may not exist on personal DB — silently fall back to localStorage
+          console.warn("Wishlist sync skipped:", error.message);
+          setLoading(false);
+          return;
+        }
         if (data && data.length > 0) {
           const dbItems: WishlistItem[] = data.map((w: any) => ({
             id: w.product_id,
