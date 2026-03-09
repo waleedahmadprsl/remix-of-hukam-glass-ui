@@ -8,15 +8,25 @@ const corsHeaders = {
 
 const WEB3FORMS_KEY = "30b97afd-15a6-456e-84e0-08bedd37e77f";
 
-async function sendEmail(to: string, subject: string, message: string) {
+async function sendWeb3FormsEmail(subject: string, message: string, replyTo?: string) {
   const formData = new FormData();
   formData.append("access_key", WEB3FORMS_KEY);
   formData.append("subject", subject);
-  formData.append("from_name", "HUKAM.PK");
-  formData.append("to", to);
+  formData.append("from_name", "HUKAM.PK Orders");
   formData.append("message", message);
-  const response = await fetch("https://api.web3forms.com/submit", { method: "POST", body: formData });
-  return response.json();
+  if (replyTo) {
+    formData.append("replyto", replyTo);
+  }
+  
+  try {
+    const response = await fetch("https://api.web3forms.com/submit", { method: "POST", body: formData });
+    const result = await response.json();
+    console.log("Web3Forms response:", JSON.stringify(result));
+    return result;
+  } catch (err) {
+    console.error("Web3Forms fetch error:", err);
+    return { success: false, message: String(err) };
+  }
 }
 
 Deno.serve(async (req) => {
@@ -26,58 +36,30 @@ Deno.serve(async (req) => {
 
   try {
     const { type, email, customerName, orderId, status, totalAmount, items } = await req.json();
-
-    if (!email) {
-      return new Response(JSON.stringify({ error: "No email provided" }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    console.log(`Email request: type=${type}, email=${email}, orderId=${orderId}, status=${status}`);
 
     if (type === "order_confirmation") {
-      const subject = `✅ Order Confirmed - HUKAM #${orderId?.slice(0, 8) || ""}`;
+      const subject = `✅ New Order #${orderId?.slice(0, 8) || ""} - Rs.${totalAmount} - ${customerName}`;
       const message = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🛍️  HUKAM ORDER CONFIRMATION
+🛍️  NEW ORDER RECEIVED
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Assalam-o-Alaikum ${customerName}! 
-
-Thank you for choosing HUKAM.PK! 🎉
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📦 ORDER DETAILS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+Customer: ${customerName}
+Email: ${email || "N/A"}
 Order ID: #${orderId?.slice(0, 8) || ""}
-Total Amount: Rs. ${totalAmount}
-Payment Method: Cash on Delivery (COD)
+Total: Rs. ${totalAmount}
+Payment: Cash on Delivery
 
-${items ? `Your Items:\n${items}\n` : ""}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚡ WHAT'S NEXT?
+${items ? `Items:\n${items}\n` : ""}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-✓ Our rider will contact you within 60 minutes
-✓ Please keep your phone accessible
-✓ Prepare exact cash amount for smooth delivery
-✓ Inspect products before payment (Check & Pay)
+⚡ ACTION: Prepare items for dispatch within 60 minutes.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📞 NEED HELP?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HUKAM.PK - Mirpur's #1 Quick Commerce`;
 
-WhatsApp: +92 342 680 7645
-Email: contact@hukam.pk
-Web: hukam.pk
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Order Nahi, HUKAM Kijiye! 💙
-
-HUKAM.PK - Mirpur's #1 Quick Commerce
-Fast Delivery | 100% Genuine | Secure Checkout`;
-      
-      // Send customer email
-      const result = await sendEmail(email, subject, message);
+      // Send admin notification
+      const result = await sendWeb3FormsEmail(subject, message, email || undefined);
 
       // Send vendor-specific emails
       try {
@@ -91,7 +73,6 @@ Fast Delivery | 100% Genuine | Secure Checkout`;
             .eq("order_id", orderId);
 
           if (orderItems && orderItems.length > 0) {
-            // Group by shop_id
             const shopGroups: Record<string, typeof orderItems> = {};
             for (const item of orderItems) {
               const key = item.shop_id || "own";
@@ -99,41 +80,14 @@ Fast Delivery | 100% Genuine | Secure Checkout`;
               shopGroups[key].push(item);
             }
 
-            // For each shop with an email, send their specific items
             for (const [shopId, shopItems] of Object.entries(shopGroups)) {
               if (shopId === "own") continue;
               const { data: shop } = await supabase.from("shops").select("name, email").eq("id", shopId).single();
               if (shop?.email) {
                 const itemsList = shopItems.map((i: any) => `• ${i.product_title} (Qty: ${i.quantity}) - Rs.${i.unit_price * i.quantity}`).join("\n");
                 const shopSubject = `📦 New Order for ${shop.name} - HUKAM #${orderId.slice(0, 8)}`;
-                const shopMessage = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🛍️  HUKAM VENDOR NOTIFICATION
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-New Order Received for ${shop.name}! 
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 ORDER DETAILS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Order ID: #${orderId.slice(0, 8)}
-Customer: ${customerName}
-
-Your Items:
-${itemsList}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚡ ACTION REQUIRED
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Please prepare these items for dispatch ASAP.
-Our rider will collect within 60 minutes.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-HUKAM.PK Marketplace
-WhatsApp: +92 342 680 7645`;
-                await sendEmail(shop.email, shopSubject, shopMessage);
+                const shopMessage = `New order received for ${shop.name}!\n\nOrder ID: #${orderId.slice(0, 8)}\nCustomer: ${customerName}\n\nYour Items:\n${itemsList}\n\nPlease prepare for dispatch ASAP.\n\nHUKAM.PK | WhatsApp: +92 342 680 7645`;
+                await sendWeb3FormsEmail(shopSubject, shopMessage);
               }
             }
           }
@@ -147,46 +101,32 @@ WhatsApp: +92 342 680 7645`;
       });
 
     } else if (type === "status_update") {
-      const statusMessages: Record<string, string> = {
-        confirmed: "✓ Order confirmed! Our team is preparing your items now. 📦",
-        dispatched: "🏍️ Out for delivery! Our rider is heading to your location.",
-        delivered: "✅ Delivered successfully! Thank you for shopping with HUKAM!",
-        canceled: "❌ Order canceled. Questions? Contact us on WhatsApp.",
+      const statusLabels: Record<string, string> = {
+        confirmed: "📦 Confirmed",
+        dispatched: "🏍️ Out for Delivery",
+        delivered: "✅ Delivered",
+        canceled: "❌ Canceled",
+        return_requested: "🔄 Return Requested",
+        return_approved: "✅ Return Approved",
+        returned: "📦 Returned",
       };
-      const statusIcons: Record<string, string> = {
-        confirmed: "📦",
-        dispatched: "🏍️",
-        delivered: "✅",
-        canceled: "❌",
-      };
-      const subject = `${statusIcons[status] || "📢"} Order ${(status || "").charAt(0).toUpperCase() + (status || "").slice(1)} - HUKAM #${orderId?.slice(0, 8) || ""}`;
+      
+      const subject = `${statusLabels[status] || "📢 Update"} - Order #${orderId?.slice(0, 8) || ""} - ${customerName}`;
       const message = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${statusIcons[status] || "📢"}  ORDER STATUS UPDATE
+📢  ORDER STATUS UPDATE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Assalam-o-Alaikum ${customerName}!
-
-${statusMessages[status] || `Your order status: ${status}`}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 ORDER SUMMARY
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+Customer: ${customerName}
+Email: ${email || "N/A"}
 Order ID: #${orderId?.slice(0, 8) || ""}
+New Status: ${(status || "").toUpperCase()}
 Total: Rs. ${totalAmount}
-Status: ${(status || "").toUpperCase()}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📞 NEED HELP?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HUKAM.PK | WhatsApp: +92 342 680 7645`;
 
-WhatsApp: +92 342 680 7645
-Email: contact@hukam.pk
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-HUKAM.PK - Mirpur's #1 Quick Commerce`;
-      const result = await sendEmail(email, subject, message);
+      const result = await sendWeb3FormsEmail(subject, message, email || undefined);
+      
       return new Response(JSON.stringify({ success: result.success, message: result.message }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
