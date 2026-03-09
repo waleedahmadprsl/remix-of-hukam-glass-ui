@@ -5,6 +5,7 @@ import { useCart, getCartKey } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
+import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { ShoppingCart, FileText, CheckCircle2, Truck, ArrowRight } from "lucide-react";
 
 
