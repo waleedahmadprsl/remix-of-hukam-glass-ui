@@ -58,6 +58,9 @@ const AdminOrders: React.FC = () => {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
+  const [currentPage, setCurrentPage] = React.useState(0);
+  const ORDERS_PER_PAGE = 25;
+
   const fetchOrders = async () => {
     const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
     setOrders((data as Order[]) || []); setLoading(false);
