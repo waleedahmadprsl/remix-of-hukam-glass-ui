@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
 import { ShoppingCart, FileText, CheckCircle2, Truck, ArrowRight } from "lucide-react";
-import { OTPVerificationModal } from "@/components/OTPVerificationModal";
+
 
 const steps = [
   { icon: ShoppingCart, label: "Cart" },
@@ -27,8 +27,6 @@ const Checkout: React.FC = () => {
   const [result, setResult] = React.useState("");
   const [placedOrderId, setPlacedOrderId] = React.useState<string | null>(null);
   const [phoneError, setPhoneError] = React.useState("");
-  const [showOTPModal, setShowOTPModal] = React.useState(false);
-  const [pendingOrderData, setPendingOrderData] = React.useState<any>(null);
 
   // Auto-fill from profile
   React.useEffect(() => {
@@ -79,50 +77,30 @@ const Checkout: React.FC = () => {
       return;
     }
 
-    // Prepare order data but don't save yet - COD requires OTP verification first
+    setResult("Sending....");
+
+    // Prepare order data
     const cartStr = formatCart();
     const cartSubtotal = subtotal();
     const discountAmt = promoStatus === "applied" && discountedTotal !== null ? cartSubtotal - discountedTotal : 0;
     const finalTotal = (discountedTotal !== null && promoStatus === "applied" ? discountedTotal : cartSubtotal) + shippingCost;
     const appliedPromo = promoStatus === "applied" ? promoCode : null;
 
-    const orderData = {
-      customer_name: String(form.fullName),
-      customer_email: String(form.email),
-      customer_phone: String(form.phone),
-      delivery_address: String(form.address),
-      instructions: String(form.instructions) || '',
-      items: cartStr,
-      promo_code: appliedPromo,
-      total_amount: finalTotal,
-      shipping_cost: shippingCost,
-      discount_amount: discountAmt,
-      status: 'pending',
-      user_id: session?.user?.id || null,
-    };
-
-    // Store order data and show OTP modal for verification
-    setPendingOrderData({
-      orderData,
-      cartItems: items,
-      finalTotal,
-      cartStr,
-      appliedPromo,
-      discountAmt
-    });
-    
-    setShowOTPModal(true);
-  };
-
-  const handleOTPVerified = async () => {
-    if (!pendingOrderData) return;
-
-    setResult("Sending....");
-    const { orderData, cartItems, finalTotal, cartStr } = pendingOrderData;
-
     try {
-      // Now create the verified order
-      const { data, error } = await supabase.from('orders').insert([orderData]).select();
+      const { data, error } = await supabase.from('orders').insert([{
+        customer_name: String(form.fullName),
+        customer_email: String(form.email),
+        customer_phone: String(form.phone),
+        delivery_address: String(form.address),
+        instructions: String(form.instructions) || '',
+        items: cartStr,
+        promo_code: appliedPromo,
+        total_amount: finalTotal,
+        shipping_cost: shippingCost,
+        discount_amount: discountAmt,
+        status: 'pending',
+        user_id: session?.user?.id || null,
+      }]).select();
 
       if (error) {
         console.error("SUPABASE INSERT ERROR:", error.message);
@@ -134,37 +112,34 @@ const Checkout: React.FC = () => {
       const orderId = data?.[0]?.id;
       setPlacedOrderId(orderId || null);
 
-      // Insert normalized order_items
       if (orderId) {
-        const orderItemsPayload = cartItems.map((it) => ({
-          order_id: orderId,
-          product_id: it.id,
-          product_title: it.name,
-          quantity: it.quantity,
-          unit_price: it.priceNumber,
-          buying_cost: it.buyingCost || 0,
-          shop_id: it.shopId || null,
-          variant_id: it.variantId || null,
-          variant_name: it.variantName || null,
-        }));
-        await supabase.from("order_items").insert(orderItemsPayload);
+        // Insert normalized order_items
+        await supabase.from("order_items").insert(
+          items.map((it) => ({
+            order_id: orderId,
+            product_id: it.id,
+            product_title: it.name,
+            quantity: it.quantity,
+            unit_price: it.priceNumber,
+            buying_cost: it.buyingCost || 0,
+            shop_id: it.shopId || null,
+            variant_id: it.variantId || null,
+            variant_name: it.variantName || null,
+          }))
+        );
 
         // Stock deduction
-        for (const it of cartItems) {
-          const { data: success } = await supabase.rpc("deduct_stock", {
+        for (const it of items) {
+          await supabase.rpc("deduct_stock", {
             p_product_id: it.id,
             p_variant_id: it.variantId || null,
             p_quantity: it.quantity,
           });
-          if (success === false) {
-            console.warn(`Stock deduction failed for ${it.name}`);
-          }
         }
 
         // Send order confirmation email
         if (form.email) {
-          try {
-          await supabase.functions.invoke("send-order-email", {
+          supabase.functions.invoke("send-order-email", {
             body: {
               type: "order_confirmation",
               email: form.email,
@@ -172,52 +147,26 @@ const Checkout: React.FC = () => {
               orderId,
               totalAmount: finalTotal,
               status: "pending",
+              items: cartStr,
             },
-          });
-
-          // Send external notifications (Discord/Telegram)
-          await supabase.functions.invoke("order-notifications", {
-            body: {
-              order: {
-                id: orderId,
-                customer_name: form.fullName,
-                customer_phone: form.phone,
-                customer_email: form.email,
-                delivery_address: form.address,
-                total_amount: finalTotal,
-                items: cartStr,
-                status: "pending"
-              }
-            }
-          });
-          } catch (emailErr) {
-            console.error("Order email failed:", emailErr);
-          }
+          }).catch((err) => console.error("Order email failed:", err));
         }
+
+        // Web3Forms admin notification — fire-and-forget
+        const fd = new FormData();
+        fd.append("access_key", import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || "30b97afd-15a6-456e-84e0-08bedd37e77f");
+        fd.append("subject", "NEW COD ORDER - HUKAM.pk");
+        fd.append("from_name", "HUKAM Ordering System");
+        fd.append("name", form.fullName);
+        fd.append("email", form.email);
+        fd.append("phone", form.phone);
+        fd.append("address", form.address);
+        fd.append("message", `COD Order:\n\nCustomer: ${form.fullName}\nPhone: ${form.phone}\nEmail: ${form.email}\nAddress: ${form.address}\n\nItems:\n${cartStr}\n\nTotal: Rs.${finalTotal}\n\nOrder ID: ${orderId}`);
+        fetch("https://api.web3forms.com/submit", { method: "POST", body: fd }).catch(() => {});
       }
 
-      // Success
       setResult("HUKAM Accepted! Your tech is being dispatched. A rider will contact you shortly.");
       clearCart();
-      setPendingOrderData(null);
-
-      // Web3Forms notification — fire-and-forget
-      const ACCESS_KEY = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || "30b97afd-15a6-456e-84e0-08bedd37e77f";
-      const fd = new FormData();
-      fd.append("access_key", ACCESS_KEY);
-      fd.append("subject", "NEW VERIFIED COD ORDER - HUKAM.pk");
-      fd.append("from_name", "HUKAM Ordering System");
-      fd.append("name", form.fullName);
-      fd.append("email", form.email);
-      fd.append("phone", form.phone);
-      fd.append("address", form.address);
-      fd.append("message", `Verified COD Order:\n\nCustomer: ${form.fullName}\nPhone: ${form.phone} (✓ Verified)\nEmail: ${form.email}\nAddress: ${form.address}\n\nItems:\n${cartStr}\n\nTotal: Rs.${finalTotal}\n\nOrder ID: ${orderId}`);
-      
-      try {
-        await fetch("https://api.web3forms.com/submit", { method: "POST", body: fd });
-      } catch (err) {
-        console.error("Web3Forms notification failed (order is still placed):", err);
-      }
 
     } catch (err: any) {
       console.error("SUPABASE INSERT EXCEPTION:", err);
@@ -520,19 +469,6 @@ const Checkout: React.FC = () => {
         </div>
       )}
 
-      {/* OTP Verification Modal */}
-      {pendingOrderData && (
-        <OTPVerificationModal
-          isOpen={showOTPModal}
-          onClose={() => {
-            setShowOTPModal(false);
-            setPendingOrderData(null);
-          }}
-          onVerified={handleOTPVerified}
-          orderId="pending" // Temporary - we'll generate this in the modal
-          phoneNumber={form.phone}
-        />
-      )}
     </div>
   );
 };

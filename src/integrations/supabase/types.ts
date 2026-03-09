@@ -186,47 +186,6 @@ export type Database = {
           },
         ]
       }
-      order_otp: {
-        Row: {
-          created_at: string
-          expires_at: string
-          id: string
-          is_verified: boolean
-          order_id: string
-          otp_code: string
-          phone_number: string
-          verified_at: string | null
-        }
-        Insert: {
-          created_at?: string
-          expires_at: string
-          id?: string
-          is_verified?: boolean
-          order_id: string
-          otp_code: string
-          phone_number: string
-          verified_at?: string | null
-        }
-        Update: {
-          created_at?: string
-          expires_at?: string
-          id?: string
-          is_verified?: boolean
-          order_id?: string
-          otp_code?: string
-          phone_number?: string
-          verified_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "order_otp_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       orders: {
         Row: {
           created_at: string
@@ -759,20 +718,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      create_order_otp: {
-        Args: { p_order_id: string; p_phone_number: string }
-        Returns: {
-          expires_at: string
-          otp_code: string
-        }[]
-      }
       deduct_stock: {
         Args: { p_product_id: string; p_quantity: number; p_variant_id: string }
-        Returns: boolean
-      }
-      generate_otp: { Args: never; Returns: string }
-      verify_order_otp: {
-        Args: { p_order_id: string; p_otp_code: string }
         Returns: boolean
       }
     }
