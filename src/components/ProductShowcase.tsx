@@ -40,7 +40,34 @@ const ProductShowcase = () => {
     openCart();
   };
 
-  if (products.length === 0) return null;
+  const [loading, setLoading] = useState(true);
+
+  // Update the useEffect to track loading
+  useEffect(() => {
+    setLoading(true);
+    supabase
+      .from("products")
+      .select("id, title, price, compare_at_price, images")
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .limit(4)
+      .then(({ data }) => {
+        setProducts((data || []).map((p: any) => ({ ...p, images: Array.isArray(p.images) ? p.images : [] })));
+        setLoading(false);
+      });
+  }, []);
+
+  if (!loading && products.length === 0) return null;
+
+  const SkeletonCard = () => (
+    <div className="bg-card border border-border/40 rounded-2xl overflow-hidden">
+      <div className="h-48 bg-muted animate-pulse" />
+      <div className="p-5 space-y-3">
+        <div className="h-4 bg-muted rounded-lg w-3/4 animate-pulse" />
+        <div className="h-4 bg-muted rounded-lg w-1/2 animate-pulse" />
+      </div>
+    </div>
+  );
 
   return (
     <section className="py-20">
