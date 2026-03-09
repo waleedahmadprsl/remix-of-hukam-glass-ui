@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://hukam.pk/sitemap.xml
+Sitemap: https://hukam.pk/functions/v1/sitemap
