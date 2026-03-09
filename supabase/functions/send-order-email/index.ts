@@ -22,11 +22,9 @@ function getTransporter() {
 
 async function sendEmail(to: string, subject: string, html: string) {
   const transporter = getTransporter();
-  const fromName = "HUKAM.PK";
-  const fromEmail = Deno.env.get("GMAIL_USER") || "hello@likehukam.com";
   
   const info = await transporter.sendMail({
-    from: `"${fromName}" <${fromEmail}>`,
+    from: '"HUKAM" <hello@likehukam.com>',
     to,
     subject,
     html,
