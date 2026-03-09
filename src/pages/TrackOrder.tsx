@@ -52,6 +52,7 @@ interface Order {
   delivery_address: string;
   tracking_id: string | null;
   shipping_cost: number | null;
+  instructions: string | null;
 }
 
 const TrackOrder: React.FC = () => {
