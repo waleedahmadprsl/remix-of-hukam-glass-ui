@@ -99,7 +99,7 @@ function orderConfirmationHTML(customerName: string, orderId: string, totalAmoun
   </div>`;
 }
 
-function statusUpdateHTML(customerName: string, orderId: string, status: string, totalAmount: number) {
+function statusUpdateHTML(customerName: string, orderId: string, status: string, totalAmount: number, trackingId?: string) {
   const statusConfig: Record<string, { emoji: string; color: string; bg: string; message: string }> = {
     confirmed: { emoji: "📦", color: "#2563eb", bg: "#eff6ff", message: "Your order has been confirmed and is being prepared!" },
     dispatched: { emoji: "🏍️", color: "#7c3aed", bg: "#f5f3ff", message: "Your order is out for delivery! Our rider is heading to you." },
@@ -111,6 +111,13 @@ function statusUpdateHTML(customerName: string, orderId: string, status: string,
   };
   
   const config = statusConfig[status] || { emoji: "📢", color: "#6b7280", bg: "#f9fafb", message: `Your order status has been updated to: ${status}` };
+
+  const trackingSection = (status === "dispatched" && trackingId) ? `
+      <div style="background: #f5f3ff; border: 2px dashed #7c3aed; border-radius: 12px; padding: 20px; margin-bottom: 20px; text-align: center;">
+        <p style="color: #6b7280; font-size: 12px; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 1px;">Tracking ID</p>
+        <p style="color: #7c3aed; font-size: 22px; font-weight: 800; margin: 0; letter-spacing: 2px;">${trackingId}</p>
+        <p style="color: #6b7280; font-size: 12px; margin: 8px 0 0;">Use this ID to track your shipment</p>
+      </div>` : '';
   
   return `
   <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e5e7eb;">
@@ -129,6 +136,8 @@ function statusUpdateHTML(customerName: string, orderId: string, status: string,
       <div style="background: ${config.bg}; border-radius: 12px; padding: 20px; margin-bottom: 20px; border-left: 4px solid ${config.color};">
         <p style="color: #374151; margin: 0; font-size: 14px; line-height: 1.6;">${config.message}</p>
       </div>
+
+      ${trackingSection}
       
       <div style="background: #f9fafb; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
         <table style="width: 100%; border-collapse: collapse;">
@@ -161,7 +170,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { type, email, customerName, orderId, status, totalAmount, items } = await req.json();
+    const { type, email, customerName, orderId, status, totalAmount, items, trackingId } = await req.json();
     console.log(`Email request: type=${type}, to=${email}, orderId=${orderId}, status=${status}`);
 
     if (!email) {
@@ -225,7 +234,7 @@ Deno.serve(async (req) => {
 
     } else if (type === "status_update") {
       const subject = `${status === "delivered" ? "✅" : status === "dispatched" ? "🏍️" : status === "confirmed" ? "📦" : "📢"} Order ${(status || "").charAt(0).toUpperCase() + (status || "").slice(1)} - HUKAM #${orderId?.slice(0, 8) || ""}`;
-      const html = statusUpdateHTML(customerName, orderId || "", status, totalAmount);
+      const html = statusUpdateHTML(customerName, orderId || "", status, totalAmount, trackingId);
       
       const result = await sendEmail(email, subject, html);
 
